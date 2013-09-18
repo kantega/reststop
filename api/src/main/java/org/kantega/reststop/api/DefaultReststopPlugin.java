@@ -28,6 +28,7 @@ public class DefaultReststopPlugin implements ReststopPlugin {
 
     private List<Object> resources = new ArrayList<>();
     private List<Filter> servletFilters = new ArrayList<>();
+    private List<PluginListener> pluginListeners = new ArrayList<>();
 
     @Override
     public Collection<Object> getSingletonResources() {
@@ -45,5 +46,14 @@ public class DefaultReststopPlugin implements ReststopPlugin {
 
     public List<Filter> getServletFilters() {
         return servletFilters;
+    }
+
+    @Override
+    public Collection<PluginListener> getPluginListeners() {
+        return pluginListeners;
+    }
+
+    protected void addPluginListener(PluginListener pluginListener) {
+        pluginListeners.add(pluginListener);
     }
 }

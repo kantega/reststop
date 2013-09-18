@@ -27,4 +27,6 @@ public interface ReststopPlugin {
     public Collection<Object> getSingletonResources();
 
     public Collection<Filter> getServletFilters();
+
+    public Collection<PluginListener> getPluginListeners();
 }

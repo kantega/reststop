@@ -26,6 +26,7 @@ import org.kantega.jexmec.PluginManagerListener;
 import org.kantega.jexmec.ServiceKey;
 import org.kantega.jexmec.ctor.ConstructorInjectionPluginLoader;
 import org.kantega.jexmec.manager.DefaultPluginManager;
+import org.kantega.reststop.api.PluginListener;
 import org.kantega.reststop.api.Reststop;
 import org.kantega.reststop.api.ReststopPlugin;
 
@@ -34,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.core.Application;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
@@ -52,8 +54,6 @@ public class ReststopInitializer implements ServletContainerInitializer{
     public void onStartup(Set<Class<?>> classes, ServletContext servletContext) throws ServletException {
 
 
-
-
         final DefaultPluginManager<ReststopPlugin> manager = buildPluginManager(servletContext);
 
         manager.addPluginManagerListener(new PluginManagerListener<ReststopPlugin>() {
@@ -61,6 +61,17 @@ public class ReststopInitializer implements ServletContainerInitializer{
             public void pluginsUpdated(Collection<ReststopPlugin> plugins) {
                 if(container != null) {
                     container.reload(getResourceConfig(new ReststopApplication(manager)));
+                }
+            }
+        });
+        manager.addPluginManagerListener(new PluginManagerListener<ReststopPlugin>() {
+            @Override
+            public void afterPluginManagerStarted(PluginManager pluginManager) {
+                PluginManager<ReststopPlugin> pm = pluginManager;
+                for(ReststopPlugin plugin : pm.getPlugins()) {
+                    for(PluginListener listener : plugin.getPluginListeners()) {
+                        listener.pluginManagerStarted();
+                    }
                 }
             }
         });
@@ -77,12 +88,17 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
     private DefaultPluginManager<ReststopPlugin> buildPluginManager(ServletContext servletContext) throws ServletException {
 
+        DefaultReststop reststop = new DefaultReststop();
         DefaultPluginManager<ReststopPlugin> build = buildFor(ReststopPlugin.class)
+                        .withClassLoaderProvider(reststop)
                         .withClassLoaderProviders(findClassLoaderProviders(servletContext))
                         .withClassLoader(getClass().getClassLoader())
                         .withPluginLoader(new ConstructorInjectionPluginLoader())
-                        .withService(ServiceKey.by(Reststop.class), new DefaultReststop())
+                        .withService(ServiceKey.by(Reststop.class), reststop)
+                        .withService(ServiceKey.by(ServletContext.class), servletContext)
                         .build();
+
+
 
         return build;
     }
@@ -90,19 +106,22 @@ public class ReststopInitializer implements ServletContainerInitializer{
     private ClassLoaderProvider[] findClassLoaderProviders(ServletContext servletContext) throws ServletException {
         List<ClassLoaderProvider> providers = new ArrayList<ClassLoaderProvider>();
 
-        ServiceLoader<ClassLoaderProvider> loader = ServiceLoader.load(ClassLoaderProvider.class, Thread.currentThread().getContextClassLoader());
-
-        for(ClassLoaderProvider provider : loader) {
-            providers.add(provider);
+        {
+            String pluginsTxtPath = servletContext.getInitParameter("plugins.txt");
+            if(pluginsTxtPath != null) {
+                File pluginsTxt = new File(pluginsTxtPath);
+                if(!pluginsTxt.exists()) {
+                    throw new ServletException("Path not found: " + pluginsTxt.getAbsolutePath());
+                }
+                providers.add(new PluginsTxtClassLoaderProvider(pluginsTxt));
+            }
         }
 
-        String pluginsTxtPath = servletContext.getInitParameter("plugins.txt");
-        if(pluginsTxtPath != null) {
-            File pluginsTxt = new File(pluginsTxtPath);
-            if(!pluginsTxt.exists()) {
-                throw new ServletException("Path not found: " + pluginsTxt.getAbsolutePath());
+        {
+            List<String> pluginsLines = (List<String>) servletContext.getAttribute("pluginsList");
+            if(pluginsLines != null) {
+                providers.add(new PluginLinesClassLoaderProvider(pluginsLines));
             }
-            providers.add(new PluginsTxtClassLoaderProvider(pluginsTxt));
         }
         return providers.toArray(new ClassLoaderProvider[providers.size()]);
 
@@ -124,10 +143,62 @@ public class ReststopInitializer implements ServletContainerInitializer{
         return resourceConfig;
     }
 
-    private class DefaultReststop implements Reststop {
+    private class DefaultReststop implements Reststop, ClassLoaderProvider {
+        private Registry registry;
+        private ClassLoader parentClassLoader;
+
+        @Override
+        public void start(Registry registry, ClassLoader parentClassLoader) {
+
+            this.registry = registry;
+            this.parentClassLoader = parentClassLoader;
+        }
+
+        @Override
+        public void stop() {
+
+        }
+
+        @Override
+        public ClassLoader getPluginParentClassLoader() {
+            return parentClassLoader;
+        }
+
+        @Override
+        public PluginClassLoaderChange changePluginClassLoaders() {
+            return new DefaultClassLoaderChange(registry);
+        }
+
         @Override
         public Filter createFilter(Filter filter, String mapping) {
             return new MappingWrappedFilter(filter, mapping);
+        }
+
+        private class DefaultClassLoaderChange implements PluginClassLoaderChange {
+            private final Registry registry;
+            private List<ClassLoader> adds = new ArrayList<>();
+            private List<ClassLoader> removes = new ArrayList<>();
+
+            public DefaultClassLoaderChange(Registry registry) {
+                this.registry = registry;
+            }
+
+            @Override
+            public PluginClassLoaderChange add(ClassLoader classLoader) {
+                adds.add(classLoader);
+                return this;
+            }
+
+            @Override
+            public PluginClassLoaderChange remove(ClassLoader classLoader) {
+                removes.add(classLoader);
+                return this;
+            }
+
+            @Override
+            public void commit() {
+                registry.replace(removes, adds);
+            }
         }
     }
 
@@ -277,6 +348,39 @@ public class ReststopInitializer implements ServletContainerInitializer{
         @Override
         public void addURL(URL url) {
             super.addURL(url);    //To change body of overridden methods use File | Settings | File Templates.
+        }
+    }
+
+    private class PluginLinesClassLoaderProvider implements ClassLoaderProvider {
+        private final List<String> pluginsLines;
+
+        public PluginLinesClassLoaderProvider(List<String> pluginsLines) {
+            this.pluginsLines = pluginsLines;
+        }
+
+        @Override
+        public void start(Registry registry, ClassLoader parentClassLoader) {
+            ArrayList<ClassLoader> loaders = new ArrayList<>();
+            for(String line : pluginsLines) {
+                PluginClassloader pluginClassloader = new PluginClassloader(parentClassLoader);
+                for(String path : line.split(":")) {
+
+                    try {
+                        pluginClassloader.addURL(new File(path).toURI().toURL());
+                    } catch (MalformedURLException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+
+                loaders.add(pluginClassloader);
+            }
+
+            registry.add(loaders);
+        }
+
+        @Override
+        public void stop() {
+
         }
     }
 }

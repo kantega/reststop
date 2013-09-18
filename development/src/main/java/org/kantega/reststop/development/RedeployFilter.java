@@ -24,6 +24,12 @@ import java.io.IOException;
  */
 public class RedeployFilter implements Filter {
 
+    private final DevelopmentClassLoaderProvider provider;
+
+    public RedeployFilter(DevelopmentClassLoaderProvider provider) {
+        this.provider = provider;
+    }
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
 
@@ -32,7 +38,7 @@ public class RedeployFilter implements Filter {
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
 
-        DevelopmentClassLoaderProvider provider = DevelopmentClassLoaderProvider.getInstance();
+
 
         synchronized (this) {
             if(provider.getClassloader().isStale()) {

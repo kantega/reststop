@@ -16,61 +16,35 @@
 
 package org.kantega.reststop.development;
 
-import org.kantega.jexmec.ClassLoaderProvider;
+import org.kantega.reststop.api.Reststop;
 
-import javax.tools.*;
 import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
-import java.net.URLDecoder;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
-import static java.util.Collections.singleton;
 
 /**
  *
  */
-public class DevelopmentClassLoaderProvider implements ClassLoaderProvider {
-    private static DevelopmentClassLoaderProvider instance;
+public class DevelopmentClassLoaderProvider {
 
     private DevelopmentClassloader classloader;
 
-
-
     private File pluginDir;
-    private Registry registry;
+    private Reststop reststop;
     private ClassLoader parentClassLoader;
 
-    @Override
-    public synchronized void start(Registry registry, ClassLoader parentClassLoader) {
+
+    public synchronized void start(Reststop reststop) {
         System.out.println("Starting devclassloaderprovider");
-        instance = this;
-
+        this.parentClassLoader = reststop.getPluginParentClassLoader();
         pluginDir = new File(System.getProperty("reststopPluginDir"));
-
+        this.reststop= reststop;
         classloader = new DevelopmentClassloader(pluginDir, Collections.<File>emptyList(), parentClassLoader);
-
-        registry.add(singleton(classloader));
-        this.registry = registry;
-        this.parentClassLoader = parentClassLoader;
-
+        reststop.changePluginClassLoaders().add(classloader).commit();
 
     }
 
-    @Override
-    public void stop() {
-
-    }
-
-    public static DevelopmentClassLoaderProvider getInstance() {
-        return instance;
-    }
 
     public DevelopmentClassloader getClassloader() {
         return classloader;
@@ -79,8 +53,10 @@ public class DevelopmentClassLoaderProvider implements ClassLoaderProvider {
     public synchronized void redeploy(String compileClasspath, String runtimeClasspath) {
         classloader.compileJava(compileClasspath);
         classloader.copyResources();
-        registry.replace(singleton(classloader),
-                singleton(classloader = new DevelopmentClassloader(pluginDir,  parseClasspath(runtimeClasspath), parentClassLoader)));
+        reststop.changePluginClassLoaders()
+                .remove(classloader)
+                .add(classloader = new DevelopmentClassloader(pluginDir, parseClasspath(runtimeClasspath), parentClassLoader))
+                .commit();
 
     }
 

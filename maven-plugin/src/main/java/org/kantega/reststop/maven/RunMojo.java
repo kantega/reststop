@@ -26,10 +26,12 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.resolution.ArtifactRequest;
-import org.eclipse.aether.resolution.ArtifactResolutionException;
-import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.*;
+import org.eclipse.aether.util.filter.ScopeDependencyFilter;
 import org.eclipse.jetty.maven.plugin.JettyWebAppContext;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
@@ -44,6 +46,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -67,9 +72,6 @@ public class RunMojo extends AbstractMojo {
     @Parameter (defaultValue = "${project.groupId}:reststop-webapp:war:${project.version}")
     private String warCoords;
 
-    @Parameter (defaultValue = "${project.groupId}:reststop-development:jar:${project.version}")
-    private String devCoords;
-
     @Parameter(defaultValue = "${project.build.directory}/reststop/temp")
     private File tempDirectory;
 
@@ -81,6 +83,10 @@ public class RunMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project}")
     private MavenProject mavenProject;
+
+    @Parameter
+    private List<Plugin> plugins;
+
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -105,10 +111,11 @@ public class RunMojo extends AbstractMojo {
             Server server = new Server(port);
 
             JettyWebAppContext context = new JettyWebAppContext();
-            context.setExtraClasspath(resolveArtifactFile(devCoords).getAbsolutePath());
+
             context.setWar(war.getAbsolutePath());
             context.setInitParameter("compileClasspath", getClasspath(mavenProject.getCompileArtifacts()));
             context.setInitParameter("runtimeClasspath", getClasspath(mavenProject.getRuntimeArtifacts()));
+            context.getServletContext().setAttribute("pluginsList", createPluginClasspaths(plugins));
 
             tempDirectory.mkdirs();
             context.setTempDirectory(tempDirectory);
@@ -128,6 +135,55 @@ public class RunMojo extends AbstractMojo {
         } catch (Exception e) {
             throw new MojoExecutionException("Failed starting Jetty ", e);
         }
+    }
+
+    private List<String> createPluginClasspaths(List<Plugin> plugins) throws MojoFailureException, MojoExecutionException {
+        List<String> lines = new ArrayList<>();
+
+
+
+            for (Plugin plugin : getPlugins()) {
+
+                Artifact pluginArtifact = resolveArtifact(plugin.getCoords());
+                CollectRequest collectRequest = new CollectRequest(new Dependency(pluginArtifact, "compile"), remoteRepos);
+
+                DependencyResult dependencyResult = null;
+                try {
+                    dependencyResult = repoSystem.resolveDependencies(repoSession, new DependencyRequest(collectRequest, new ScopeDependencyFilter("test", "provided")));
+                } catch (DependencyResolutionException e) {
+                    throw new MojoFailureException("Failed resolving plugin dependencies", e);
+                }
+                if(!dependencyResult.getCollectExceptions().isEmpty()) {
+                    throw new MojoFailureException("Failed resolving plugin dependencies", dependencyResult.getCollectExceptions().get(0));
+                }
+
+                String line = "";
+                for(ArtifactResult result : dependencyResult.getArtifactResults()) {
+                    Artifact artifact = result.getArtifact();
+                    if(!line.isEmpty()) {
+                        line+=":";
+                    }
+                    line += artifact.getFile().getAbsolutePath();
+
+                }
+                lines.add(line);
+            }
+
+
+
+        return lines;
+    }
+
+    private List<Plugin> getPlugins() {
+        List<Plugin> plugins = new ArrayList<>();
+
+        if(this.plugins != null) {
+            plugins.addAll(this.plugins);
+        }
+
+        plugins.add(new Plugin(mavenProject.getGroupId(), "reststop-development", mavenProject.getVersion()));
+
+        return plugins;
     }
 
 
@@ -164,8 +220,12 @@ public class RunMojo extends AbstractMojo {
             }
         }
     }
-
     private File resolveArtifactFile(String coords) throws MojoFailureException, MojoExecutionException {
+        return resolveArtifact(coords).getFile();
+    }
+
+
+    private Artifact resolveArtifact(String coords) throws MojoFailureException, MojoExecutionException {
         Artifact artifact;
         try
         {
@@ -195,7 +255,7 @@ public class RunMojo extends AbstractMojo {
         getLog().info( "Resolved artifact " + artifact + " to " + result.getArtifact().getFile() + " from "
                 + result.getRepository() );
 
-        return result.getArtifact().getFile();
+        return result.getArtifact();
     }
 
     private class ShutdownHandler extends AbstractHandler {

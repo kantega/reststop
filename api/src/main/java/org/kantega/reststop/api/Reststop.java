@@ -23,4 +23,14 @@ import javax.servlet.Filter;
  */
 public interface Reststop {
     Filter createFilter(Filter filter, String mapping);
+
+    ClassLoader getPluginParentClassLoader();
+    PluginClassLoaderChange changePluginClassLoaders();
+
+    interface PluginClassLoaderChange {
+        PluginClassLoaderChange add(ClassLoader classLoader);
+        PluginClassLoaderChange remove(ClassLoader classLoader);
+        void commit();
+
+    }
 }
