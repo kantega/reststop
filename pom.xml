@@ -37,8 +37,8 @@
         <module>api</module>
         <module>core</module>
         <module>plugins/security</module>
+        <module>plugins/development</module>
         <module>webapp</module>
-        <module>development</module>
         <module>maven-plugin</module>
         <module>integration-tests/hello-world</module>
     </modules>

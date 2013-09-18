@@ -23,7 +23,7 @@
         <artifactId>reststop-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
     </parent>
-    <artifactId>reststop-development</artifactId>
+    <artifactId>reststop-development-plugin</artifactId>
 
     <dependencies>
         <dependency>

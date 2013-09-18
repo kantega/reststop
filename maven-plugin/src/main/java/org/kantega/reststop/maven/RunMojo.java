@@ -181,7 +181,7 @@ public class RunMojo extends AbstractMojo {
             plugins.addAll(this.plugins);
         }
 
-        plugins.add(new Plugin(mavenProject.getGroupId(), "reststop-development", mavenProject.getVersion()));
+        plugins.add(new Plugin(mavenProject.getGroupId(), "reststop-development-plugin", mavenProject.getVersion()));
 
         return plugins;
     }
