@@ -28,7 +28,7 @@ import javax.ws.rs.Produces;
 public class HelloworldResource {
 
     @GET
-    @Produces("text/json")
+    @Produces({"application/json", "application/xml", })
     public Hello hello() {
         return new Hello("Hello world");
     }

@@ -39,6 +39,7 @@ public class HelloworldIT {
 
         HttpURLConnection connection = (HttpURLConnection) new URL("http://localhost:" + System.getProperty("reststopPort") + "/helloworld").openConnection();
         connection.setRequestProperty("Authorization", "Basic " + DatatypeConverter.printBase64Binary("joe:joe".getBytes("utf-8")));
+        connection.setRequestProperty("Accept", "application/json");
         String message = IOUtils.toString(connection.getInputStream());
 
 
