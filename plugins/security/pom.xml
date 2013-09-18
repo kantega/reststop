@@ -23,6 +23,7 @@
         <groupId>org.kantega.reststop</groupId>
         <artifactId>reststop-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <artifactId>reststop-security-plugin</artifactId>
