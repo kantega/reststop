@@ -32,10 +32,6 @@
         <jackson.version>2.2.3</jackson.version>
     </properties>
 
-    <prerequisites>
-        <maven>${maven.version}</maven>
-    </prerequisites>
-
 
     <modules>
         <module>api</module>

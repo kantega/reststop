@@ -26,6 +26,9 @@
     <artifactId>reststop-maven-plugin</artifactId>
     <packaging>maven-plugin</packaging>
 
+    <prerequisites>
+        <maven>${maven.version}</maven>
+    </prerequisites>
 
     <dependencies>
         <dependency>
