@@ -59,7 +59,7 @@
                     <execution>
                         <id>start</id>
                         <goals>
-                            <goal>run</goal>
+                            <goal>start</goal>
                             <goal>stop</goal>
                         </goals>
                     </execution>

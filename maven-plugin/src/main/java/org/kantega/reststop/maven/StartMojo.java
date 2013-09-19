@@ -54,10 +54,10 @@ import java.util.List;
 /**
  *
  */
-@Mojo(name = "run",
+@Mojo(name = "start",
         defaultPhase = LifecyclePhase.PRE_INTEGRATION_TEST,
 requiresDependencyResolution = ResolutionScope.TEST)
-public class RunMojo extends AbstractMojo {
+public class StartMojo extends AbstractMojo {
 
 
     @Component
