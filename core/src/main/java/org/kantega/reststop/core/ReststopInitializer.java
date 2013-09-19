@@ -17,6 +17,7 @@
 package org.kantega.reststop.core;
 
 import com.google.common.io.Files;
+import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.glassfish.jersey.servlet.ServletContainer;
@@ -32,9 +33,11 @@ import org.kantega.reststop.api.ReststopPlugin;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Application;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -80,6 +83,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         servletContext.addFilter(PluginDelegatingFilter.class.getName(), new PluginDelegatingFilter(manager))
                 .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
 
+        servletContext.addFilter(AssetFilter.class.getName(), new AssetFilter(manager)).addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/assets/*");
 
         container = addJerseyFilter(servletContext, new ReststopApplication(manager));
 
@@ -378,6 +382,52 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         @Override
         public void stop() {
+
+        }
+    }
+
+    private class AssetFilter implements Filter {
+        private final PluginManager<ReststopPlugin> manager;
+
+        public AssetFilter(PluginManager<ReststopPlugin> manager) {
+            this.manager = manager;
+        }
+
+        @Override
+        public void init(FilterConfig filterConfig) throws ServletException {
+
+        }
+
+        @Override
+        public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+
+            HttpServletRequest req = (HttpServletRequest) servletRequest;
+            HttpServletResponse resp = (HttpServletResponse) servletResponse;
+
+            for(ReststopPlugin plugin : manager.getPlugins()) {
+                ClassLoader loader = manager.getClassLoader(plugin);
+                String requestURI = req.getRequestURI();
+
+                String path = requestURI.substring("/assets/".length());
+
+                InputStream stream = loader.getResourceAsStream("assets/" + path);
+                if(stream != null) {
+                    String mimeType = req.getServletContext().getMimeType(path.substring(path.lastIndexOf("/") + 1));
+                    if(mimeType != null) {
+                        resp.setContentType(mimeType);
+                    }
+
+                    IOUtils.copy(stream, servletResponse.getOutputStream());
+
+                    return;
+                }
+            }
+
+            filterChain.doFilter(servletRequest, servletResponse);
+        }
+
+        @Override
+        public void destroy() {
 
         }
     }

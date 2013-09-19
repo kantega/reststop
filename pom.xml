@@ -92,6 +92,13 @@
                 <artifactId>jexmec-ctor-pl</artifactId>
                 <version>${jexmec.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>1.4</version>
+            </dependency>
+
             <!-- Test deps-->
             <dependency>
                 <groupId>junit</groupId>
