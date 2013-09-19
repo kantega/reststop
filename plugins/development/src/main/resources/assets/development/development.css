@@ -1,0 +1,14 @@
+body {
+    background-color: white;
+}
+
+.sourceCode {
+    border: 1px solid gray;
+    padding: 1em;
+    max-height: 10em;
+    overflow-y: auto;
+}
+
+.error {
+    color: red;
+}

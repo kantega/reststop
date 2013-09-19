@@ -22,6 +22,8 @@ import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 
 import javax.servlet.*;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
@@ -48,41 +50,50 @@ public class RedeployFilter implements Filter {
 
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        HttpServletRequest req = (HttpServletRequest) servletRequest;
+        HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
-        if (!testing) {
-            DevelopmentClassloader classloader = provider.getClassloader();
+        DevelopmentClassloader classloader = provider.getClassloader();
 
-            boolean staleSources;
+        if (!testing &&  !req.getRequestURI().startsWith("/assets")) {
+            try {
 
-            synchronized (compileSourcesMonitor) {
-                staleSources = classloader.isStaleSources();
-                if (staleSources) {
-                    System.out.println("Needs redeploy!");
-                    provider.redeploy();
-                }
-            }
+                boolean staleSources;
 
-            boolean staleTests = classloader.isStaleTests();
-            if (staleSources || staleTests) {
-                synchronized (compileTestsMonitor) {
-                    classloader.compileJavaTests();
-                    classloader.copyTestResources();
-                }
-
-                try {
-                    testing = true;
-                    synchronized (runTestsMonitor) {
-                        List<Class> testClasses = classloader.getTestClasses();
-                        Class[] objects = testClasses.toArray(new Class[testClasses.size()]);
-                        Result result = new JUnitCore().run(objects);
-                        if (result.getFailureCount() > 0) {
-                            Failure first = result.getFailures().get(0);
-                            throw new RuntimeException(first.getMessage(), first.getException());
-                        }
+                synchronized (compileSourcesMonitor) {
+                    staleSources = classloader.isStaleSources();
+                    if (staleSources) {
+                        System.out.println("Needs redeploy!");
+                        provider.redeploy();
                     }
-                } finally {
-                    testing = false;
                 }
+
+                boolean staleTests = classloader.isStaleTests();
+                if (staleSources || staleTests) {
+
+                    synchronized (compileTestsMonitor) {
+                        classloader.compileJavaTests();
+                        classloader.copyTestResources();
+                    }
+
+                    try {
+                        testing = true;
+                        synchronized (runTestsMonitor) {
+                            List<Class> testClasses = provider.getClassloader().getTestClasses();
+                            Class[] objects = testClasses.toArray(new Class[testClasses.size()]);
+                            Result result = new JUnitCore().run(objects);
+                            if (result.getFailureCount() > 0) {
+                                Failure first = result.getFailures().get(0);
+                                throw new RuntimeException(first.getMessage(), first.getException());
+                            }
+                        }
+                    } finally {
+                        testing = false;
+                    }
+                }
+            } catch (JavaCompilationException e) {
+                new ErrorReporter(classloader.getBasedir()).addCompilationException(e).render(req, resp);
+                return;
             }
         }
 

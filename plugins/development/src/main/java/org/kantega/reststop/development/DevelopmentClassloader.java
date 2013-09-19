@@ -138,6 +138,9 @@ public class DevelopmentClassloader extends URLClassLoader {
         return classes;
     }
 
+    public File getBasedir() {
+        return basedir;
+    }
 
     private class NewestFileVisitor extends SimpleFileVisitor<Path> {
 
@@ -194,7 +197,7 @@ public class DevelopmentClassloader extends URLClassLoader {
             boolean success = task.call();
 
             if (!success) {
-                throw new RuntimeException("Java compilation exception: " +diagnostics.getDiagnostics().toString());
+                throw new JavaCompilationException(diagnostics.getDiagnostics());
             }
         }
     }
