@@ -47,8 +47,6 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.10</version>
-            <scope>test</scope>
         </dependency>
     </dependencies>
     <dependencyManagement>
@@ -93,6 +91,13 @@
                 <groupId>org.kantega.jexmec</groupId>
                 <artifactId>jexmec-ctor-pl</artifactId>
                 <version>${jexmec.version}</version>
+            </dependency>
+            <!-- Test deps-->
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>4.11</version>
+                <scope>test</scope>
             </dependency>
 
         </dependencies>

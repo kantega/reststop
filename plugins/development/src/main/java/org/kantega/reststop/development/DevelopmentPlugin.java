@@ -20,12 +20,23 @@ import org.kantega.reststop.api.DefaultReststopPlugin;
 import org.kantega.reststop.api.PluginListener;
 import org.kantega.reststop.api.Reststop;
 
+import javax.servlet.ServletContext;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  *
  */
 public class DevelopmentPlugin extends DefaultReststopPlugin {
-    public DevelopmentPlugin(final Reststop reststop) {
-        final DevelopmentClassLoaderProvider provider = new DevelopmentClassLoaderProvider();
+    public DevelopmentPlugin(final Reststop reststop, ServletContext servletContext) {
+
+        List<File> compileClasspath = parseClasspath(servletContext.getInitParameter("compileClasspath"));
+        List<File> runtimeClasspath = parseClasspath(servletContext.getInitParameter("runtimeClasspath"));
+        List<File> testClasspath = parseClasspath(servletContext.getInitParameter("testClasspath"));
+
+
+        final DevelopmentClassLoaderProvider provider = new DevelopmentClassLoaderProvider(compileClasspath, runtimeClasspath, testClasspath);
         addPluginListener(new PluginListener() {
             @Override
             public void pluginManagerStarted() {
@@ -35,5 +46,14 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
 
         addServletFilter(new RedeployFilter(provider));
 
+    }
+
+    private List<File> parseClasspath(String classPath) {
+        List<File> files = new ArrayList<>();
+        for(String path : classPath.split(File.pathSeparator)) {
+            File file = new File(path);
+            files.add(file);
+        }
+        return files;
     }
 }

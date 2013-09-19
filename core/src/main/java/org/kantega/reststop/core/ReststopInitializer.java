@@ -89,7 +89,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
     private DefaultPluginManager<ReststopPlugin> buildPluginManager(ServletContext servletContext) throws ServletException {
 
         DefaultReststop reststop = new DefaultReststop();
-        DefaultPluginManager<ReststopPlugin> build = buildFor(ReststopPlugin.class)
+
+
+        return buildFor(ReststopPlugin.class)
                         .withClassLoaderProvider(reststop)
                         .withClassLoaderProviders(findClassLoaderProviders(servletContext))
                         .withClassLoader(getClass().getClassLoader())
@@ -97,14 +99,10 @@ public class ReststopInitializer implements ServletContainerInitializer{
                         .withService(ServiceKey.by(Reststop.class), reststop)
                         .withService(ServiceKey.by(ServletContext.class), servletContext)
                         .build();
-
-
-
-        return build;
     }
 
     private ClassLoaderProvider[] findClassLoaderProviders(ServletContext servletContext) throws ServletException {
-        List<ClassLoaderProvider> providers = new ArrayList<ClassLoaderProvider>();
+        List<ClassLoaderProvider> providers = new ArrayList<>();
 
         {
             String pluginsTxtPath = servletContext.getInitParameter("plugins.txt");
@@ -176,8 +174,8 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         private class DefaultClassLoaderChange implements PluginClassLoaderChange {
             private final Registry registry;
-            private List<ClassLoader> adds = new ArrayList<>();
-            private List<ClassLoader> removes = new ArrayList<>();
+            private final List<ClassLoader> adds = new ArrayList<>();
+            private final List<ClassLoader> removes = new ArrayList<>();
 
             public DefaultClassLoaderChange(Registry registry) {
                 this.registry = registry;
@@ -266,7 +264,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
     }
     private static class PluginFilterChain implements FilterChain {
         private final List<Filter> filters;
-        private FilterChain filterChain;
+        private final FilterChain filterChain;
         private int filterIndex;
 
         public PluginFilterChain(List<Filter> filters, FilterChain filterChain) {

@@ -90,9 +90,10 @@ public class DistMojo extends AbstractMojo {
     @Parameter
     private List<Plugin> plugins;
 
+    @Parameter
     private final String jettyVersion = "9.0.5.v20130815";
 
-    private String jettydistCoords  ="org.eclipse.jetty:jetty-distribution:tar.gz:" + jettyVersion;
+    private final String jettydistCoords  ="org.eclipse.jetty:jetty-distribution:tar.gz:" + jettyVersion;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -165,8 +166,10 @@ public class DistMojo extends AbstractMojo {
 
         File distDir = new File(jettyDir, "jetty-distribution-" + jettyVersion);
         File[] files = distDir.listFiles();
-        for (File file : files) {
-            file.renameTo(new File(jettyDir, file.getName()));
+        if(files != null) {
+            for (File file : files) {
+                file.renameTo(new File(jettyDir, file.getName()));
+            }
         }
 
         distDir.delete();
@@ -199,7 +202,7 @@ public class DistMojo extends AbstractMojo {
                 copyArtifactToRepository(pluginArtifact, manager);
                 CollectRequest collectRequest = new CollectRequest(new Dependency(pluginArtifact, "compile"), remoteRepos);
 
-                DependencyResult dependencyResult = null;
+                DependencyResult dependencyResult;
                 try {
                     dependencyResult = repoSystem.resolveDependencies(repoSession, new DependencyRequest(collectRequest, new ScopeDependencyFilter("test", "provided")));
                 } catch (DependencyResolutionException e) {

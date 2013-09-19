@@ -16,8 +16,14 @@
 
 package org.kantega.reststop.development;
 
+import org.junit.runner.JUnitCore;
+import org.junit.runner.Result;
+import org.junit.runner.notification.Failure;
+import org.junit.runner.notification.RunListener;
+
 import javax.servlet.*;
 import java.io.IOException;
+import java.util.List;
 
 /**
  *
@@ -25,6 +31,11 @@ import java.io.IOException;
 public class RedeployFilter implements Filter {
 
     private final DevelopmentClassLoaderProvider provider;
+    private volatile boolean testing = false;
+
+    private final Object compileSourcesMonitor = new Object();
+    private final Object compileTestsMonitor = new Object();
+    private final Object runTestsMonitor = new Object();
 
     public RedeployFilter(DevelopmentClassLoaderProvider provider) {
         this.provider = provider;
@@ -38,13 +49,40 @@ public class RedeployFilter implements Filter {
     @Override
     public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
 
+        if (!testing) {
+            DevelopmentClassloader classloader = provider.getClassloader();
 
+            boolean staleSources;
 
-        synchronized (this) {
-            if(provider.getClassloader().isStale()) {
-                System.out.println("Needs redeploy!");
-                provider.redeploy(servletRequest.getServletContext().getInitParameter("compileClasspath"),
-                        servletRequest.getServletContext().getInitParameter("runtimeClasspath"));
+            synchronized (compileSourcesMonitor) {
+                staleSources = classloader.isStaleSources();
+                if (staleSources) {
+                    System.out.println("Needs redeploy!");
+                    provider.redeploy();
+                }
+            }
+
+            boolean staleTests = classloader.isStaleTests();
+            if (staleSources || staleTests) {
+                synchronized (compileTestsMonitor) {
+                    classloader.compileJavaTests();
+                    classloader.copyTestResources();
+                }
+
+                try {
+                    testing = true;
+                    synchronized (runTestsMonitor) {
+                        List<Class> testClasses = classloader.getTestClasses();
+                        Class[] objects = testClasses.toArray(new Class[testClasses.size()]);
+                        Result result = new JUnitCore().run(objects);
+                        if (result.getFailureCount() > 0) {
+                            Failure first = result.getFailures().get(0);
+                            throw new RuntimeException(first.getMessage(), first.getException());
+                        }
+                    }
+                } finally {
+                    testing = false;
+                }
             }
         }
 
@@ -55,4 +93,5 @@ public class RedeployFilter implements Filter {
     public void destroy() {
 
     }
+
 }

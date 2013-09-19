@@ -26,9 +26,9 @@ import java.util.List;
  */
 public class DefaultReststopPlugin implements ReststopPlugin {
 
-    private List<Object> resources = new ArrayList<>();
-    private List<Filter> servletFilters = new ArrayList<>();
-    private List<PluginListener> pluginListeners = new ArrayList<>();
+    private final List<Object> resources = new ArrayList<>();
+    private final List<Filter> servletFilters = new ArrayList<>();
+    private final List<PluginListener> pluginListeners = new ArrayList<>();
 
     @Override
     public Collection<Object> getSingletonResources() {

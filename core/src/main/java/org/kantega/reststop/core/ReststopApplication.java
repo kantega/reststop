@@ -38,7 +38,7 @@ public class ReststopApplication extends Application {
 
     @Override
     public Set<Object> getSingletons() {
-        Set<Object> singletons = new HashSet<Object>();
+        Set<Object> singletons = new HashSet<>();
         for(ReststopPlugin plugin : pluginManager.getPlugins()) {
             singletons.addAll(plugin.getSingletonResources());
         }

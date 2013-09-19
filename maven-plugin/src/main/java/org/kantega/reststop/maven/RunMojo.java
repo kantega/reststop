@@ -56,7 +56,7 @@ import java.util.List;
  */
 @Mojo(name = "run",
         defaultPhase = LifecyclePhase.PRE_INTEGRATION_TEST,
-requiresDependencyResolution = ResolutionScope.COMPILE)
+requiresDependencyResolution = ResolutionScope.TEST)
 public class RunMojo extends AbstractMojo {
 
 
@@ -107,6 +107,7 @@ public class RunMojo extends AbstractMojo {
             int port = nextAvailablePort(8080);
 
             mavenProject.getProperties().setProperty("reststopPort", Integer.toString(port));
+            System.setProperty("reststopPort", Integer.toString(port));
 
             Server server = new Server(port);
 
@@ -115,6 +116,7 @@ public class RunMojo extends AbstractMojo {
             context.setWar(war.getAbsolutePath());
             context.setInitParameter("compileClasspath", getClasspath(mavenProject.getCompileArtifacts()));
             context.setInitParameter("runtimeClasspath", getClasspath(mavenProject.getRuntimeArtifacts()));
+            context.setInitParameter("testClasspath", getClasspath(mavenProject.getTestArtifacts()));
             context.getServletContext().setAttribute("pluginsList", createPluginClasspaths(plugins));
 
             tempDirectory.mkdirs();
@@ -147,7 +149,7 @@ public class RunMojo extends AbstractMojo {
                 Artifact pluginArtifact = resolveArtifact(plugin.getCoords());
                 CollectRequest collectRequest = new CollectRequest(new Dependency(pluginArtifact, "compile"), remoteRepos);
 
-                DependencyResult dependencyResult = null;
+                DependencyResult dependencyResult;
                 try {
                     dependencyResult = repoSystem.resolveDependencies(repoSession, new DependencyRequest(collectRequest, new ScopeDependencyFilter("test", "provided")));
                 } catch (DependencyResolutionException e) {
