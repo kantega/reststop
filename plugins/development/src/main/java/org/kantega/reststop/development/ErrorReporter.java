@@ -1,6 +1,7 @@
 package org.kantega.reststop.development;
 
 import org.apache.commons.io.IOUtils;
+import org.junit.runner.notification.Failure;
 
 import javax.servlet.ServletOutputStream;
 import javax.servlet.ServletRequest;
@@ -23,6 +24,7 @@ import java.util.*;
 public class ErrorReporter {
     private final File basedir;
     private List<JavaCompilationException> compilationExceptions = new ArrayList<>();
+    private List<TestFailureException> testFailureExceptions = new ArrayList<>();
 
     public ErrorReporter(File basedir) {
 
@@ -44,8 +46,53 @@ public class ErrorReporter {
         Map<String, String> map = new HashMap<>();
         map.put("contextPath", contextPath);
         map.put("compilationExceptions", formatCompilationExceptions());
+        map.put("testFailureExceptions", formatTestFailureExceptions());
         render(outputStream, map);
 
+    }
+
+    private String formatTestFailureExceptions() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        for (TestFailureException e : testFailureExceptions) {
+            if(sb.length() != 1) {
+                sb.append(",\n");
+            }
+            for(int f = 0; f < e.getFailures().size(); f++) {
+                Failure failure = e.getFailures().get(f);
+                if(f > 0) {
+                    sb.append(",\n");
+                }
+                sb.append("[");
+                {
+                    sb.append("{");
+                    {
+                        sb.append("description:").append("\"").append(escape(failure.getDescription().toString())).append("\",");
+                        sb.append("exceptionClass:").append("\"").append(escape(failure.getException().getClass().getName())).append("\",");
+                        String message = failure.getMessage();
+
+                        for (StackTraceElement element : failure.getException().getStackTrace()) {
+                            if(element.getClassName().equals(failure.getDescription().getTestClass().getName())) {
+                                sb.append("sourceFile:").append("\"").append(escape(element.getFileName())).append("\",");
+                                sb.append("sourceMethod:").append("\"").append(escape(element.getMethodName())).append("\",");
+                                sb.append("sourceLine:").append(Integer.toString(element.getLineNumber())).append(",");
+                            }
+                        }
+
+                        File sourceFile = new File(new File(basedir, "src/test/java"), failure.getDescription().getTestClass().getName().replace('.','/') +".java");
+                        sb.append("sourceLines:").append(readSourceLines(sourceFile)).append("\n,");
+
+                        sb.append("message:").append("\"").append(escape(message)).append("\"");
+
+                    }
+                    sb.append("}");
+                }
+                sb.append("]");
+            }
+        }
+
+        sb.append("]");
+        return sb.toString();
     }
 
     private String formatCompilationExceptions() {
@@ -112,7 +159,7 @@ public class ErrorReporter {
     }
 
     private String escape(String message) {
-        String replaced = message.replace("\n", "\\n").replace("\\", "\\\\").replace("\"","\\\"");
+        String replaced = message.replace("\\", "\\\\").replace("\n", "\\n").replace("\"","\\\"");
         return replaced;
     }
 
@@ -122,10 +169,15 @@ public class ErrorReporter {
 
         String rendered = template;
         for (Map.Entry<String, String> entry : values.entrySet()) {
-            rendered = rendered.replace("${" + entry.getKey() +"}", entry.getValue());
+            rendered = rendered.replace("${" + entry.getKey() + "}", entry.getValue());
         }
 
 
         outputStream.write(rendered.getBytes("utf-8"));
+    }
+
+    public ErrorReporter addTestFailulreException(TestFailureException e) {
+        this.testFailureExceptions.add(e);
+        return this;
     }
 }

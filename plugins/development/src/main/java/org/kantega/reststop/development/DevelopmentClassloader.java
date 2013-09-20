@@ -63,7 +63,7 @@ public class DevelopmentClassloader extends URLClassLoader {
     }
 
     private long lastTestCompile;
-    private volatile boolean testsFailed;
+    private volatile boolean testsFailed = true;
 
     public DevelopmentClassloader(DevelopmentClassloader other) {
         this(other.basedir, other.compileClasspath, other.runtimeClasspath, other.testClasspath, other.getParent());

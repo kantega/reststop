@@ -96,6 +96,8 @@ public class RedeployFilter implements Filter {
             } catch (JavaCompilationException e) {
                 new ErrorReporter(classloader.getBasedir()).addCompilationException(e).render(req, resp);
                 return;
+            } catch (TestFailureException e) {
+                new ErrorReporter(classloader.getBasedir()).addTestFailulreException(e).render(req, resp);
             }
         }
 
