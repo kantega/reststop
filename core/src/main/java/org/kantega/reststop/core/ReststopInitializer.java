@@ -21,6 +21,7 @@ import org.apache.commons.io.IOUtils;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.glassfish.jersey.servlet.ServletContainer;
+import org.glassfish.jersey.servlet.ServletProperties;
 import org.kantega.jexmec.ClassLoaderProvider;
 import org.kantega.jexmec.PluginManager;
 import org.kantega.jexmec.PluginManagerListener;
@@ -44,6 +45,7 @@ import java.net.URLClassLoader;
 import java.nio.charset.Charset;
 import java.util.*;
 
+import static java.util.Collections.singletonMap;
 import static org.kantega.jexmec.manager.DefaultPluginManager.buildFor;
 
 /**
@@ -141,6 +143,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
     private ResourceConfig getResourceConfig(Application application) {
         ResourceConfig resourceConfig = ResourceConfig.forApplication(application);
+        resourceConfig.setProperties(singletonMap(ServletProperties.FILTER_FORWARD_ON_404, "true"));
         resourceConfig.register(RolesAllowedDynamicFeature.class);
         return resourceConfig;
     }
