@@ -29,6 +29,7 @@ public class DefaultReststopPlugin implements ReststopPlugin {
     private final List<Object> resources = new ArrayList<>();
     private final List<Filter> servletFilters = new ArrayList<>();
     private final List<PluginListener> pluginListeners = new ArrayList<>();
+    private final List<Class<?>> jaxRsContainerClasses = new ArrayList<>();
 
     @Override
     public Collection<Object> getSingletonResources() {
@@ -55,5 +56,14 @@ public class DefaultReststopPlugin implements ReststopPlugin {
 
     protected void addPluginListener(PluginListener pluginListener) {
         pluginListeners.add(pluginListener);
+    }
+
+    @Override
+    public Collection<Class<?>> getJaxRsContainerClasses() {
+        return jaxRsContainerClasses;
+    }
+
+    protected void addJaxRsContainerClass(Class<?> clazz) {
+        jaxRsContainerClasses.add(clazz);
     }
 }

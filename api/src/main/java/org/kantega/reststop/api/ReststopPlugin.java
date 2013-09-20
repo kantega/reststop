@@ -24,9 +24,12 @@ import java.util.Collection;
  */
 public interface ReststopPlugin {
 
-    public Collection<Object> getSingletonResources();
+    Collection<Object> getSingletonResources();
 
-    public Collection<Filter> getServletFilters();
+    Collection<Filter> getServletFilters();
 
-    public Collection<PluginListener> getPluginListeners();
+    Collection<PluginListener> getPluginListeners();
+
+    Collection<Class<?>> getJaxRsContainerClasses();
+
 }

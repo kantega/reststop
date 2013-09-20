@@ -44,4 +44,13 @@ public class ReststopApplication extends Application {
         }
         return singletons;
     }
+
+    @Override
+    public Set<Class<?>> getClasses() {
+        Set<Class<?>> classes = new HashSet<>();
+        for(ReststopPlugin plugin : pluginManager.getPlugins()) {
+            classes.addAll(plugin.getJaxRsContainerClasses());
+        }
+        return classes;
+    }
 }

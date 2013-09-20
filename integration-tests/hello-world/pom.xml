@@ -55,11 +55,25 @@
                 <groupId>org.kantega.reststop</groupId>
                 <artifactId>reststop-maven-plugin</artifactId>
                 <version>${project.version}</version>
+                <configuration>
+                    <plugins>
+                        <plugin>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>reststop-security-plugin</artifactId>
+                            <version>${project.version}</version>
+                        </plugin>
+                    </plugins>
+                </configuration>
                 <executions>
                     <execution>
                         <id>start</id>
                         <goals>
                             <goal>start</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>stop</id>
+                        <goals>
                             <goal>stop</goal>
                         </goals>
                     </execution>
@@ -68,15 +82,6 @@
                         <goals>
                             <goal>dist</goal>
                         </goals>
-                        <configuration>
-                            <plugins>
-                                <plugin>
-                                    <groupId>${project.groupId}</groupId>
-                                    <artifactId>reststop-security-plugin</artifactId>
-                                    <version>${project.version}</version>
-                                </plugin>
-                            </plugins>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>

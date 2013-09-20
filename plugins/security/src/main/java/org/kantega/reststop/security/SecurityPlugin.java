@@ -16,10 +16,15 @@
 
 package org.kantega.reststop.security;
 
+import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.kantega.reststop.api.DefaultReststopPlugin;
 import org.kantega.reststop.api.Reststop;
 
 import javax.servlet.Filter;
+import javax.ws.rs.container.DynamicFeature;
+import javax.ws.rs.container.ResourceInfo;
+import javax.ws.rs.core.FeatureContext;
+import javax.ws.rs.ext.Provider;
 
 /**
  *
@@ -27,7 +32,15 @@ import javax.servlet.Filter;
 public class SecurityPlugin extends DefaultReststopPlugin {
     public SecurityPlugin(Reststop reststop) {
         addServletFilter(reststop.createFilter(new BasicAuthFilter(), "/*"));
+        addJaxRsContainerClass(RolesAllowedDynamicFeature.class);
     }
 
 
+
+    public static class SecurityFeature implements DynamicFeature {
+        @Override
+        public void configure(ResourceInfo resourceInfo, FeatureContext context) {
+            System.out.println("Config!");
+        }
+    }
 }
