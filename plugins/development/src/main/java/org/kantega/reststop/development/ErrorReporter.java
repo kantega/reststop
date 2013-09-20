@@ -7,10 +7,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.*;
@@ -78,8 +75,15 @@ public class ErrorReporter {
                             }
                         }
 
+
                         File sourceFile = new File(new File(basedir, "src/test/java"), failure.getDescription().getTestClass().getName().replace('.','/') +".java");
                         sb.append("sourceLines:").append(readSourceLines(sourceFile)).append("\n,");
+
+                        if(failure.getException() != null) {
+                            StringWriter sw = new StringWriter();
+                            failure.getException().printStackTrace(new PrintWriter(sw));
+                            sb.append("stackTrace:").append("\"").append(escapeJavascript(sw.toString())).append("\"\n,");
+                        }
 
                         sb.append("message:").append("\"").append(escapeJavascript(message)).append("\"");
 

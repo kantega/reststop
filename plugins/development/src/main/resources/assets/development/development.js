@@ -87,6 +87,19 @@ window.addEventListener("load", function() {
 
             lines.scrollTop = document.getElementById("failline" + i + f + (fail.sourceLine-1)).offsetTop;
 
+
+            if(fail.stackTrace) {
+                var p = document.createElement("p");
+                p.textContent = "Stack trace:";
+                container.appendChild(p);
+                var stackTrace = document.createElement("pre");
+
+                stackTrace.setAttribute("class", "stackTrace");
+                stackTrace.textContent = fail.stackTrace;
+
+                container.appendChild(stackTrace);
+            }
+
         }
     }
 
