@@ -1,6 +1,7 @@
 package org.kantega.reststop.maven;
 
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Execute;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
@@ -16,6 +17,7 @@ import java.util.List;
         defaultPhase = LifecyclePhase.PRE_INTEGRATION_TEST,
         requiresDirectInvocation = true,
         requiresDependencyResolution = ResolutionScope.TEST)
+@Execute(phase = LifecyclePhase.PACKAGE)
 public class RunMojo extends AbstractReststopMojo {
 
     @Override
