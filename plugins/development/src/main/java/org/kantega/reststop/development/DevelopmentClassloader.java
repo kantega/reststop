@@ -47,19 +47,9 @@ public class DevelopmentClassloader extends URLClassLoader {
     static {
         compiler = ToolProvider.getSystemJavaCompiler();
 
-        fileManager = compiler.getStandardFileManager(new DiagnosticListener<JavaFileObject>() {
-            @Override
-            public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-                System.out.println("DIAG: " + diagnostic);
-            }
-        }, null, null);
+        fileManager = compiler.getStandardFileManager(null, null, null);
 
-        testFileManager = compiler.getStandardFileManager(new DiagnosticListener<JavaFileObject>() {
-            @Override
-            public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
-                System.out.println("DIAG: " + diagnostic);
-            }
-        }, null, null);
+        testFileManager = compiler.getStandardFileManager(null, null, null);
     }
 
     private long lastTestCompile;
@@ -257,6 +247,9 @@ public class DevelopmentClassloader extends URLClassLoader {
     }
 
     private void copyResources(final Path fromDirectory, final Path toDirectory) {
+        if(! Files.exists(fromDirectory)) {
+            return;
+        }
         try {
             Files.walkFileTree(fromDirectory, new SimpleFileVisitor<Path>() {
                 @Override

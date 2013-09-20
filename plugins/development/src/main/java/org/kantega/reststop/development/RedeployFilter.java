@@ -18,8 +18,6 @@ package org.kantega.reststop.development;
 
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
-import org.junit.runner.notification.Failure;
-import org.junit.runner.notification.RunListener;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -63,7 +61,6 @@ public class RedeployFilter implements Filter {
                 synchronized (compileSourcesMonitor) {
                     staleSources = classloader.isStaleSources();
                     if (staleSources) {
-                        System.out.println("Needs redeploy!");
                         provider.redeploy();
                     }
                 }

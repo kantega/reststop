@@ -20,7 +20,8 @@ import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.plugins.annotations.*;
+import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
@@ -28,26 +29,21 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.graph.Dependency;
-import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.*;
 import org.eclipse.aether.util.filter.ScopeDependencyFilter;
 import org.eclipse.jetty.maven.plugin.JettyWebAppContext;
-import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 
 import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -84,7 +80,6 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-        getLog().info("Start Reststop here!");
 
         File war = resolveArtifactFile(warCoords);
 
@@ -268,17 +263,16 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
         @Override
         public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
 
-            if("/shutdown".equals(target)) {
+            if("/shutdown".equals(target) && ! (server.isStopping() || server.isStopped())) {
                 try {
                     log.info("Shutting down Jetty server");
                     new Thread() {
                         @Override
                         public void run() {
                             try {
-                                Thread.sleep(500);
                                 server.stop();
-                            } catch (Exception e) {
-                                throw new RuntimeException(e);
+                            } catch (Throwable e) {
+                                org.eclipse.jetty.util.log.Log.getLogger(getClass()).ignore(e);
                             }
                         }
                     }.start();
