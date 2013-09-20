@@ -69,7 +69,7 @@ public class RedeployFilter implements Filter {
                 }
 
                 boolean staleTests = classloader.isStaleTests();
-                if (staleSources || staleTests) {
+                if (staleSources || staleTests || classloader.hasFailingTests()) {
 
                     synchronized (compileTestsMonitor) {
                         classloader.compileJavaTests();
@@ -83,8 +83,10 @@ public class RedeployFilter implements Filter {
                             Class[] objects = testClasses.toArray(new Class[testClasses.size()]);
                             Result result = new JUnitCore().run(objects);
                             if (result.getFailureCount() > 0) {
-                                Failure first = result.getFailures().get(0);
-                                throw new RuntimeException(first.getMessage(), first.getException());
+                                provider.getClassloader().testsFailed();
+                                throw new TestFailureException(result.getFailures());
+                            } else {
+                                provider.getClassloader().testsPassed();
                             }
                         }
                     } finally {

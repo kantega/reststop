@@ -25,8 +25,9 @@ import java.net.URLClassLoader;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+
+import static java.util.Arrays.asList;
 
 /**
  *
@@ -41,13 +42,28 @@ public class DevelopmentClassloader extends URLClassLoader {
     private final static JavaCompiler compiler;
     private final static StandardJavaFileManager fileManager;
 
+    private static final StandardJavaFileManager testFileManager;
+
     static {
         compiler = ToolProvider.getSystemJavaCompiler();
 
-        fileManager = compiler.getStandardFileManager(null, null, null);
+        fileManager = compiler.getStandardFileManager(new DiagnosticListener<JavaFileObject>() {
+            @Override
+            public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
+                System.out.println("DIAG: " + diagnostic);
+            }
+        }, null, null);
+
+        testFileManager = compiler.getStandardFileManager(new DiagnosticListener<JavaFileObject>() {
+            @Override
+            public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
+                System.out.println("DIAG: " + diagnostic);
+            }
+        }, null, null);
     }
 
     private long lastTestCompile;
+    private volatile boolean testsFailed;
 
     public DevelopmentClassloader(DevelopmentClassloader other) {
         this(other.basedir, other.compileClasspath, other.runtimeClasspath, other.testClasspath, other.getParent());
@@ -142,6 +158,19 @@ public class DevelopmentClassloader extends URLClassLoader {
         return basedir;
     }
 
+    public void testsFailed() {
+        testsFailed = true;
+    }
+
+    public void testsPassed() {
+        testsFailed = false;
+    }
+
+    public boolean hasFailingTests() {
+        return testsFailed;
+    }
+
+
     private class NewestFileVisitor extends SimpleFileVisitor<Path> {
 
         private long newest;
@@ -164,7 +193,7 @@ public class DevelopmentClassloader extends URLClassLoader {
         List<File> classpath = compileClasspath;
 
 
-        compileJava(sourceDirectory, outputDirectory, classpath);
+        compileJava(sourceDirectory, outputDirectory, classpath, fileManager);
     }
 
     public void compileJavaTests() {
@@ -172,13 +201,13 @@ public class DevelopmentClassloader extends URLClassLoader {
         File outputDirectory = new File(basedir, "target/test-classes");
         List<File> classpath = testClasspath;
 
-        compileJava(sourceDirectory, outputDirectory, classpath);
+        compileJava(sourceDirectory, outputDirectory, classpath, testFileManager);
 
         lastTestCompile = System.currentTimeMillis();
     }
 
 
-    private void compileJava(File sourceDirectory, File outputDirectory, List<File> classpath) {
+    private void compileJava(File sourceDirectory, File outputDirectory, List<File> classpath, StandardJavaFileManager manager) {
         List<File> sourceFiles = getCompilationUnits(sourceDirectory, newest(outputDirectory));
 
         if (!sourceFiles.isEmpty()) {
@@ -190,9 +219,9 @@ public class DevelopmentClassloader extends URLClassLoader {
 
             outputDirectory.mkdirs();
 
-            List<String> options = Arrays.asList("-g", "-classpath", cp, "-d", outputDirectory.getAbsolutePath());
+            List<String> options = asList("-g", "-classpath", cp, "-d", outputDirectory.getAbsolutePath());
 
-            JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, diagnostics, options, null, fileManager.getJavaFileObjectsFromFiles(sourceFiles));
+            JavaCompiler.CompilationTask task = compiler.getTask(null, manager, diagnostics, options, null, fileManager.getJavaFileObjectsFromFiles(sourceFiles));
 
             boolean success = task.call();
 
@@ -263,5 +292,4 @@ public class DevelopmentClassloader extends URLClassLoader {
             throw new RuntimeException(e);
         }
     }
-
 }

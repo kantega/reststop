@@ -27,7 +27,9 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.Scanner;
 
+import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 
 /**
  *
@@ -42,8 +44,7 @@ public class HelloworldIT {
         connection.setRequestProperty("Accept", "application/json");
         String message = IOUtils.toString(connection.getInputStream());
 
-
-        assertEquals("{\"message\":\"Hello world\"}", message);
+        assertThat(message, is("{\"message\":\"Hello world\"}"));
     }
 
 }
