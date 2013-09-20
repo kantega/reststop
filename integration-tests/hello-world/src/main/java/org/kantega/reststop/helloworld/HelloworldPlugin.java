@@ -24,7 +24,7 @@ import org.kantega.reststop.api.DefaultReststopPlugin;
 public class HelloworldPlugin extends DefaultReststopPlugin {
 
     public HelloworldPlugin() {
-        addSingletonResource(new HelloworldResource());
+        addJaxRsSingletonResource(new HelloworldResource());
     }
 
 }
