@@ -72,7 +72,7 @@
                             <plugins>
                                 <plugin>
                                     <groupId>${project.groupId}</groupId>
-                                    <artifactId>reststop-development</artifactId>
+                                    <artifactId>reststop-development-plugin</artifactId>
                                     <version>${project.version}</version>
                                 </plugin>
                                 <plugin>
