@@ -47,7 +47,9 @@ public class ErrorReporter {
         map.put("contextPath", contextPath);
         map.put("compilationExceptions", formatCompilationExceptions());
         map.put("testFailureExceptions", formatTestFailureExceptions());
-        render(outputStream, map);
+        byte[] bytes = render(map);
+        resp.setContentLength(bytes.length);
+        outputStream.write(bytes);
 
     }
 
@@ -163,7 +165,7 @@ public class ErrorReporter {
         return replaced;
     }
 
-    void render(OutputStream outputStream, Map<String, String> values) throws IOException {
+    byte[] render(Map<String, String> values) throws IOException {
         InputStream stream = getClass().getResourceAsStream("template.html");
         String template = IOUtils.toString(stream, "utf-8");
 
@@ -173,7 +175,7 @@ public class ErrorReporter {
         }
 
 
-        outputStream.write(rendered.getBytes("utf-8"));
+        return rendered.getBytes("utf-8");
     }
 
     public ErrorReporter addTestFailulreException(TestFailureException e) {
