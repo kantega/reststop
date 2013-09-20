@@ -36,11 +36,4 @@ public class SecurityPlugin extends DefaultReststopPlugin {
     }
 
 
-
-    public static class SecurityFeature implements DynamicFeature {
-        @Override
-        public void configure(ResourceInfo resourceInfo, FeatureContext context) {
-            System.out.println("Config!");
-        }
-    }
 }
