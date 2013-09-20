@@ -2,25 +2,26 @@
 window.addEventListener("load", function() {
    console.log("Found " + compilationExceptions.length +" exceptions")
 
+    var container = document.querySelector("div.content");
     for(var i = 0; i < compilationExceptions.length; i++) {
         var ex = compilationExceptions[i];
         var h1 = document.createElement("h1");
-        h1.innerHTML = "Compilation exception:";
-        document.body.appendChild(h1);
+        h1.innerHTML = "Compilation failed:";
+        container.appendChild(h1);
 
         for(var d = 0; d < ex.length; d++) {
             var diag = ex[d];
             var h2 = document.createElement("h2");
             h2.innerHTML = diag.kind +": " + diag.source;
-            document.body.appendChild(h2);
+            container.appendChild(h2);
 
             var lineNumber = document.createElement("div");
             lineNumber.innerHTML = "Line " + diag.lineNumber +":";
-            document.body.appendChild(lineNumber);
+            container.appendChild(lineNumber);
             var message = document.createElement("pre");
-            message.innerHTML = diag.message;
+            message.textContent= diag.message;
 
-            document.body.appendChild(message);
+            container.appendChild(message);
 
             var lines = document.createElement("pre");
             lines.setAttribute("class", "sourceCode");
@@ -36,9 +37,9 @@ window.addEventListener("load", function() {
                 lines.appendChild(line);
             }
 
-            document.body.appendChild(lines);
+            container.appendChild(lines);
 
-            document.getElementById("exline" + i + d + (diag.lineNumber-1)).scrollIntoView();
+            lines.scrollTop = document.getElementById("exline" + i + d + (diag.lineNumber-1)).offsetTop;
 
         }
     }
@@ -55,17 +56,17 @@ window.addEventListener("load", function() {
             var h2 = document.createElement("h2");
             h2.innerHTML = "Test failed: " + fail.description;
 
-            document.body.appendChild(h2);
+            container.appendChild(h2);
 
             var message = document.createElement("pre");
             console.log("Message: " + fail.message);
-            message.innerHTML = fail.message;
-            document.body.appendChild(message);
+            message.textContent = fail.message;
+            container.appendChild(message);
 
             if(fail.sourceFile) {
                 var source = document.createElement("div");
                 source.innerHTML = fail.sourceFile +". Line " + fail.sourceLine +":";
-                document.body.appendChild(source);
+                container.appendChild(source);
             }
 
             var lines = document.createElement("pre");
@@ -82,9 +83,9 @@ window.addEventListener("load", function() {
                 lines.appendChild(line);
             }
 
-            document.body.appendChild(lines);
+            container.appendChild(lines);
 
-            document.getElementById("failline" + i + f + (fail.sourceLine-1)).scrollIntoView();
+            lines.scrollTop = document.getElementById("failline" + i + f + (fail.sourceLine-1)).offsetTop;
 
         }
     }

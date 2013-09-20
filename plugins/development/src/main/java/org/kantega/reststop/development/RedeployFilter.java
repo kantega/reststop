@@ -76,21 +76,23 @@ public class RedeployFilter implements Filter {
                         classloader.copyTestResources();
                     }
 
-                    try {
-                        testing = true;
-                        synchronized (runTestsMonitor) {
-                            List<Class> testClasses = provider.getClassloader().getTestClasses();
-                            Class[] objects = testClasses.toArray(new Class[testClasses.size()]);
-                            Result result = new JUnitCore().run(objects);
-                            if (result.getFailureCount() > 0) {
-                                provider.getClassloader().testsFailed();
-                                throw new TestFailureException(result.getFailures());
-                            } else {
-                                provider.getClassloader().testsPassed();
+                    synchronized (runTestsMonitor) {
+                        if(!this.testing) {
+                            try {
+                                this.testing = true;
+                                List<Class> testClasses = provider.getClassloader().getTestClasses();
+                                Class[] objects = testClasses.toArray(new Class[testClasses.size()]);
+                                Result result = new JUnitCore().run(objects);
+                                if (result.getFailureCount() > 0) {
+                                    provider.getClassloader().testsFailed();
+                                    throw new TestFailureException(result.getFailures());
+                                } else {
+                                    provider.getClassloader().testsPassed();
+                                }
+                            } finally {
+                                this.testing = false;
                             }
                         }
-                    } finally {
-                        testing = false;
                     }
                 }
             } catch (JavaCompilationException e) {

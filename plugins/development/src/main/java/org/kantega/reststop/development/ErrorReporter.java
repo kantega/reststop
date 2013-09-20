@@ -3,9 +3,6 @@ package org.kantega.reststop.development;
 import org.apache.commons.io.IOUtils;
 import org.junit.runner.notification.Failure;
 
-import javax.servlet.ServletOutputStream;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.tools.Diagnostic;
@@ -69,14 +66,14 @@ public class ErrorReporter {
                 {
                     sb.append("{");
                     {
-                        sb.append("description:").append("\"").append(escape(failure.getDescription().toString())).append("\",");
-                        sb.append("exceptionClass:").append("\"").append(escape(failure.getException().getClass().getName())).append("\",");
+                        sb.append("description:").append("\"").append(escapeJavascript(failure.getDescription().toString())).append("\",");
+                        sb.append("exceptionClass:").append("\"").append(escapeJavascript(failure.getException().getClass().getName())).append("\",");
                         String message = failure.getMessage();
 
                         for (StackTraceElement element : failure.getException().getStackTrace()) {
                             if(element.getClassName().equals(failure.getDescription().getTestClass().getName())) {
-                                sb.append("sourceFile:").append("\"").append(escape(element.getFileName())).append("\",");
-                                sb.append("sourceMethod:").append("\"").append(escape(element.getMethodName())).append("\",");
+                                sb.append("sourceFile:").append("\"").append(escapeJavascript(element.getFileName())).append("\",");
+                                sb.append("sourceMethod:").append("\"").append(escapeJavascript(element.getMethodName())).append("\",");
                                 sb.append("sourceLine:").append(Integer.toString(element.getLineNumber())).append(",");
                             }
                         }
@@ -84,7 +81,7 @@ public class ErrorReporter {
                         File sourceFile = new File(new File(basedir, "src/test/java"), failure.getDescription().getTestClass().getName().replace('.','/') +".java");
                         sb.append("sourceLines:").append(readSourceLines(sourceFile)).append("\n,");
 
-                        sb.append("message:").append("\"").append(escape(message)).append("\"");
+                        sb.append("message:").append("\"").append(escapeJavascript(message)).append("\"");
 
                     }
                     sb.append("}");
@@ -133,7 +130,7 @@ public class ErrorReporter {
                     .append("\"\n,");
             sb.append("lineNumber:").append("\"").append(diagnostic.getLineNumber())
                     .append("\"\n,");
-            sb.append("message:").append("\"").append(escape(diagnostic.getMessage(Locale.getDefault())))
+            sb.append("message:").append("\"").append(escapeJavascript(diagnostic.getMessage(Locale.getDefault())))
                     .append("\"\n");
 
             sb.append("}");
@@ -151,7 +148,7 @@ public class ErrorReporter {
                     sb.append(" ,\n");
                 }
 
-                sb.append("\"").append(escape(line)).append("\"");
+                sb.append("\"").append(escapeHTML(line)).append("\"");
             }
             sb.append("]");
             return sb.toString();
@@ -160,8 +157,13 @@ public class ErrorReporter {
         }
     }
 
-    private String escape(String message) {
+    private String escapeJavascript(String message) {
         String replaced = message.replace("\\", "\\\\").replace("\n", "\\n").replace("\"","\\\"");
+        return replaced;
+    }
+
+    private String escapeHTML(String message) {
+        String replaced = message.replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
         return replaced;
     }
 

@@ -44,7 +44,7 @@ public class HelloworldIT {
         connection.setRequestProperty("Accept", "application/json");
         String message = IOUtils.toString(connection.getInputStream());
 
-        assertThat(message, is("{\"message\":\"Hello world\"}"));
+        assertThat(message, is("{\"message\":\"hello world\"}"));
     }
 
 }
