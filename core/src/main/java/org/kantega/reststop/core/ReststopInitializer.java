@@ -349,7 +349,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         @Override
         public void addURL(URL url) {
-            super.addURL(url);    //To change body of overridden methods use File | Settings | File Templates.
+            super.addURL(url);
         }
     }
 
