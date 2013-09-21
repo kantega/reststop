@@ -62,7 +62,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.remoteProjectRepositories}")
     private List<RemoteRepository> remoteRepos;
 
-    @Parameter (defaultValue = "${project.groupId}:reststop-webapp:war:${project.version}")
+    @Parameter (defaultValue = "org.kantega.reststop:reststop-webapp:war:${plugin.version}")
     private String warCoords;
 
     @Parameter(defaultValue = "${project.build.directory}/reststop/temp")

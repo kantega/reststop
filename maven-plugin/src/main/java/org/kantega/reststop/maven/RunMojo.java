@@ -1,10 +1,7 @@
 package org.kantega.reststop.maven;
 
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.Execute;
-import org.apache.maven.plugins.annotations.LifecyclePhase;
-import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.plugins.annotations.*;
 import org.eclipse.jetty.server.Server;
 
 import java.util.ArrayList;
@@ -32,7 +29,7 @@ public class RunMojo extends AbstractReststopMojo {
     @Override
     protected List<Plugin> getPlugins() {
         ArrayList<Plugin> plugins = new ArrayList<>(super.getPlugins());
-        plugins.add(new Plugin(mavenProject.getGroupId(), "reststop-development-plugin", mavenProject.getVersion()));
+        plugins.add(new Plugin("org.kantega.reststop", "reststop-development-plugin", mavenProject.getVersion()));
         return plugins;
     }
 }
