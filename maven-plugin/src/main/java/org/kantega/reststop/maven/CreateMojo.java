@@ -84,7 +84,8 @@ public class CreateMojo extends AbstractMojo {
 
         request.setPomFile(pomFile);
 
-        request.setGoals(Collections.singletonList("reststop:run"));
+        request.setGoals(asList("reststop:run", "-Dpath=helloworld", "-DopenProjectDir=true"));
+
 
         try {
             invoker.execute(request);

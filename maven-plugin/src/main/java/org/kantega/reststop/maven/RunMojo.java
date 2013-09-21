@@ -21,6 +21,12 @@ import java.util.List;
 @Execute(phase = LifecyclePhase.PACKAGE)
 public class RunMojo extends AbstractReststopMojo {
 
+    @Parameter(defaultValue = "${path}")
+    private String path;
+
+    @Parameter(defaultValue = "${openProjectDir}")
+    private boolean openProjectDir;
+
     @Override
     protected void afterServerStart(Server server, int port) throws MojoFailureException {
         try {
@@ -34,7 +40,14 @@ public class RunMojo extends AbstractReststopMojo {
     private void openInBrowser(int port) throws MojoFailureException {
         try {
         if(Desktop.isDesktopSupported()) {
-            Desktop.getDesktop().browse(new URI("http://localhost:" + port));
+            String u = "http://localhost:" + port;
+            if(path != null) {
+                u +="/" + path;
+            }
+            Desktop.getDesktop().browse(new URI(u));
+            if(openProjectDir) {
+                Desktop.getDesktop().open(mavenProject.getBasedir());
+            }
         }} catch (IOException | URISyntaxException e) {
             throw new MojoFailureException(e.getMessage(), e);
         }
