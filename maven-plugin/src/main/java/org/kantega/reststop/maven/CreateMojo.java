@@ -119,7 +119,7 @@ public class CreateMojo extends AbstractMojo {
             String defaultPackage = values.get("groupId") +"." + values.get("artifactId");
             String pack;
             for(;;) {
-                pack = System.console().readLine("%s [%s]: ", "package", defaultPackage).trim();
+                pack = readLineWithDefault("package", defaultPackage).trim();
                 if(pack.isEmpty()) pack = defaultPackage;
 
                 Pattern p = Pattern.compile("^[a-zA-Z_\\$][\\w\\$]*(?:\\.[a-zA-Z_\\$][\\w\\$]*)*$");
@@ -130,17 +130,23 @@ public class CreateMojo extends AbstractMojo {
 
             values.put("package", pack);
 
+            System.out.println();
+            System.out.println("Please confirm configuration:");
             for (String option : values.keySet()) {
-                System.console().printf("%s = %s\n", option, values.get(option));
+                System.console().printf("  %s = '%s'\n", option, values.get(option));
             }
-        } while(!System.console().readLine("OK?").isEmpty());
+        } while(!System.console().readLine(" Y: ").equalsIgnoreCase("y"));
 
         return values;
     }
 
     private void readValue(Map<String, String> values, String name, String defaultValue) {
-        String value = System.console().readLine("%s [%s]: ", name, defaultValue).trim();
+        String value = readLineWithDefault(name, defaultValue);
 
         values.put(name, value.isEmpty() ? defaultValue : value);
+    }
+
+    private String readLineWithDefault(String name, String defaultValue) {
+        return System.console().readLine("Define value for property '%s' [ %s ] : ", name, defaultValue).trim();
     }
 }
