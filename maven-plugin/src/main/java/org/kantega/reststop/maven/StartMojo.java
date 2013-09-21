@@ -26,7 +26,7 @@ public class StartMojo extends AbstractReststopMojo {
     }
 
     @Override
-    protected void afterServerStart(Server server) throws MojoFailureException {
+    protected void afterServerStart(Server server, int port) throws MojoFailureException {
         if(System.getProperty("wait") != null) {
             try {
                 server.join();

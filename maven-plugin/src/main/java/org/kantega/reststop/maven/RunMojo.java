@@ -4,6 +4,10 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.*;
 import org.eclipse.jetty.server.Server;
 
+import java.awt.*;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,10 +22,20 @@ import java.util.List;
 public class RunMojo extends AbstractReststopMojo {
 
     @Override
-    protected void afterServerStart(Server server) throws MojoFailureException {
+    protected void afterServerStart(Server server, int port) throws MojoFailureException {
         try {
+            openInBrowser(port);
             server.join();
         } catch (InterruptedException e) {
+            throw new MojoFailureException(e.getMessage(), e);
+        }
+    }
+
+    private void openInBrowser(int port) throws MojoFailureException {
+        try {
+        if(Desktop.isDesktopSupported()) {
+            Desktop.getDesktop().browse(new URI("http://localhost:" + port));
+        }} catch (IOException | URISyntaxException e) {
             throw new MojoFailureException(e.getMessage(), e);
         }
     }

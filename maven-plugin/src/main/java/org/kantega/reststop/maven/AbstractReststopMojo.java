@@ -120,14 +120,14 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
             server.start();
 
-            afterServerStart(server);
+            afterServerStart(server, port);
 
         } catch (Exception e) {
             throw new MojoExecutionException("Failed starting Jetty ", e);
         }
     }
 
-    protected void afterServerStart(Server server) throws MojoFailureException {
+    protected void afterServerStart(Server server, int port) throws MojoFailureException {
 
     }
 
