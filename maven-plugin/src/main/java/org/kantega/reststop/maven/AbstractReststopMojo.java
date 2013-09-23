@@ -190,7 +190,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
         for (org.apache.maven.artifact.Artifact a : artifacts) {
 
             if (c > 0) {
-                classpath.append(":");
+                classpath.append(File.pathSeparatorChar);
             }
             c++;
             classpath.append(a.getFile().getAbsolutePath());

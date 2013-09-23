@@ -124,7 +124,7 @@ public class DevelopmentClassloader extends URLClassLoader {
                     String name = file.toFile().getName();
                     if(name.endsWith("Test.java") || name.endsWith("IT.java")) {
                         String sourceFile = root.relativize(file).toString();
-                        classNames.add(sourceFile.replace('/', '.').substring(0, sourceFile.length()-".java".length()));
+                        classNames.add(sourceFile.replace(File.separatorChar, '.').substring(0, sourceFile.length()-".java".length()));
                     }
                    return  FileVisitResult.CONTINUE;
                 }
