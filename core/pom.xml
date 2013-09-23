@@ -63,5 +63,9 @@
             <artifactId>jackson-jaxrs-xml-provider</artifactId>
             <version>${jackson.version}</version>
         </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+        </dependency>
     </dependencies>
 </project>

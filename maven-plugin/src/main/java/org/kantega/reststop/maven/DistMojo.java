@@ -16,12 +16,10 @@
 
 package org.kantega.reststop.maven;
 
-import com.google.inject.spi.UntargettedBinding;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
 import org.apache.tools.ant.Project;
@@ -33,22 +31,14 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.graph.Dependency;
-import org.eclipse.aether.graph.DependencyFilter;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.*;
 import org.eclipse.aether.util.filter.ScopeDependencyFilter;
-import org.eclipse.jetty.maven.plugin.JettyWebAppContext;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletHolder;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.*;
-import java.net.ServerSocket;
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -75,7 +65,10 @@ public class DistMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.remoteProjectRepositories}")
     private List<RemoteRepository> remoteRepos;
 
-    @Parameter (defaultValue = "${project.groupId}:reststop-webapp:war:${project.version}")
+    @Parameter(defaultValue = "${plugin}")
+    private Object plugin;
+
+    @Parameter (defaultValue = "org.kantega.reststop:reststop-webapp:war:${plugin.version}")
     private String warCoords;
 
     @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}.${project.packaging}")
@@ -90,14 +83,16 @@ public class DistMojo extends AbstractMojo {
     @Parameter
     private List<Plugin> plugins;
 
+    @Parameter
     private final String jettyVersion = "9.0.5.v20130815";
 
-    private String jettydistCoords  ="org.eclipse.jetty:jetty-distribution:tar.gz:" + jettyVersion;
+    private final String jettydistCoords  ="org.eclipse.jetty:jetty-distribution:tar.gz:" + jettyVersion;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
         File repository = new File(workDirectory, "repository");
+        repository.mkdirs();
 
         LocalRepository repo = new LocalRepository(repository);
         LocalRepositoryManager manager = repoSystem.newLocalRepositoryManager(repoSession, repo);
@@ -165,8 +160,10 @@ public class DistMojo extends AbstractMojo {
 
         File distDir = new File(jettyDir, "jetty-distribution-" + jettyVersion);
         File[] files = distDir.listFiles();
-        for (File file : files) {
-            file.renameTo(new File(jettyDir, file.getName()));
+        if(files != null) {
+            for (File file : files) {
+                file.renameTo(new File(jettyDir, file.getName()));
+            }
         }
 
         distDir.delete();
@@ -199,7 +196,7 @@ public class DistMojo extends AbstractMojo {
                 copyArtifactToRepository(pluginArtifact, manager);
                 CollectRequest collectRequest = new CollectRequest(new Dependency(pluginArtifact, "compile"), remoteRepos);
 
-                DependencyResult dependencyResult = null;
+                DependencyResult dependencyResult;
                 try {
                     dependencyResult = repoSystem.resolveDependencies(repoSession, new DependencyRequest(collectRequest, new ScopeDependencyFilter("test", "provided")));
                 } catch (DependencyResolutionException e) {

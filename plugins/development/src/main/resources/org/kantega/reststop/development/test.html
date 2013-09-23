@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="../../../../assets/development/development.css">
+
+    <script type="text/javascript">
+        var compilationExceptions = [];
+
+        if(false)  {
+            compilationExceptions = [[{kind:"ERROR"
+                ,sourceLines:["/*" ,
+                    " * Copyright 2013 Kantega AS" ,
+                    " *" ,
+                    " * Licensed under the Apache License, Version 2.0 (the \"License\");" ,
+                    " * you may not use this file except in compliance with the License." ,
+                    " * You may obtain a copy of the License at" ,
+                    " *" ,
+                    " *    http://www.apache.org/licenses/LICENSE-2.0" ,
+                    " *" ,
+                    " * Unless required by applicable law or agreed to in writing, software" ,
+                    " * distributed under the License is distributed on an \"AS IS\" BASIS," ,
+                    " * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied." ,
+                    " * See the License for the specific language governing permissions and" ,
+                    " * limitations under the License." ,
+                    " */" ,
+                    "" ,
+                    "package org.kantega.reststop.helloworld;" ,
+                    "" ,
+                    "import org.apache.commons.io.IOUtils;" ,
+                    "import org.junit.Test;" ,
+                    "" ,
+                    "import javax.xml.bind.DatatypeConverter;" ,
+                    "import java.io.IOException;" ,
+                    "import java.net.HttpURLConnection;" ,
+                    "import java.net.MalformedURLException;" ,
+                    "import java.net.URL;" ,
+                    "import java.net.URLConnection;" ,
+                    "import java.util.Scanner;" ,
+                    "" ,
+                    "import static org.junit.Assert.assertEquals;" ,
+                    "" ,
+                    "/**" ,
+                    " *" ,
+                    " */" ,
+                    "public class HelloworldIT {" ,
+                    "" ,
+                    "    @Test" ,
+                    "    public void shouldReturnHelloWorld() throws IOException {" ,
+                    "" ,
+                    "        HttpURLConnection connection = (HttpURLConnection) new URL(\"http://localhost:\" + System.getProperty(\"reststopPort\") + \"/helloworld\").openConnection();" ,
+                    "        connection.setRequestProperty(\"Authorization\", \"Basic \" + DatatypeConverter.printBase64Binary(\"joe:joe\".getBytes(\"utf-8\")));" ,
+                    "        connection.setRequestProperty(\"Accept\", \"application/json\");" ,
+                    "        String message = IOUtils.toString(connection.getInputStream());" ,
+                    "" ,
+                    "" ,
+                    "" ,
+                    "        assert Equals(\"{\\\"message\\\":\\\"Hello world\\\"}\", message);" ,
+                    "    }" ,
+                    "" ,
+                    "}"]
+                ,source:"src/test/java/org/kantega/reststop/helloworld/HelloworldIT.java"
+                ,lineNumber:"47"
+                ,message:"cannot find symbol\\n  symbol:   method Equals(java.lang.String,java.lang.String)\\n  location: class org.kantega.reststop.helloworld.HelloworldIT"
+            }]];
+
+        }
+
+        var testFailureExceptions = [[{description:"shouldReturnHelloWorld(org.kantega.reststop.helloworld.HelloworldIT)",exceptionClass:"java.lang.AssertionError",sourceFile:"HelloworldIT.java",sourceMethod:"shouldReturnHelloWorld",sourceLine:47,sourceLines:["/*" ,
+            " * Copyright 2013 Kantega AS" ,
+            " *" ,
+            " * Licensed under the Apache License, Version 2.0 (the \"License\");" ,
+            " * you may not use this file except in compliance with the License." ,
+            " * You may obtain a copy of the License at" ,
+            " *" ,
+            " *    http://www.apache.org/licenses/LICENSE-2.0" ,
+            " *" ,
+            " * Unless required by applicable law or agreed to in writing, software" ,
+            " * distributed under the License is distributed on an \"AS IS\" BASIS," ,
+            " * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied." ,
+            " * See the License for the specific language governing permissions and" ,
+            " * limitations under the License." ,
+            " */" ,
+            "" ,
+            "package org.kantega.reststop.helloworld;" ,
+            "" ,
+            "import org.apache.commons.io.IOUtils;" ,
+            "import org.junit.Test;" ,
+            "" ,
+            "import javax.xml.bind.DatatypeConverter;" ,
+            "import java.io.IOException;" ,
+            "import java.net.HttpURLConnection;" ,
+            "import java.net.MalformedURLException;" ,
+            "import java.net.URL;" ,
+            "import java.net.URLConnection;" ,
+            "import java.util.Scanner;" ,
+            "" ,
+            "import static org.hamcrest.CoreMatchers.is;" ,
+            "import static org.junit.Assert.assertEquals;" ,
+            "import static org.junit.Assert.assertThat;" ,
+            "" ,
+            "/**" ,
+            " *" ,
+            " */" ,
+            "public class HelloworldIT {" ,
+            "" ,
+            "    @Test" ,
+            "    public void shouldReturnHelloWorld() throws IOException {" ,
+            "" ,
+            "        HttpURLConnection connection = (HttpURLConnection) new URL(\"http://localhost:\" + System.getProperty(\"reststopPort\") + \"/helloworld\").openConnection();" ,
+            "        connection.setRequestProperty(\"Authorization\", \"Basic \" + DatatypeConverter.printBase64Binary(\"joe:joe\".getBytes(\"utf-8\")));" ,
+            "        connection.setRequestProperty(\"Accept\", \"application/json\");" ,
+            "        String message = IOUtils.toString(connection.getInputStream());" ,
+            "" ,
+            "        assertThat(message, is(\"{\\\"message\\\":\\\"Hello worlds\\\"}\"));" ,
+            "    }" ,
+            "" ,
+            "}"]
+            ,message:"\nExpected: is \"{\\\"message\\\":\\\"Hello worlds\\\"}\"\n     but: was \"{\\\"message\\\":\\\"Hello world\\\"}\""}]];
+    </script>
+</head>
+<body>
+
+</body>
+
+<script type="text/javascript" src="../../../../assets/development/development.js"></script>
+</html>

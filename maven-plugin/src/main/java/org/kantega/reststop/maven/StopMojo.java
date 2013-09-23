@@ -19,34 +19,14 @@ package org.kantega.reststop.maven;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
-import org.eclipse.aether.RepositorySystem;
-import org.eclipse.aether.RepositorySystemSession;
-import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.resolution.ArtifactRequest;
-import org.eclipse.aether.resolution.ArtifactResolutionException;
-import org.eclipse.aether.resolution.ArtifactResult;
-import org.eclipse.jetty.maven.plugin.JettyWebAppContext;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletHolder;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.File;
 import java.io.IOException;
-import java.net.ServerSocket;
+import java.net.SocketException;
 import java.net.URL;
-import java.net.URLEncoder;
-import java.util.List;
 
 /**
  *
@@ -64,11 +44,17 @@ public class StopMojo extends AbstractMojo {
 
         int reststopPort = Integer.parseInt(mavenProject.getProperties().getProperty("reststopPort"));
 
-        try {
-            String url = "http://localhost:" + reststopPort + "/shutdown";
-            new URL(url).openStream();
-        } catch (IOException e) {
-            throw new MojoExecutionException("Failed shutting down", e);
+        boolean failed = false;
+
+        while(!failed) {
+            try {
+                String url = "http://localhost:" + reststopPort + "/shutdown";
+                new URL(url).openStream();
+            } catch(SocketException e) {
+                failed = true;
+            }catch (IOException e) {
+                throw new MojoExecutionException("Failed shutting down", e);
+            }
         }
 
 

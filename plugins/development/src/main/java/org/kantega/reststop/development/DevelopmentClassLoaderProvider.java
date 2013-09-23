@@ -20,7 +20,6 @@ import org.kantega.reststop.api.Reststop;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -30,17 +29,21 @@ public class DevelopmentClassLoaderProvider {
 
     private DevelopmentClassloader classloader;
 
-    private File pluginDir;
     private Reststop reststop;
-    private ClassLoader parentClassLoader;
+    private final List<File> compileClasspath, runtimeClasspath, testClasspath;
+
+    public DevelopmentClassLoaderProvider(List<File> compileClasspath, List<File> runtimeClasspath, List<File> testClasspath) {
+        this.compileClasspath = compileClasspath;
+        this.runtimeClasspath = runtimeClasspath;
+        this.testClasspath = testClasspath;
+    }
 
 
     public synchronized void start(Reststop reststop) {
-        System.out.println("Starting devclassloaderprovider");
-        this.parentClassLoader = reststop.getPluginParentClassLoader();
-        pluginDir = new File(System.getProperty("reststopPluginDir"));
+        ClassLoader parentClassLoader = reststop.getPluginParentClassLoader();
+        File pluginDir = new File(System.getProperty("reststopPluginDir"));
         this.reststop= reststop;
-        classloader = new DevelopmentClassloader(pluginDir, Collections.<File>emptyList(), parentClassLoader);
+        classloader = new DevelopmentClassloader(pluginDir, compileClasspath, runtimeClasspath, testClasspath, parentClassLoader);
         reststop.changePluginClassLoaders().add(classloader).commit();
 
     }
@@ -50,24 +53,14 @@ public class DevelopmentClassLoaderProvider {
         return classloader;
     }
 
-    public synchronized void redeploy(String compileClasspath, String runtimeClasspath) {
-        classloader.compileJava(compileClasspath);
-        classloader.copyResources();
+    public synchronized void redeploy() {
+        classloader.compileSources();
+        classloader.copySourceResorces();
         reststop.changePluginClassLoaders()
                 .remove(classloader)
-                .add(classloader = new DevelopmentClassloader(pluginDir, parseClasspath(runtimeClasspath), parentClassLoader))
+                .add(classloader = new DevelopmentClassloader(classloader))
                 .commit();
 
     }
-
-    private List<File> parseClasspath(String runtimeClasspath) {
-        List<File> files = new ArrayList<File>();
-        for(String path : runtimeClasspath.split(File.pathSeparator)) {
-            File file = new File(path);
-            files.add(file);
-        }
-        return files;
-    }
-
 
 }

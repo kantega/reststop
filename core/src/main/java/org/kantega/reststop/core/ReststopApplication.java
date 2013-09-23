@@ -20,8 +20,6 @@ import org.kantega.jexmec.PluginManager;
 import org.kantega.reststop.api.ReststopPlugin;
 
 import javax.ws.rs.core.Application;
-import javax.ws.rs.core.Context;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -38,10 +36,19 @@ public class ReststopApplication extends Application {
 
     @Override
     public Set<Object> getSingletons() {
-        Set<Object> singletons = new HashSet<Object>();
+        Set<Object> singletons = new HashSet<>();
         for(ReststopPlugin plugin : pluginManager.getPlugins()) {
-            singletons.addAll(plugin.getSingletonResources());
+            singletons.addAll(plugin.getJaxRsSingletonResources());
         }
         return singletons;
+    }
+
+    @Override
+    public Set<Class<?>> getClasses() {
+        Set<Class<?>> classes = new HashSet<>();
+        for(ReststopPlugin plugin : pluginManager.getPlugins()) {
+            classes.addAll(plugin.getJaxRsContainerClasses());
+        }
+        return classes;
     }
 }

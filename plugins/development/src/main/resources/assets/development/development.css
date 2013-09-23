@@ -1,0 +1,18 @@
+body {
+    background-color: white;
+}
+
+.sourceCode, .stackTrace {
+    border: 1px solid gray;
+    padding: 1em;
+    max-height: 15em;
+    overflow-y: auto;
+}
+
+.stackTrace {
+    max-height: 10em;
+}
+
+.error {
+    color: red;
+}

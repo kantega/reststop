@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="${contextPath}/assets/development/development.css">
+
+    <script type="text/javascript">
+        var compilationExceptions = ${compilationExceptions};
+        var testFailureExceptions = ${testFailureExceptions};
+    </script>
+
+    <title>Reststop</title>
+    <link rel="stylesheet" type="text/css" href="${contextPath}/assets/development/design/css/internett.css" media="screen"/>
+    <!--[if (lt IE 9)&(!IEMobile)]>
+    <link media="screen" rel="stylesheet" href="${contextPath}/assets/development/design/css/bootstrap.css"/>
+    <link media="screen" rel="stylesheet" href="${contextPath}/assets/development/design/css/editor.css"/>"/>
+    <link media="screen" rel="stylesheet" href="${contextPath}/assets/development/design/css/global.css"/>"/>
+    <link media="screen" rel="stylesheet" href="${contextPath}/assets/development/design/css/desktop.css"/>"/>
+    <link media="screen" rel="stylesheet" href="${contextPath}/assets/development/design/css/ie8.css"/>"/>
+    <![endif]-->
+
+
+    <script type="text/javascript" src="/syntaxhighlighter/scripts/shCore.js"></script>
+    <script type="text/javascript" src="/syntaxhighlighter/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="/syntaxhighlighter/scripts/shBrushXml.js"></script>
+    <link type="text/css" rel="stylesheet" href="/syntaxhighlighter/styles/shCoreDefault.css"/>
+    <script type="text/javascript">
+        SyntaxHighlighter.defaults['gutter'] = false;
+        SyntaxHighlighter.defaults['toolbar'] = false;
+        SyntaxHighlighter.all();
+    </script>
+
+</head>
+<body>
+<div id="page-container">
+    <div id="topsection" class="always-fullwidth">
+        <div id="header">
+            <div class="container">
+                <div class="row">
+                    <div class="span2">
+                        <a href="/" class="logoLink noLinkEffect" title="Til forsiden">
+                            <img src="/assets/development/design/bitmaps/kantega_logo.png" alt="Kantega Logo">
+                        </a>
+                        <a href="#mobile-navigation" class="mobile-menu-anchor"></a>
+                    </div>
+
+                    <section class="hidden-phone">
+                        <nav id="desktop-navigation" class="always-fullwidth">
+                            <div class="span8" id="mainMenu">
+                                <ul>
+                                    <li>
+                                        <a title="Om Kantega" target="_blank" href="http://www.kantega.no/english/">About Kantega</a>
+                                    </li>
+                                </ul>
+                            </div>
+                        </nav>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div> <!-- Topsection -->
+
+    <div id="mainsection">
+        <div class="container">
+            <div class="articleLayout">
+                <div class="content">
+
+                </div>
+
+            </div>
+            <div style="margin-top: 0.5em; color:gray;font-size: smaller;">
+                <a href="https://github.com/kantega/reststop">Reststop</a>
+                is developed by <a href="http://kantega.no">Kantega</a>, a Norwegian IT consulting company 100% owned by employees.
+
+                We're always <a href="http://kantega.no/jobb">looking for talented developers</a>
+
+            </div>
+        </div>
+
+        <div class="footerspacer">&nbsp;</div>
+
+
+    </div>
+
+</div> <!-- Page container -->
+<script type="text/javascript" src="${contextPath}/assets/development/development.js"></script>
+
+</body>
+
+</html>
