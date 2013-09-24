@@ -59,6 +59,11 @@
                     <plugins>
                         <plugin>
                             <groupId>${project.groupId}</groupId>
+                            <artifactId>reststop-statistics-plugin</artifactId>
+                            <version>${project.version}</version>
+                        </plugin>
+                        <plugin>
+                            <groupId>${project.groupId}</groupId>
                             <artifactId>reststop-security-plugin</artifactId>
                             <version>${project.version}</version>
                         </plugin>
