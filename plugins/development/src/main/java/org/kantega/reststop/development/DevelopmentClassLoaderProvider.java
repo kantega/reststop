@@ -19,47 +19,82 @@ package org.kantega.reststop.development;
 import org.kantega.reststop.api.Reststop;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
  *
  */
 public class DevelopmentClassLoaderProvider {
 
-    private DevelopmentClassloader classloader;
+    private final Map<String, Map<String, Object>> pluginsInfo = new HashMap<>();
+    private Map<String, DevelopmentClassloader> classloaders = new HashMap<>();
 
     private Reststop reststop;
-    private final List<File> compileClasspath, runtimeClasspath, testClasspath;
 
-    public DevelopmentClassLoaderProvider(List<File> compileClasspath, List<File> runtimeClasspath, List<File> testClasspath) {
-        this.compileClasspath = compileClasspath;
-        this.runtimeClasspath = runtimeClasspath;
-        this.testClasspath = testClasspath;
+
+
+    public void addPluginInfo(String pluginId, Map<String, Object> info) {
+        pluginsInfo.put(pluginId, info);
     }
 
-
+    public void addExistingClassLoader(String pluginId, DevelopmentClassloader loader) {
+        classloaders.put(pluginId, loader);
+    }
     public synchronized void start(Reststop reststop) {
         ClassLoader parentClassLoader = reststop.getPluginParentClassLoader();
-        File pluginDir = new File(System.getProperty("reststopPluginDir"));
-        this.reststop= reststop;
-        classloader = new DevelopmentClassloader(pluginDir, compileClasspath, runtimeClasspath, testClasspath, parentClassLoader);
-        reststop.changePluginClassLoaders().add(classloader).commit();
+        this.reststop = reststop;
+
+        Reststop.PluginClassLoaderChange change = reststop.changePluginClassLoaders();
+
+
+        for (String pluginId : pluginsInfo.keySet()) {
+            Map<String, Object> pluginInfo = pluginsInfo.get(pluginId);
+            if( Boolean.FALSE.equals(pluginInfo.get("directDeploy"))) {
+                List<File> runtime = (List<File>) pluginInfo.get("runtime");
+                List<File> compile = (List<File>) pluginInfo.get("compile");
+                List<File> test = (List<File>) pluginInfo.get("test");
+                File sourceDir = (File) pluginInfo.get("sourceDirectory");
+
+                DevelopmentClassloader classloader = new DevelopmentClassloader(sourceDir, compile, runtime, test, parentClassLoader);
+
+                classloaders.put(pluginId, classloader);
+                change.add(classloader);
+            }
+        }
+        change.commit();
 
     }
 
 
-    public DevelopmentClassloader getClassloader() {
-        return classloader;
+    public Map<String, DevelopmentClassloader> getClassloaders() {
+        return new HashMap<>(classloaders);
     }
 
-    public synchronized void redeploy() {
+    public synchronized DevelopmentClassloader redeploy(String pluginId, DevelopmentClassloader classloader) {
+
         classloader.compileSources();
         classloader.copySourceResorces();
-        reststop.changePluginClassLoaders()
-                .remove(classloader)
-                .add(classloader = new DevelopmentClassloader(classloader))
-                .commit();
+        DevelopmentClassloader newClassLoader = new DevelopmentClassloader(classloader);
+
+        Reststop.PluginClassLoaderChange change = reststop.changePluginClassLoaders();
+        if(pluginId.startsWith("org.kantega.reststop:reststop-development-plugin:")) {
+            for (DevelopmentClassloader developmentClassloader : classloaders.values()) {
+                if(developmentClassloader != classloader) {
+                    change.remove(developmentClassloader);
+                }
+
+            }
+            change.remove(getClass().getClassLoader());
+            change.add(newClassLoader);
+        } else {
+            change
+                    .remove(classloader)
+                    .add(newClassLoader);
+
+        }
+        change.commit();
+        classloaders.put(pluginId, newClassLoader);
+        return newClassLoader;
 
     }
 

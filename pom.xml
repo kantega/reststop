@@ -36,11 +36,10 @@
     <modules>
         <module>api</module>
         <module>core</module>
-        <module>plugins/security</module>
-        <module>plugins/development</module>
-        <module>plugins/statistics</module>
         <module>webapp</module>
         <module>maven-plugin</module>
+
+        <module>plugins</module>
         <module>integration-tests/hello-world</module>
     </modules>
 

@@ -2,12 +2,17 @@ package org.kantega.reststop.maven;
 
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.*;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.jetty.maven.plugin.JettyWebAppContext;
 import org.eclipse.jetty.server.Server;
 
 import java.awt.*;
+import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,7 +61,33 @@ public class RunMojo extends AbstractReststopMojo {
     @Override
     protected List<Plugin> getPlugins() {
         ArrayList<Plugin> plugins = new ArrayList<>(super.getPlugins());
-        plugins.add(new Plugin("org.kantega.reststop", "reststop-development-plugin", mavenProject.getVersion()));
+
+        Plugin developmentPlugin = new Plugin("org.kantega.reststop", "reststop-development-plugin", mavenProject.getVersion());
+        plugins.add(developmentPlugin);
+        developmentPlugin.setDirectDeploy(true);
+
+
+        for (Plugin plugin : plugins) {
+            plugin.setSourceDirectory(getSourceDirectory(plugin));
+        }
+
+
+
+        Plugin projectPlugin = new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion());
+        projectPlugin.setSourceDirectory(mavenProject.getBasedir());
+        plugins.add(projectPlugin);
+
         return plugins;
+    }
+
+    private File getSourceDirectory(Plugin plugin) {
+        String path = repoSession.getLocalRepositoryManager().getPathForLocalArtifact(new DefaultArtifact(plugin.getGroupId(), plugin.getArtifactId(), "sourceDir", plugin.getVersion()));
+
+        File file = new File(repoSession.getLocalRepository().getBasedir(), path);
+        try {
+            return file.exists() ? new File(Files.readAllLines(file.toPath(), Charset.forName("utf-8")).get(0)) : null;
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
     }
 }

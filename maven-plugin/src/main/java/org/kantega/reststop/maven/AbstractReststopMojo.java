@@ -28,9 +28,15 @@ import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.collection.CollectResult;
+import org.eclipse.aether.collection.DependencyCollectionException;
 import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.*;
+import org.eclipse.aether.util.artifact.JavaScopes;
+import org.eclipse.aether.util.filter.DependencyFilterUtils;
 import org.eclipse.aether.util.filter.ScopeDependencyFilter;
 import org.eclipse.jetty.maven.plugin.JettyWebAppContext;
 import org.eclipse.jetty.server.Request;
@@ -44,8 +50,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
+
+import static java.util.Arrays.asList;
 
 /**
  *
@@ -57,7 +64,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
     private RepositorySystem repoSystem;
 
     @Parameter(defaultValue ="${repositorySystemSession}" ,readonly = true)
-    private RepositorySystemSession repoSession;
+    protected RepositorySystemSession repoSession;
 
     @Parameter(defaultValue = "${project.remoteProjectRepositories}")
     private List<RemoteRepository> remoteRepos;
@@ -103,10 +110,9 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
             JettyWebAppContext context = new JettyWebAppContext();
 
             context.setWar(war.getAbsolutePath());
-            context.setInitParameter("compileClasspath", getClasspath(mavenProject.getCompileArtifacts()));
-            context.setInitParameter("runtimeClasspath", getClasspath(mavenProject.getRuntimeArtifacts()));
-            context.setInitParameter("testClasspath", getClasspath(mavenProject.getTestArtifacts()));
-            context.getServletContext().setAttribute("pluginsList", createPluginClasspaths(plugins));
+            context.getServletContext().setAttribute("pluginsClasspathMap", createPluginClasspaths());
+
+            customizeContext(context);
 
             tempDirectory.mkdirs();
             context.setTempDirectory(tempDirectory);
@@ -127,45 +133,85 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
         }
     }
 
+    protected void customizeContext(JettyWebAppContext context) {
+
+    }
+
     protected void afterServerStart(Server server, int port) throws MojoFailureException {
 
     }
 
-    private List<String> createPluginClasspaths(List<Plugin> plugins) throws MojoFailureException, MojoExecutionException {
-        List<String> lines = new ArrayList<>();
-
-
+    private Map<String, Map<String, Object>> createPluginClasspaths() throws MojoFailureException, MojoExecutionException {
+        Map<String, Map<String, Object>> pluginInfos = new HashMap<>();
 
             for (Plugin plugin : getPlugins()) {
 
+                Map<String, Object> info = new HashMap<>();
+
+                pluginInfos.put(plugin.getCoords(), info);
+
+                List<File> compileClasspath = new ArrayList<>();
+                info.put("compile", compileClasspath);
+
+                List<File> runtimeClasspath = new ArrayList<>();
+                info.put("runtime", runtimeClasspath);
+
+                List<File> testClasspath = new ArrayList<>();
+                info.put("test", testClasspath);
+
+                info.put("sourceDirectory", plugin.getSourceDirectory());
+                info.put("directDeploy", plugin.isDirectDeploy());
+
+
+
                 Artifact pluginArtifact = resolveArtifact(plugin.getCoords());
-                CollectRequest collectRequest = new CollectRequest(new Dependency(pluginArtifact, "compile"), remoteRepos);
 
-                DependencyResult dependencyResult;
-                try {
-                    dependencyResult = repoSystem.resolveDependencies(repoSession, new DependencyRequest(collectRequest, new ScopeDependencyFilter("test", "provided")));
-                } catch (DependencyResolutionException e) {
-                    throw new MojoFailureException("Failed resolving plugin dependencies", e);
-                }
-                if(!dependencyResult.getCollectExceptions().isEmpty()) {
-                    throw new MojoFailureException("Failed resolving plugin dependencies", dependencyResult.getCollectExceptions().get(0));
-                }
+                for(String scope : asList(JavaScopes.TEST, JavaScopes.RUNTIME, JavaScopes.COMPILE)) {
 
-                String line = "";
-                for(ArtifactResult result : dependencyResult.getArtifactResults()) {
-                    Artifact artifact = result.getArtifact();
-                    if(!line.isEmpty()) {
-                        line+=":";
+                    List<File> classpath  = (List<File>) info.get(scope);
+
+
+                    classpath.add(pluginArtifact.getFile());
+
+
+
+                    try {
+
+                        ArtifactDescriptorResult descriptorResult = repoSystem.readArtifactDescriptor(repoSession, new ArtifactDescriptorRequest(pluginArtifact, remoteRepos, null));
+
+                        CollectRequest collectRequest = new CollectRequest();
+
+                        for (RemoteRepository repo : remoteRepos) {
+                            collectRequest.addRepository(repo);
+                        }
+                        for (Dependency dependency : descriptorResult.getDependencies()) {
+                            collectRequest.addDependency(dependency);
+                        }
+
+                        DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, DependencyFilterUtils.classpathFilter(scope));
+
+                        DependencyResult dependencyResult = repoSystem.resolveDependencies(repoSession, dependencyRequest);
+
+                        if(!dependencyResult.getCollectExceptions().isEmpty()) {
+                            throw new MojoFailureException("Failed resolving plugin dependencies", dependencyResult.getCollectExceptions().get(0));
+                        }
+
+                        for(ArtifactResult result : dependencyResult.getArtifactResults()) {
+                            Artifact artifact = result.getArtifact();
+                            classpath.add(artifact.getFile());
+                        }
+
+                    } catch (DependencyResolutionException | ArtifactDescriptorException e) {
+                        throw new MojoFailureException("Failed resolving plugin dependencies", e);
                     }
-                    line += artifact.getFile().getAbsolutePath();
+
 
                 }
-                lines.add(line);
             }
 
 
 
-        return lines;
+        return pluginInfos;
     }
 
     protected List<Plugin> getPlugins() {

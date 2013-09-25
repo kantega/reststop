@@ -54,6 +54,7 @@ public class BasicAuthFilter implements Filter {
                         return "manager".equals(role);
                     }
                 }, servletResponse);
+
                 return;
             }
         }

@@ -25,6 +25,8 @@ import java.net.URLClassLoader;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -40,16 +42,13 @@ public class DevelopmentClassloader extends URLClassLoader {
     private final List<File> testClasspath;
 
     private final static JavaCompiler compiler;
-    private final static StandardJavaFileManager fileManager;
+    private final StandardJavaFileManager fileManager;
 
-    private static final StandardJavaFileManager testFileManager;
+    private final StandardJavaFileManager testFileManager;
 
     static {
         compiler = ToolProvider.getSystemJavaCompiler();
 
-        fileManager = compiler.getStandardFileManager(null, null, null);
-
-        testFileManager = compiler.getStandardFileManager(null, null, null);
     }
 
     private long lastTestCompile;
@@ -76,6 +75,27 @@ public class DevelopmentClassloader extends URLClassLoader {
         this.created = System.currentTimeMillis();
         this.lastTestCompile = this.created;
 
+        fileManager = compiler.getStandardFileManager(null, null, null);
+
+        testFileManager = compiler.getStandardFileManager(null, null, null);
+
+    }
+
+    @Override
+    public Enumeration<URL> getResources(String path) throws IOException {
+        Enumeration<URL> resources = super.getResources(path);
+        if("META-INF/services/ReststopPlugin/simple.txt".equals(path)) {
+            List<URL> filtered = new ArrayList<URL>();
+            while(resources.hasMoreElements()) {
+                URL url = resources.nextElement();
+                if(url.getFile().startsWith(new File(basedir, "target/classes").getCanonicalFile().getAbsolutePath())) {
+                    filtered.add(url);
+                }
+            }
+            return Collections.enumeration(filtered);
+        } else {
+            return resources;
+        }
     }
 
     public boolean isStaleSources() {
@@ -84,7 +104,8 @@ public class DevelopmentClassloader extends URLClassLoader {
     }
 
     public boolean isStaleTests() {
-        return newest(new File(basedir, "src/test/java")) > lastTestCompile;
+        File sources = new File(basedir, "src/test/java");
+        return sources.exists() && newest(sources) > lastTestCompile;
     }
 
     private long newest(File directory) {
@@ -98,6 +119,10 @@ public class DevelopmentClassloader extends URLClassLoader {
     }
 
     public List<Class> getTestClasses() {
+        File testSources = new File(basedir, "src/test/java");
+        if(!testSources.exists()) {
+            return Collections.emptyList();
+        }
 
         List<URL> urls = new ArrayList<>();
 
@@ -117,7 +142,7 @@ public class DevelopmentClassloader extends URLClassLoader {
 
         final List<String> classNames = new ArrayList<>();
         try {
-            final Path root = new File(basedir, "src/test/java").toPath();
+            final Path root = testSources.toPath();
             Files.walkFileTree(root, new SimpleFileVisitor<Path>() {
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
@@ -160,7 +185,6 @@ public class DevelopmentClassloader extends URLClassLoader {
         return testsFailed;
     }
 
-
     private class NewestFileVisitor extends SimpleFileVisitor<Path> {
 
         private long newest;
@@ -188,12 +212,14 @@ public class DevelopmentClassloader extends URLClassLoader {
 
     public void compileJavaTests() {
         File sourceDirectory = new File(basedir, "src/test/java");
-        File outputDirectory = new File(basedir, "target/test-classes");
-        List<File> classpath = testClasspath;
+        if(sourceDirectory.exists()) {
+            File outputDirectory = new File(basedir, "target/test-classes");
+            List<File> classpath = testClasspath;
 
-        compileJava(sourceDirectory, outputDirectory, classpath, testFileManager);
+            compileJava(sourceDirectory, outputDirectory, classpath, testFileManager);
 
-        lastTestCompile = System.currentTimeMillis();
+            lastTestCompile = System.currentTimeMillis();
+        }
     }
 
 

@@ -18,12 +18,15 @@ package org.kantega.reststop.development;
 
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
+import org.kantega.reststop.api.Reststop;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -31,14 +34,16 @@ import java.util.List;
 public class RedeployFilter implements Filter {
 
     private final DevelopmentClassLoaderProvider provider;
+    private final Reststop reststop;
     private volatile boolean testing = false;
 
     private final Object compileSourcesMonitor = new Object();
     private final Object compileTestsMonitor = new Object();
     private final Object runTestsMonitor = new Object();
 
-    public RedeployFilter(DevelopmentClassLoaderProvider provider) {
+    public RedeployFilter(DevelopmentClassLoaderProvider provider, Reststop reststop) {
         this.provider = provider;
+        this.reststop = reststop;
     }
 
     @Override
@@ -51,53 +56,59 @@ public class RedeployFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) servletRequest;
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
-        DevelopmentClassloader classloader = provider.getClassloader();
+        Map<String, DevelopmentClassloader> classloaders = provider.getClassloaders();
+        for (String pluginId : classloaders.keySet()) {
+            DevelopmentClassloader classloader = classloaders.get(pluginId);
 
-        if (!testing &&  !req.getRequestURI().startsWith("/assets")) {
-            try {
+            if (!testing &&  !req.getRequestURI().startsWith("/assets")) {
+                try {
 
-                boolean staleSources;
+                    boolean staleSources;
 
-                synchronized (compileSourcesMonitor) {
-                    staleSources = classloader.isStaleSources();
-                    if (staleSources) {
-                        provider.redeploy();
-                    }
-                }
-
-                boolean staleTests = classloader.isStaleTests();
-                if (staleSources || staleTests || classloader.hasFailingTests()) {
-
-                    synchronized (compileTestsMonitor) {
-                        classloader.compileJavaTests();
-                        classloader.copyTestResources();
+                    synchronized (compileSourcesMonitor) {
+                        staleSources = classloader.isStaleSources();
+                        if (staleSources) {
+                            classloader = provider.redeploy(pluginId, classloader);
+                            reststop.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
+                            return;
+                        }
                     }
 
-                    synchronized (runTestsMonitor) {
-                        if(!this.testing) {
-                            try {
-                                this.testing = true;
-                                List<Class> testClasses = provider.getClassloader().getTestClasses();
-                                Class[] objects = testClasses.toArray(new Class[testClasses.size()]);
-                                Result result = new JUnitCore().run(objects);
-                                if (result.getFailureCount() > 0) {
-                                    provider.getClassloader().testsFailed();
-                                    throw new TestFailureException(result.getFailures());
-                                } else {
-                                    provider.getClassloader().testsPassed();
+                    boolean staleTests = classloader.isStaleTests();
+                    if (staleSources || staleTests || classloader.hasFailingTests()) {
+
+                        synchronized (compileTestsMonitor) {
+                            classloader.compileJavaTests();
+                            classloader.copyTestResources();
+                        }
+
+                        synchronized (runTestsMonitor) {
+                            if(!this.testing) {
+                                try {
+                                    this.testing = true;
+                                    List<Class> testClasses = classloader.getTestClasses();
+                                    Class[] objects = testClasses.toArray(new Class[testClasses.size()]);
+                                    Result result = new JUnitCore().run(objects);
+                                    if (result.getFailureCount() > 0) {
+                                        classloader.testsFailed();
+                                        throw new TestFailureException(result.getFailures());
+                                    } else {
+                                        classloader.testsPassed();
+                                    }
+                                } finally {
+                                    this.testing = false;
                                 }
-                            } finally {
-                                this.testing = false;
                             }
                         }
                     }
+                } catch (JavaCompilationException e) {
+                    new ErrorReporter(classloader.getBasedir()).addCompilationException(e).render(req, resp);
+                    return;
+                } catch (TestFailureException e) {
+                    new ErrorReporter(classloader.getBasedir()).addTestFailulreException(e).render(req, resp);
                 }
-            } catch (JavaCompilationException e) {
-                new ErrorReporter(classloader.getBasedir()).addCompilationException(e).render(req, resp);
-                return;
-            } catch (TestFailureException e) {
-                new ErrorReporter(classloader.getBasedir()).addTestFailulreException(e).render(req, resp);
             }
+
         }
 
         filterChain.doFilter(servletRequest, servletResponse);

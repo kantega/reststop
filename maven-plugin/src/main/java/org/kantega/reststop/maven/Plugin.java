@@ -16,6 +16,8 @@
 
 package org.kantega.reststop.maven;
 
+import java.io.File;
+
 /**
  *
  */
@@ -23,6 +25,8 @@ public class Plugin {
     private String groupId;
     private String artifactId;
     private String version;
+    private boolean directDeploy;
+    private File sourceDirectory;
 
     public Plugin(String groupId, String artifactId, String version) {
         this.groupId = groupId;
@@ -60,5 +64,22 @@ public class Plugin {
 
     public String getCoords() {
         return getGroupId() +":" + getArtifactId() +":" + getVersion();
+    }
+
+
+    public boolean isDirectDeploy() {
+        return directDeploy;
+    }
+
+    public void setDirectDeploy(boolean directDeploy) {
+        this.directDeploy = directDeploy;
+    }
+
+    public File getSourceDirectory() {
+        return sourceDirectory;
+    }
+
+    public void setSourceDirectory(File sourceDirectory) {
+        this.sourceDirectory = sourceDirectory;
     }
 }

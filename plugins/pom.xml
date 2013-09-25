@@ -18,38 +18,35 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <parent>
         <groupId>org.kantega.reststop</groupId>
-        <artifactId>reststop-plugins</artifactId>
+        <artifactId>reststop-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+    <artifactId>reststop-plugins</artifactId>
+    <packaging>pom</packaging>
 
-    <artifactId>reststop-security-plugin</artifactId>
+    <modules>
+        <module>security</module>
+        <module>development</module>
+        <module>statistics</module>
 
-    <dependencies>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>reststop-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>javax</groupId>
-            <artifactId>javaee-web-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-            <version>2.0</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.glassfish.jersey.core</groupId>
-            <artifactId>jersey-server</artifactId>
-            <version>${jersey.version}</version>
-            <scope>provided</scope>
-        </dependency>
-    </dependencies>
+    </modules>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.kantega.reststop</groupId>
+                <artifactId>reststop-maven-plugin</artifactId>
+                <version>${project.version}</version>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>mark-source-dir</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

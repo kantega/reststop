@@ -27,6 +27,7 @@ import org.kantega.jexmec.PluginManagerListener;
 import org.kantega.jexmec.ServiceKey;
 import org.kantega.jexmec.ctor.ConstructorInjectionPluginLoader;
 import org.kantega.jexmec.manager.DefaultPluginManager;
+import org.kantega.reststop.api.FilterPhase;
 import org.kantega.reststop.api.PluginListener;
 import org.kantega.reststop.api.Reststop;
 import org.kantega.reststop.api.ReststopPlugin;
@@ -96,14 +97,17 @@ public class ReststopInitializer implements ServletContainerInitializer{
         DefaultReststop reststop = new DefaultReststop();
 
 
-        return buildFor(ReststopPlugin.class)
-                        .withClassLoaderProvider(reststop)
-                        .withClassLoaderProviders(findClassLoaderProviders(servletContext))
-                        .withClassLoader(getClass().getClassLoader())
-                        .withPluginLoader(new ConstructorInjectionPluginLoader())
-                        .withService(ServiceKey.by(Reststop.class), reststop)
-                        .withService(ServiceKey.by(ServletContext.class), servletContext)
-                        .build();
+        DefaultPluginManager<ReststopPlugin> manager = buildFor(ReststopPlugin.class)
+                .withClassLoaderProvider(reststop)
+                .withClassLoaderProviders(findClassLoaderProviders(servletContext))
+                .withClassLoader(getClass().getClassLoader())
+                .withPluginLoader(new ConstructorInjectionPluginLoader())
+                .withService(ServiceKey.by(Reststop.class), reststop)
+                .withService(ServiceKey.by(ServletContext.class), servletContext)
+                .build();
+
+        reststop.setManager(manager);
+        return manager;
     }
 
     private ClassLoaderProvider[] findClassLoaderProviders(ServletContext servletContext) throws ServletException {
@@ -121,9 +125,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
 
         {
-            List<String> pluginsLines = (List<String>) servletContext.getAttribute("pluginsList");
-            if(pluginsLines != null) {
-                providers.add(new PluginLinesClassLoaderProvider(pluginsLines));
+            Map<String, Map<String, Object>> pluginsClasspathMap = (Map<String, Map<String, Object>>) servletContext.getAttribute("pluginsClasspathMap");
+            if(pluginsClasspathMap != null) {
+                providers.add(new PluginLinesClassLoaderProvider(pluginsClasspathMap));
             }
         }
         return providers.toArray(new ClassLoaderProvider[providers.size()]);
@@ -150,6 +154,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
     private class DefaultReststop implements Reststop, ClassLoaderProvider {
         private Registry registry;
         private ClassLoader parentClassLoader;
+        private DefaultPluginManager<ReststopPlugin> manager;
 
         @Override
         public void start(Registry registry, ClassLoader parentClassLoader) {
@@ -174,8 +179,19 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
 
         @Override
-        public Filter createFilter(Filter filter, String mapping) {
-            return new MappingWrappedFilter(filter, mapping);
+        public Filter createFilter(Filter filter, String mapping, FilterPhase phase) {
+            return new MappingWrappedFilter(filter, mapping, phase);
+        }
+
+        public void setManager(DefaultPluginManager<ReststopPlugin> manager) {
+            this.manager = manager;
+        }
+
+        @Override
+        public FilterChain newFilterChain(FilterChain filterChain) {
+
+            PluginFilterChain orig = (PluginFilterChain) filterChain;
+            return buildFilterChain(orig.getFilterChain(), manager);
         }
 
         private class DefaultClassLoaderChange implements PluginClassLoaderChange {
@@ -209,10 +225,12 @@ public class ReststopInitializer implements ServletContainerInitializer{
     private class MappingWrappedFilter implements Filter {
         private final Filter filter;
         private final String mapping;
+        private final FilterPhase phase;
 
-        public MappingWrappedFilter(Filter filter, String mapping) {
+        public MappingWrappedFilter(Filter filter, String mapping, FilterPhase phase) {
             this.filter = filter;
             this.mapping = mapping;
+            this.phase = phase;
         }
 
         @Override
@@ -252,21 +270,32 @@ public class ReststopInitializer implements ServletContainerInitializer{
         @Override
         public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
 
-            buildFilterChain(filterChain).doFilter(servletRequest, servletResponse);
+            buildFilterChain(filterChain, manager).doFilter(servletRequest, servletResponse);
         }
 
-        private FilterChain buildFilterChain(FilterChain filterChain) {
-            List<Filter> filters = new ArrayList<>();
-            for(ReststopPlugin plugin : manager.getPlugins()) {
-                filters.addAll(plugin.getServletFilters());
-            }
-            return new PluginFilterChain(filters, filterChain);
-        }
+
 
         @Override
         public void destroy() {
 
         }
+    }
+
+    private FilterChain buildFilterChain(FilterChain filterChain, PluginManager<ReststopPlugin> pluginManager) {
+        List<Filter> filters = new ArrayList<>();
+        for(ReststopPlugin plugin : pluginManager.getPlugins()) {
+            filters.addAll(plugin.getServletFilters());
+        }
+
+        Collections.sort(filters, new Comparator<Filter>() {
+            @Override
+            public int compare(Filter o1, Filter o2) {
+                FilterPhase phase1 = o1 instanceof MappingWrappedFilter ? ((MappingWrappedFilter)o1).phase : FilterPhase.USER;
+                FilterPhase phase2 = o2 instanceof MappingWrappedFilter ? ((MappingWrappedFilter)o2).phase : FilterPhase.USER;
+                return phase1.ordinal() - phase2.ordinal();
+            }
+        });
+        return new PluginFilterChain(filters, filterChain);
     }
     private static class PluginFilterChain implements FilterChain {
         private final List<Filter> filters;
@@ -283,6 +312,10 @@ public class ReststopInitializer implements ServletContainerInitializer{
             } else {
                 filters.get(filterIndex++).doFilter(request, response, this);
             }
+        }
+
+        private FilterChain getFilterChain() {
+            return filterChain;
         }
     }
 
@@ -356,27 +389,38 @@ public class ReststopInitializer implements ServletContainerInitializer{
     }
 
     private class PluginLinesClassLoaderProvider implements ClassLoaderProvider {
-        private final List<String> pluginsLines;
+        private final Map<String, Map<String, Object>> pluginsLines;
 
-        public PluginLinesClassLoaderProvider(List<String> pluginsLines) {
+        public PluginLinesClassLoaderProvider(Map<String, Map<String, Object>> pluginsLines) {
             this.pluginsLines = pluginsLines;
         }
 
         @Override
         public void start(Registry registry, ClassLoader parentClassLoader) {
-            ArrayList<ClassLoader> loaders = new ArrayList<>();
-            for(String line : pluginsLines) {
-                PluginClassloader pluginClassloader = new PluginClassloader(parentClassLoader);
-                for(String path : line.split(":")) {
+            List<ClassLoader> loaders = new ArrayList<>();
 
-                    try {
-                        pluginClassloader.addURL(new File(path).toURI().toURL());
-                    } catch (MalformedURLException e) {
-                        throw new RuntimeException(e);
+
+            for(String pluginKey : pluginsLines.keySet()) {
+
+                Map<String, Object> pluginInfo = pluginsLines.get(pluginKey);
+                List<File> runtimeClasspath = (List<File>) pluginInfo.get("runtime");
+                File sourceDirectory = (File) pluginInfo.get("sourceDirectory");
+
+                Object directDeploy = pluginInfo.get("directDeploy");
+                if(Boolean.TRUE.equals(directDeploy)) {
+                    PluginClassloader pluginClassloader = new PluginClassloader(parentClassLoader);
+
+                    for (File file : runtimeClasspath) {
+                        try {
+                            pluginClassloader.addURL(file.toURI().toURL());
+                        } catch (MalformedURLException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
-                }
 
-                loaders.add(pluginClassloader);
+                    loaders.add(pluginClassloader);
+
+                }
             }
 
             registry.add(loaders);
