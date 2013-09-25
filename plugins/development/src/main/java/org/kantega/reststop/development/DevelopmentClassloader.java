@@ -19,6 +19,7 @@ package org.kantega.reststop.development;
 import javax.tools.*;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -79,6 +80,20 @@ public class DevelopmentClassloader extends URLClassLoader {
 
         testFileManager = compiler.getStandardFileManager(null, null, null);
 
+    }
+
+    @Override
+    public URL getResource(String name) {
+        File resources = new File(basedir, "src/main/resources");
+        File resource = new File(resources, name);
+        if(resource.exists()) {
+            try {
+                return resource.toURI().toURL();
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return super.getResource(name);
     }
 
     @Override

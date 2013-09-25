@@ -404,18 +404,21 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
                 Map<String, Object> pluginInfo = pluginsLines.get(pluginKey);
                 List<File> runtimeClasspath = (List<File>) pluginInfo.get("runtime");
-                File sourceDirectory = (File) pluginInfo.get("sourceDirectory");
 
                 Object directDeploy = pluginInfo.get("directDeploy");
                 if(Boolean.TRUE.equals(directDeploy)) {
                     PluginClassloader pluginClassloader = new PluginClassloader(parentClassLoader);
 
-                    for (File file : runtimeClasspath) {
-                        try {
+                    File pluginJar = (File) pluginInfo.get("pluginFile");
+                    try {
+                        pluginClassloader.addURL(pluginJar.toURI().toURL());
+
+                        for (File file : runtimeClasspath) {
                             pluginClassloader.addURL(file.toURI().toURL());
-                        } catch (MalformedURLException e) {
-                            throw new RuntimeException(e);
+
                         }
+                    } catch (MalformedURLException e) {
+                        throw new RuntimeException(e);
                     }
 
                     loaders.add(pluginClassloader);

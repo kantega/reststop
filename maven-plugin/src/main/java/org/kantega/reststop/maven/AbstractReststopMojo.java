@@ -166,14 +166,11 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
                 Artifact pluginArtifact = resolveArtifact(plugin.getCoords());
 
+                info.put("pluginFile", pluginArtifact.getFile());
+
                 for(String scope : asList(JavaScopes.TEST, JavaScopes.RUNTIME, JavaScopes.COMPILE)) {
 
                     List<File> classpath  = (List<File>) info.get(scope);
-
-
-                    classpath.add(pluginArtifact.getFile());
-
-
 
                     try {
 
