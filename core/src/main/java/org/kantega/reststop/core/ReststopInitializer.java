@@ -242,7 +242,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
             HttpServletRequest req = (HttpServletRequest) servletRequest;
 
-            if(mapping.endsWith("*") && req.getRequestURI().regionMatches(0, mapping, 0, mapping.length()-1)) {
+            if(mapping.equals(req.getRequestURI()) || mapping.endsWith("*") && req.getRequestURI().regionMatches(0, mapping, 0, mapping.length()-1)) {
                 filter.doFilter(servletRequest, servletResponse, filterChain);
             } else {
                 filterChain.doFilter(servletRequest, servletResponse);
