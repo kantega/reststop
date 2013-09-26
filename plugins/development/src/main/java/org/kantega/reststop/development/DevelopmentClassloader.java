@@ -103,7 +103,8 @@ public class DevelopmentClassloader extends URLClassLoader {
             List<URL> filtered = new ArrayList<URL>();
             while(resources.hasMoreElements()) {
                 URL url = resources.nextElement();
-                if(url.getFile().startsWith(new File(basedir, "target/classes").getCanonicalFile().getAbsolutePath())) {
+                String ondisk = new File(url.getFile()).getCanonicalFile().getAbsolutePath();
+                if(ondisk.startsWith(new File(basedir, "target/classes").getCanonicalFile().getAbsolutePath())) {
                     filtered.add(url);
                 }
             }
