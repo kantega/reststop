@@ -30,11 +30,10 @@ public class StatisticsFilter implements Filter {
         StringBuilder b = new StringBuilder();
         b.append(req.getRequestURI());
 
-        String auth = req.getHeader("Authorization");
+        String remoteUser = req.getRemoteUser();
 
-        if( auth != null){
-            final String[] usernameAndPassword = new String(DatatypeConverter.parseBase64Binary(auth.substring("Basic ".length())), "utf-8").split(":");
-            b.append("[").append(usernameAndPassword[0]).append("]");
+        if( remoteUser != null){
+            b.append("[").append(remoteUser).append("]");
         }
 
         b.append(" ").append(resp.getStatus()).append(" ").append(String.valueOf(System.currentTimeMillis() - before));
