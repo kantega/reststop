@@ -96,24 +96,6 @@ public class DevelopmentClassloader extends URLClassLoader {
         return super.getResource(name);
     }
 
-    @Override
-    public Enumeration<URL> getResources(String path) throws IOException {
-        Enumeration<URL> resources = super.getResources(path);
-        if("META-INF/services/ReststopPlugin/simple.txt".equals(path)) {
-            List<URL> filtered = new ArrayList<URL>();
-            while(resources.hasMoreElements()) {
-                URL url = resources.nextElement();
-                String ondisk = new File(url.getFile()).getCanonicalFile().getAbsolutePath();
-                if(ondisk.startsWith(new File(basedir, "target/classes").getCanonicalFile().getAbsolutePath())) {
-                    filtered.add(url);
-                }
-            }
-            return Collections.enumeration(filtered);
-        } else {
-            return resources;
-        }
-    }
-
     public boolean isStaleSources() {
 
         return newest(new File(basedir, "src/main/java")) > created;
