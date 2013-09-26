@@ -74,7 +74,7 @@ public class DistMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}.${project.packaging}")
     private File pluginJar;
 
-    @Parameter(defaultValue = "${project.build.directory}/restwork/")
+    @Parameter(defaultValue = "${project.build.directory}/reststop/dist/")
     private File workDirectory;
 
     @Parameter(defaultValue = "${project}")
@@ -87,6 +87,11 @@ public class DistMojo extends AbstractMojo {
     private final String jettyVersion = "9.0.5.v20130815";
 
     private final String jettydistCoords  ="org.eclipse.jetty:jetty-distribution:tar.gz:" + jettyVersion;
+
+    @Parameter
+    private final String tomcatVersion = "7.0.42";
+
+    private final String tomcatdistCoords  ="org.apache.tomcat:tomcat:tar.gz:" + tomcatVersion;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -104,13 +109,34 @@ public class DistMojo extends AbstractMojo {
 
         copyJetty();
 
-        createContextXml(warArifact, manager);
+        createJettyContextXml(warArifact, manager);
+
+        copyTomcat();
+
+        createTomcatContextXml(warArifact, manager);
 
     }
 
-    private void createContextXml(Artifact warArifact, LocalRepositoryManager manager) throws MojoExecutionException {
+    private void createTomcatContextXml(Artifact warArifact, LocalRepositoryManager manager) throws MojoExecutionException {
         try {
-            String xml = IOUtils.toString(getClass().getResourceAsStream("reststop.xml"), "utf-8");
+            String xml = IOUtils.toString(getClass().getResourceAsStream("reststop-tomcat.xml"), "utf-8");
+
+            String warLocation = "../../repository/" +manager.getPathForLocalArtifact(warArifact);
+
+            xml = xml.replaceAll("RESTSTOPWAR", warLocation);
+
+            File xmlFile = new File(workDirectory, "tomcat/conf/Catalina/localhost/ROOT.xml");
+            xmlFile.getParentFile().mkdirs();
+            Files.write(xmlFile.toPath(), singleton(xml), Charset.forName("utf-8"));
+        } catch (IOException e) {
+            throw new MojoExecutionException(e.getMessage(), e);
+        }
+
+    }
+
+    private void createJettyContextXml(Artifact warArifact, LocalRepositoryManager manager) throws MojoExecutionException {
+        try {
+            String xml = IOUtils.toString(getClass().getResourceAsStream("reststop-jetty.xml"), "utf-8");
 
             String warLocation = "../repository/" +manager.getPathForLocalArtifact(warArifact);
 
@@ -123,6 +149,54 @@ public class DistMojo extends AbstractMojo {
         }
     }
 
+    private void copyTomcat() throws MojoFailureException, MojoExecutionException {
+        Artifact tomcatArtifact = resolveArtifactFile(tomcatdistCoords);
+
+        File tomcatDir = new File(workDirectory, "tomcat");
+
+        if(tomcatDir.exists()) {
+            try {
+                Files.walkFileTree(tomcatDir.toPath(), new DeleteDirectory());
+            } catch (IOException e) {
+                throw new MojoExecutionException("Failed deleteing Jetty dir", e);
+            }
+        }
+        tomcatDir.mkdirs();
+
+
+        Untar untar = new Untar();
+        EnumeratedAttribute gzip = EnumeratedAttribute.getInstance(Untar.UntarCompressionMethod.class, "gzip");
+        untar.setCompression((Untar.UntarCompressionMethod) gzip);
+        untar.setProject(new Project());
+        untar.setSrc(tomcatArtifact.getFile());
+        untar.setDest(tomcatDir);
+        untar.execute();
+
+
+        File distDir = new File(tomcatDir, "apache-tomcat-" + tomcatVersion);
+        File[] files = distDir.listFiles();
+        if(files != null) {
+            for (File file : files) {
+                file.renameTo(new File(tomcatDir, file.getName()));
+            }
+        }
+
+        distDir.delete();
+
+
+        File webappsDir = new File(tomcatDir, "webapps");
+
+        if(webappsDir.exists()) {
+            try {
+                Files.walkFileTree(webappsDir.toPath(), new DeleteDirectory());
+            } catch (IOException e) {
+                throw new MojoExecutionException("Failed deleteing Tomcat's webapps dir", e);
+            }
+        }
+        webappsDir.mkdirs();
+
+    }
+
     private void copyJetty() throws MojoFailureException, MojoExecutionException {
         Artifact jettyDistroArtifact = resolveArtifactFile(jettydistCoords);
 
@@ -130,19 +204,7 @@ public class DistMojo extends AbstractMojo {
 
         if(jettyDir.exists()) {
             try {
-                Files.walkFileTree(jettyDir.toPath(), new SimpleFileVisitor<Path>() {
-                    @Override
-                    public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                        file.toFile().delete();
-                        return FileVisitResult.CONTINUE;
-                    }
-
-                    @Override
-                    public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
-                        dir.toFile().delete();
-                        return FileVisitResult.CONTINUE;
-                    }
-                });
+                Files.walkFileTree(jettyDir.toPath(), new DeleteDirectory());
             } catch (IOException e) {
                 throw new MojoExecutionException("Failed deleteing Jetty dir", e);
             }
@@ -278,5 +340,19 @@ public class DistMojo extends AbstractMojo {
             plugins.add(new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion()));
         }
         return plugins;
+    }
+
+    private class DeleteDirectory extends SimpleFileVisitor<Path> {
+        @Override
+        public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+            file.toFile().delete();
+            return FileVisitResult.CONTINUE;
+        }
+
+        @Override
+        public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+            dir.toFile().delete();
+            return FileVisitResult.CONTINUE;
+        }
     }
 }

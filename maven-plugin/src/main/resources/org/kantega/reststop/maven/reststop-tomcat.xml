@@ -1,0 +1,6 @@
+<?xml version="1.0"  encoding="utf-8"?>
+<Context docBase="RESTSTOPWAR" path="/">
+
+    <Parameter name="plugins.txt" value="${catalina.home}/../plugins.txt" override="true"/>
+
+</Context>
