@@ -28,25 +28,24 @@ import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.collection.CollectRequest;
-import org.eclipse.aether.collection.CollectResult;
-import org.eclipse.aether.collection.DependencyCollectionException;
 import org.eclipse.aether.graph.Dependency;
-import org.eclipse.aether.repository.LocalRepository;
-import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.*;
 import org.eclipse.aether.util.artifact.JavaScopes;
 import org.eclipse.aether.util.filter.DependencyFilterUtils;
-import org.eclipse.aether.util.filter.ScopeDependencyFilter;
 import org.eclipse.jetty.maven.plugin.JettyWebAppContext;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -110,7 +109,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
             JettyWebAppContext context = new JettyWebAppContext();
 
             context.setWar(war.getAbsolutePath());
-            context.getServletContext().setAttribute("pluginsClasspathMap", createPluginClasspaths());
+            context.getServletContext().setAttribute("pluginsXml", createPluginXmlDocument());
 
             customizeContext(context);
 
@@ -141,36 +140,36 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
     }
 
-    private Map<String, Map<String, Object>> createPluginClasspaths() throws MojoFailureException, MojoExecutionException {
-        Map<String, Map<String, Object>> pluginInfos = new HashMap<>();
+    private Document createPluginXmlDocument() throws MojoFailureException, MojoExecutionException {
+        try {
+            Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+
+            Element pluginsElem = doc.createElement("plugins");
+
+            doc.appendChild(pluginsElem);
 
             for (Plugin plugin : getPlugins()) {
 
-                Map<String, Object> info = new HashMap<>();
+                Element pluginElem = doc.createElement("plugin");
+                pluginsElem.appendChild(pluginElem);
 
-                pluginInfos.put(plugin.getCoords(), info);
-
-                List<File> compileClasspath = new ArrayList<>();
-                info.put("compile", compileClasspath);
-
-                List<File> runtimeClasspath = new ArrayList<>();
-                info.put("runtime", runtimeClasspath);
-
-                List<File> testClasspath = new ArrayList<>();
-                info.put("test", testClasspath);
-
-                info.put("sourceDirectory", plugin.getSourceDirectory());
-                info.put("directDeploy", plugin.isDirectDeploy());
-
-
+                pluginElem.setAttribute("groupId", plugin.getGroupId());
+                pluginElem.setAttribute("artifactId", plugin.getArtifactId());
+                pluginElem.setAttribute("version", plugin.getVersion());
+                pluginElem.setAttribute("directDeploy", Boolean.toString(plugin.isDirectDeploy()));
+                if(plugin.getSourceDirectory() != null) {
+                    pluginElem.setAttribute("sourceDirectory", plugin.getSourceDirectory().getAbsolutePath());
+                }
 
                 Artifact pluginArtifact = resolveArtifact(plugin.getCoords());
 
-                info.put("pluginFile", pluginArtifact.getFile());
+                pluginElem.setAttribute("pluginFile", pluginArtifact.getFile().getAbsolutePath());
 
                 for(String scope : asList(JavaScopes.TEST, JavaScopes.RUNTIME, JavaScopes.COMPILE)) {
 
-                    List<File> classpath  = (List<File>) info.get(scope);
+                    Element scopeElem = doc.createElement(scope);
+
+                    pluginElem.appendChild(scopeElem);
 
                     try {
 
@@ -195,7 +194,14 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
                         for(ArtifactResult result : dependencyResult.getArtifactResults()) {
                             Artifact artifact = result.getArtifact();
-                            classpath.add(artifact.getFile());
+                            Element artifactElement = doc.createElement("artifact");
+                            artifactElement.setAttribute("groupId", artifact.getGroupId());
+                            artifactElement.setAttribute("artifactId", artifact.getArtifactId());
+                            artifactElement.setAttribute("version", artifact.getVersion());
+
+                            artifactElement.setAttribute("file", artifact.getFile().getAbsolutePath());
+
+                            scopeElem.appendChild(artifactElement);
                         }
 
                     } catch (DependencyResolutionException | ArtifactDescriptorException e) {
@@ -205,10 +211,12 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
                 }
             }
+            return doc;
+        } catch (ParserConfigurationException e) {
+            throw new MojoExecutionException(e.getMessage(), e);
+        }
 
 
-
-        return pluginInfos;
     }
 
     protected List<Plugin> getPlugins() {

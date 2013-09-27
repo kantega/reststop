@@ -26,15 +26,15 @@ import java.util.*;
  */
 public class DevelopmentClassLoaderProvider {
 
-    private final Map<String, Map<String, Object>> pluginsInfo = new HashMap<>();
+    private final Map<String, DevelopmentPlugin.PluginInfo> pluginsInfo = new HashMap<>();
     private Map<String, DevelopmentClassloader> classloaders = new HashMap<>();
 
     private Reststop reststop;
 
 
 
-    public void addPluginInfo(String pluginId, Map<String, Object> info) {
-        pluginsInfo.put(pluginId, info);
+    public void addPluginInfo(DevelopmentPlugin.PluginInfo info) {
+        pluginsInfo.put(info.getPluginId(), info);
     }
 
     public void addExistingClassLoader(String pluginId, DevelopmentClassloader loader) {
@@ -47,17 +47,17 @@ public class DevelopmentClassLoaderProvider {
         Reststop.PluginClassLoaderChange change = reststop.changePluginClassLoaders();
 
 
-        for (String pluginId : pluginsInfo.keySet()) {
-            Map<String, Object> pluginInfo = pluginsInfo.get(pluginId);
-            if( Boolean.FALSE.equals(pluginInfo.get("directDeploy"))) {
-                List<File> runtime = (List<File>) pluginInfo.get("runtime");
-                List<File> compile = (List<File>) pluginInfo.get("compile");
-                List<File> test = (List<File>) pluginInfo.get("test");
-                File sourceDir = (File) pluginInfo.get("sourceDirectory");
+        for (DevelopmentPlugin.PluginInfo pluginInfo : this.pluginsInfo.values()) {
+
+            if( !pluginInfo.isDirectDeploy()) {
+                List<File> runtime = pluginInfo.getClassPath("runtime");
+                List<File> compile = pluginInfo.getClassPath("compile");
+                List<File> test = pluginInfo.getClassPath("test");
+                File sourceDir = pluginInfo.getSourceDirectory();
 
                 DevelopmentClassloader classloader = new DevelopmentClassloader(sourceDir, compile, runtime, test, parentClassLoader);
 
-                classloaders.put(pluginId, classloader);
+                classloaders.put(pluginInfo.getPluginId(), classloader);
                 change.add(classloader);
             }
         }

@@ -20,12 +20,18 @@ import org.kantega.reststop.api.DefaultReststopPlugin;
 import org.kantega.reststop.api.FilterPhase;
 import org.kantega.reststop.api.PluginListener;
 import org.kantega.reststop.api.Reststop;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import javax.servlet.ServletContext;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static java.util.Arrays.asList;
 
 /**
  *
@@ -35,17 +41,19 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
 
     public DevelopmentPlugin(final Reststop reststop, ServletContext servletContext) {
 
-        Map<String, Map<String, Object>> pluginsClasspathMap = (Map<String, Map<String, Object>>) servletContext.getAttribute("pluginsClasspathMap");
+        Document pluginsXml = (Document) servletContext.getAttribute("pluginsXml");
 
 
         if(! loadedByDevelopmentClassLoader()) {
-            for (String pluginId : pluginsClasspathMap.keySet()) {
-                if(pluginId.startsWith("org.kantega.reststop:reststop-development-plugin")) {
-                    File sourceDirectory  = (File) pluginsClasspathMap.get(pluginId).get("sourceDirectory");
+
+            for(PluginInfo info : PluginInfo.parse(pluginsXml)) {
+
+                if(info.isDevelopmentPlugin()) {
+                    File sourceDirectory  = info.getSourceDirectory();
                     if(sourceDirectory != null) {
-                        Map<String, Object> info = pluginsClasspathMap.get(pluginId);
+
                         ClassLoader pluginParentClassLoader = reststop.getPluginParentClassLoader();
-                        final DevelopmentClassloader devloader = createClassLoader(sourceDirectory, info, pluginParentClassLoader);
+                        final DevelopmentClassloader devloader = createClassLoader(info, pluginParentClassLoader);
 
                         addPluginListener(new PluginListener() {
                             @Override
@@ -65,16 +73,13 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
         final DevelopmentClassLoaderProvider provider = new DevelopmentClassLoaderProvider();
 
 
-        for (String pluginId : pluginsClasspathMap.keySet()) {
-            if(pluginId.startsWith("org.kantega.reststop:reststop-development-plugin:")) {
-                File sourceDirectory  = (File) pluginsClasspathMap.get(pluginId).get("sourceDirectory");
-
-                provider.addExistingClassLoader(pluginId, createClassLoader(sourceDirectory, pluginsClasspathMap.get(pluginId), reststop.getPluginParentClassLoader()));
-
+        for (PluginInfo info : PluginInfo.parse(pluginsXml)) {
+            if(info.isDevelopmentPlugin()) {
+                provider.addExistingClassLoader(info.getPluginId(), createClassLoader(info, reststop.getPluginParentClassLoader()));
             }
-            File sourceDirectory  = (File) pluginsClasspathMap.get(pluginId).get("sourceDirectory");
-            if(sourceDirectory != null) {
-                provider.addPluginInfo(pluginId, pluginsClasspathMap.get(pluginId));
+
+            if(!info.isDirectDeploy()) {
+                provider.addPluginInfo(info);
             }
 
         }
@@ -96,12 +101,12 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
 
     }
 
-    private DevelopmentClassloader createClassLoader(File sourceDirectory, Map<String, Object> info, ClassLoader pluginParentClassLoader) {
-        List<File> runtime  = (List<File>) info.get("runtime");
-        List<File> compile  = (List<File>) info.get("compile");
-        List<File> test  = (List<File>) info.get("test");
+    private DevelopmentClassloader createClassLoader(PluginInfo info, ClassLoader pluginParentClassLoader) {
+        List<File> runtime  = info.getClassPath("runtime");
+        List<File> compile  = info.getClassPath("compile");
+        List<File> test  = info.getClassPath("test");
 
-        return new DevelopmentClassloader(sourceDirectory, compile, runtime, test, pluginParentClassLoader);
+        return new DevelopmentClassloader(info.getSourceDirectory(), compile, runtime, test, pluginParentClassLoader);
     }
 
     private boolean loadedByDevelopmentClassLoader() {
@@ -115,5 +120,127 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
             files.add(file);
         }
         return files;
+    }
+
+    public static class PluginInfo {
+
+        private Map<String, List<File>> classpaths = new HashMap<>();
+        private String groupId;
+        private String artifactId;
+        private String version;
+        private File pluginFile;
+        private File sourceDirectory;
+        private boolean directDeploy;
+
+        public List<File> getClassPath(String scope) {
+            if(!classpaths.containsKey(scope)) {
+                classpaths.put(scope, new ArrayList<File>());
+            }
+
+            return classpaths.get(scope);
+        }
+
+        static List<PluginInfo> parse(Document document) {
+            List<PluginInfo> infos = new ArrayList<>();
+
+            NodeList pluginElements = document.getDocumentElement().getElementsByTagName("plugin");
+
+            for (int i = 0; i < pluginElements.getLength(); i++) {
+
+                PluginInfo pluginInfo = new PluginInfo();
+
+                infos.add(pluginInfo);
+
+                Element pluginElement = (Element) pluginElements.item(i);
+
+                pluginInfo.setGroupId(pluginElement.getAttribute("groupId"));
+                pluginInfo.setArtifactId(pluginElement.getAttribute("artifactId"));
+                pluginInfo.setVersion(pluginElement.getAttribute("version"));
+                pluginInfo.setDirectDeploy("true".equals(pluginElement.getAttribute("directDeploy")));
+                File pluginJar = new File(pluginElement.getAttribute("pluginFile"));
+                pluginInfo.setPluginFile(pluginJar);
+                String sourceDir = pluginElement.getAttribute("sourceDirectory");
+                if (sourceDir != null && !sourceDir.trim().isEmpty()) {
+                    pluginInfo.setSourceDirectory(new File(sourceDir));
+                }
+
+
+                for (String scope : asList("test", "runtime", "compile")) {
+
+                    Element runtimeElement = (Element) pluginElement.getElementsByTagName(scope).item(0);
+
+
+
+                    NodeList artifacts = runtimeElement.getElementsByTagName("artifact");
+
+
+                    for (int a = 0; a < artifacts.getLength(); a++) {
+                        Element artifact = (Element) artifacts.item(a);
+                        pluginInfo.getClassPath(scope).add(new File(artifact.getAttribute("file")));
+
+                    }
+
+
+                }
+            }
+            return infos;
+        }
+
+        public void setGroupId(String groupId) {
+            this.groupId = groupId;
+        }
+
+        public String getGroupId() {
+            return groupId;
+        }
+
+        public void setArtifactId(String artifactId) {
+            this.artifactId = artifactId;
+        }
+
+        public String getArtifactId() {
+            return artifactId;
+        }
+
+        public void setVersion(String version) {
+            this.version = version;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
+        public void setPluginFile(File pluginFile) {
+            this.pluginFile = pluginFile;
+        }
+
+        public File getPluginFile() {
+            return pluginFile;
+        }
+
+
+        public void setSourceDirectory(File sourceDirectory) {
+            this.sourceDirectory = sourceDirectory;
+        }
+
+        public File getSourceDirectory() {
+            return sourceDirectory;
+        }
+
+        public boolean isDevelopmentPlugin() {
+            return "org.kantega.reststop".equals(getGroupId()) && "reststop-development-plugin".equals(getArtifactId());
+        }
+
+        public String getPluginId() {
+            return getGroupId()+":" + getArtifactId()+":" + getVersion();
+        }
+
+        public void setDirectDeploy(boolean directDeploy) {
+            this.directDeploy = directDeploy;
+        }
+
+        public boolean isDirectDeploy() {
+            return directDeploy;
+        }
     }
 }

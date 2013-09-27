@@ -31,6 +31,9 @@ import org.kantega.reststop.api.FilterPhase;
 import org.kantega.reststop.api.PluginListener;
 import org.kantega.reststop.api.Reststop;
 import org.kantega.reststop.api.ReststopPlugin;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -125,9 +128,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
 
         {
-            Map<String, Map<String, Object>> pluginsClasspathMap = (Map<String, Map<String, Object>>) servletContext.getAttribute("pluginsClasspathMap");
-            if(pluginsClasspathMap != null) {
-                providers.add(new PluginLinesClassLoaderProvider(pluginsClasspathMap));
+            Document pluginsXml = (Document) servletContext.getAttribute("pluginsXml");
+            if(pluginsXml != null) {
+                providers.add(new PluginLinesClassLoaderProvider(pluginsXml));
             }
         }
         return providers.toArray(new ClassLoaderProvider[providers.size()]);
@@ -389,10 +392,10 @@ public class ReststopInitializer implements ServletContainerInitializer{
     }
 
     private class PluginLinesClassLoaderProvider implements ClassLoaderProvider {
-        private final Map<String, Map<String, Object>> pluginsLines;
+        private final Document pluginsXml;
 
-        public PluginLinesClassLoaderProvider(Map<String, Map<String, Object>> pluginsLines) {
-            this.pluginsLines = pluginsLines;
+        public PluginLinesClassLoaderProvider(Document pluginsXml) {
+            this.pluginsXml = pluginsXml;
         }
 
         @Override
@@ -400,21 +403,29 @@ public class ReststopInitializer implements ServletContainerInitializer{
             List<ClassLoader> loaders = new ArrayList<>();
 
 
-            for(String pluginKey : pluginsLines.keySet()) {
+            NodeList pluginElements = pluginsXml.getDocumentElement().getElementsByTagName("plugin");
+            for(int i = 0; i < pluginElements.getLength(); i++) {
 
-                Map<String, Object> pluginInfo = pluginsLines.get(pluginKey);
-                List<File> runtimeClasspath = (List<File>) pluginInfo.get("runtime");
+                Element pluginElement = (Element) pluginElements.item(i);
 
-                Object directDeploy = pluginInfo.get("directDeploy");
-                if(Boolean.TRUE.equals(directDeploy)) {
+
+                boolean directDeploy = !"false".equals(pluginElement.getAttribute("directDeploy"));
+
+                if(directDeploy) {
                     PluginClassloader pluginClassloader = new PluginClassloader(parentClassLoader);
 
-                    File pluginJar = (File) pluginInfo.get("pluginFile");
+                    Element runtimeElement = (Element) pluginElement.getElementsByTagName("runtime").item(0);
+
+                    NodeList artifacts = runtimeElement.getElementsByTagName("artifact");
+
+                    File pluginJar = new File(pluginElement.getAttribute("pluginFile"));
+
                     try {
                         pluginClassloader.addURL(pluginJar.toURI().toURL());
 
-                        for (File file : runtimeClasspath) {
-                            pluginClassloader.addURL(file.toURI().toURL());
+                        for(int a = 0; a < artifacts.getLength(); a++) {
+                            Element artifact = (Element) artifacts.item(a);
+                            pluginClassloader.addURL(new File(artifact.getAttribute("file")).toURI().toURL());
 
                         }
                     } catch (MalformedURLException e) {
