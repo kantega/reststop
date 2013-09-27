@@ -21,7 +21,7 @@
 
             <xs:complexType name="greetResponse">
                 <xs:sequence>
-                    <xs:element minOccurs="0" name="messageResult" type="xs:string"/>
+                    <xs:element minOccurs="1" name="messageResult" type="xs:string"/>
                 </xs:sequence>
             </xs:complexType>
 
