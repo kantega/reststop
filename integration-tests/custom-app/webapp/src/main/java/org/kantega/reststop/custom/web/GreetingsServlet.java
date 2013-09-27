@@ -30,8 +30,15 @@ public class GreetingsServlet extends HttpServlet {
 
         request.setAttribute("greetings", greetings);
 
-        request.setAttribute("allPlugins", manager.getPlugins());
         request.setAttribute("appPlugins", manager.getPlugins(CustomAppPlugin.class));
+        Collection<ReststopPlugin> all = manager.getPlugins();
+        List<ReststopPlugin> reststopPlugins = new ArrayList<>();
+        for (ReststopPlugin plugin : all) {
+            if(!(plugin instanceof CustomAppPlugin)) {
+                reststopPlugins.add(plugin);
+            }
+        }
+        request.setAttribute("reststopPlugins", reststopPlugins);
 
         request.getRequestDispatcher("/WEB-INF/jsp/greetings.jsp").forward(request, response);
     }

@@ -12,7 +12,7 @@
 <body>
 <h1>Greetings:</h1>
 <p>
-    These are the messages of the currently installed plugins:
+    These are the messages of the currently installed CustomAppPlugins:
 </p>
 <ul>
     <c:forEach items="${greetings}" var="greeting">
@@ -22,16 +22,16 @@
     </c:forEach>
 </ul>
 
-<h2>App plugins:</h2>
+<h2>Custom (app) plugins:</h2>
 <ul>
     <c:forEach items="${appPlugins}" var="plugin">
         <li>${plugin}</li>
     </c:forEach>
 </ul>
 
-<h2>All plugins:</h2>
+<h2>Reststop plugins:</h2>
 <ul>
-    <c:forEach items="${allPlugins}" var="plugin">
+    <c:forEach items="${reststopPlugins}" var="plugin">
         <li>${plugin}</li>
     </c:forEach>
 </ul>

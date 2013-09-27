@@ -31,6 +31,7 @@
     <modules>
         <module>api</module>
         <module>french-greeting-plugin</module>
+        <module>german-greeting-plugin</module>
         <module>webapp</module>
     </modules>
 
