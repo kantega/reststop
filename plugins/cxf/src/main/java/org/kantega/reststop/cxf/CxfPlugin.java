@@ -1,6 +1,7 @@
 package org.kantega.reststop.cxf;
 
 import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
+import org.apache.cxf.wsdl.WSDLManager;
 import org.kantega.reststop.api.*;
 import org.kantega.reststop.api.jaxws.EndpointConfiguration;
 import org.kantega.reststop.api.jaxws.JaxWsPlugin;
@@ -9,6 +10,7 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
+import javax.wsdl.Definition;
 import javax.xml.ws.Endpoint;
 import java.io.IOException;
 import java.util.*;
@@ -21,6 +23,8 @@ public class CxfPlugin extends DefaultReststopPlugin {
 
     private final ReststopPluginManager pluginManager;
     private List<Endpoint> endpoints = new ArrayList<>();
+
+    public static ThreadLocal<ClassLoader> pluginClassLoader = new ThreadLocal<>();
 
     public CxfPlugin(Reststop reststop, final ReststopPluginManager pluginManager, ServletContext servletContext) {
         this.pluginManager = pluginManager;
@@ -55,13 +59,25 @@ public class CxfPlugin extends DefaultReststopPlugin {
             for (Endpoint endpoint : endpoints) {
                 endpoint.stop();
             }
-            for(JaxWsPlugin plugin : pluginManager.getPlugins(JaxWsPlugin.class)) {
-                for(EndpointConfiguration config : plugin.getEndpointConfigurations()) {
-                    Endpoint endpoint = Endpoint.create(config.getImplementor());
-                    endpoint.publish(config.getPath());
-                    CxfPlugin.this.endpoints.add(endpoint);
-                }
+
+            WSDLManager wsdlManager = WSDLManagerDefinitionCacheCleaner.getWsdlManager();
+            for(Definition def : wsdlManager.getDefinitions().values()) {
+                wsdlManager.removeDefinition(def);
             }
+            for(JaxWsPlugin plugin : pluginManager.getPlugins(JaxWsPlugin.class)) {
+
+                try {
+                    pluginClassLoader.set(pluginManager.getClassLoader(plugin));
+
+                    for(EndpointConfiguration config : plugin.getEndpointConfigurations()) {
+                        Endpoint endpoint = Endpoint.create(config.getImplementor());
+                        endpoint.publish(config.getPath());
+                        CxfPlugin.this.endpoints.add(endpoint);
+                    }
+                }finally {
+                    pluginClassLoader.remove();
+                }
+                }
         } finally {
             Thread.currentThread().setContextClassLoader(loader);
         }

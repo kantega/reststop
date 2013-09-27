@@ -526,6 +526,12 @@ public class ReststopInitializer implements ServletContainerInitializer{
             return manager.getPlugins(pluginClass);
         }
 
+        @Override
+        public ClassLoader getClassLoader(ReststopPlugin plugin) {
+            assertStarted();
+            return manager.getClassLoader(plugin);
+        }
+
         private void assertStarted() {
             if(manager == null) {
                 throw new IllegalStateException("Illegal to call getPlugins before PluginManager is fully started. Please add a listener instead!");

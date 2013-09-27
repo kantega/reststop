@@ -1,0 +1,2 @@
+org.kantega.reststop.cxf.ContextClassLoaderResourceResolver
+org.kantega.reststop.cxf.WSDLManagerDefinitionCacheCleaner

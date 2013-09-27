@@ -8,12 +8,15 @@ import javax.jws.WebService;
 /**
  *
  */
-@WebService(serviceName = "HelloService", name = "Hello", targetNamespace = "http://reststop.kantega.org/ws/hello-1.0")
+@WebService(serviceName = "HelloService",
+        name = "Hello",
+        targetNamespace = "http://reststop.kantega.org/ws/hello-1.0",
+        wsdlLocation = "META-INF/wsdl/HelloService.wsdl")
 public class HelloService {
+
 
     @WebMethod(operationName = "greet")
     @WebResult(name = "messageResult")
-
     public String sayHello(@WebParam(name = "receiver") String melding, @WebParam(name = "lang") String lang) {
         return "Hei: " + melding;
     }
