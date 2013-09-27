@@ -44,7 +44,9 @@ public class ReststopApplication extends Application {
         Set<Object> singletons = new HashSet<>();
         if(pluginManager != null) {
             for(JaxRsPlugin plugin : pluginManager.getPlugins(JaxRsPlugin.class)) {
-                singletons.addAll(plugin.getJaxRsSingletonResources());
+                for (Application application : plugin.getJaxRsApplications()) {
+                    singletons.addAll(application.getSingletons());
+                }
             }
         }
         return singletons;
@@ -55,7 +57,9 @@ public class ReststopApplication extends Application {
         Set<Class<?>> classes = new HashSet<>();
         if(pluginManager != null) {
             for(JaxRsPlugin plugin : pluginManager.getPlugins(JaxRsPlugin.class)) {
-                classes.addAll(plugin.getJaxRsContainerClasses());
+                for (Application application : plugin.getJaxRsApplications()) {
+                    classes.addAll(application.getClasses());
+                }
             }
         }
         return classes;
