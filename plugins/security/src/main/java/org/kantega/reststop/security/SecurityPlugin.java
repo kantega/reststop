@@ -34,6 +34,6 @@ import javax.ws.rs.ext.Provider;
 public class SecurityPlugin extends DefaultJaxRsPlugin {
     public SecurityPlugin(Reststop reststop) {
         addServletFilter(reststop.createFilter(new BasicAuthFilter(), "/*", FilterPhase.AUTHENTICATION));
-     //   addJaxRsContainerClass(RolesAllowedDynamicFeature.class);
+        addJaxRsContainerClass(RolesAllowedDynamicFeature.class);
     }
 }

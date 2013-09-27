@@ -21,7 +21,7 @@ public class DefaultJaxRsPlugin extends DefaultReststopPlugin implements JaxRsPl
     }
 
     protected void addJaxRsContainerClass(Class<?> clazz) {
-        application.addJaxRsSingletonResource(clazz);
+        application.addJaxRsContainerClass(clazz);
     }
 
     private class JaxRsApplication extends Application {

@@ -29,6 +29,7 @@ public class HelloworldResource {
 
     @GET
     @Produces({"application/json", "application/xml", })
+    @RolesAllowed("manager")
     public Hello hello() {
         return new Hello("Hello world");
     }
