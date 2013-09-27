@@ -106,6 +106,8 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
             Server server = new Server(port);
 
+            mavenProject.setContextValue("jettyServer", server);
+
             JettyWebAppContext context = new JettyWebAppContext();
 
             context.setWar(war.getAbsolutePath());

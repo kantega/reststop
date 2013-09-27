@@ -23,6 +23,7 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.eclipse.jetty.server.Server;
 
 import java.io.IOException;
 import java.net.SocketException;
@@ -44,17 +45,20 @@ public class StopMojo extends AbstractMojo {
 
         int reststopPort = Integer.parseInt(mavenProject.getProperties().getProperty("reststopPort"));
 
-        boolean failed = false;
+        try {
+            String url = "http://localhost:" + reststopPort + "/shutdown";
+            new URL(url).openStream();
+        }  catch (IOException e) {
+            throw new MojoExecutionException("Failed shutting down", e);
+        }
 
-        while(!failed) {
-            try {
-                String url = "http://localhost:" + reststopPort + "/shutdown";
-                new URL(url).openStream();
-            } catch(SocketException e) {
-                failed = true;
-            }catch (IOException e) {
-                throw new MojoExecutionException("Failed shutting down", e);
-            }
+
+        Server server = (Server) mavenProject.getContextValue("jettyServer");
+
+        try {
+            server.join();
+        } catch (InterruptedException e) {
+            throw new MojoExecutionException(e.getMessage(), e);
         }
 
 
