@@ -34,11 +34,14 @@ import org.kantega.reststop.api.ReststopPlugin;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Application;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -129,6 +132,18 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         {
             Document pluginsXml = (Document) servletContext.getAttribute("pluginsXml");
+            if(pluginsXml == null) {
+
+                String path = servletContext.getInitParameter("plugins.xml");
+                if(path != null) {
+                    try {
+                        pluginsXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(path));
+                        servletContext.setAttribute("pluginsXml", pluginsXml);
+                    } catch (SAXException | IOException | ParserConfigurationException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
             if(pluginsXml != null) {
                 providers.add(new PluginLinesClassLoaderProvider(pluginsXml));
             }

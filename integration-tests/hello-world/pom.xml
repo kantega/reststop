@@ -72,6 +72,12 @@
                 </configuration>
                 <executions>
                     <execution>
+                        <id>mark-source-dir</id>
+                        <goals>
+                            <goal>mark-source-dir</goal>
+                        </goals>
+                    </execution>
+                    <execution>
                         <id>start</id>
                         <goals>
                             <goal>start</goal>

@@ -49,6 +49,8 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.*;
 
 import static java.util.Arrays.asList;
@@ -142,7 +144,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
     }
 
-    private Document createPluginXmlDocument() throws MojoFailureException, MojoExecutionException {
+    protected Document createPluginXmlDocument() throws MojoFailureException, MojoExecutionException {
         try {
             Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
 
@@ -302,6 +304,17 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
                 + result.getRepository() );
 
         return result.getArtifact();
+    }
+
+    protected File getSourceDirectory(Plugin plugin) {
+        String path = repoSession.getLocalRepositoryManager().getPathForLocalArtifact(new DefaultArtifact(plugin.getGroupId(), plugin.getArtifactId(), "sourceDir", plugin.getVersion()));
+
+        File file = new File(repoSession.getLocalRepository().getBasedir(), path);
+        try {
+            return file.exists() ? new File(Files.readAllLines(file.toPath(), Charset.forName("utf-8")).get(0)) : null;
+        } catch (IOException e) {
+            throw new RuntimeException(e.getMessage(), e);
+        }
     }
 
     private class ShutdownHandler extends AbstractHandler {

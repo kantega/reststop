@@ -80,14 +80,4 @@ public class RunMojo extends AbstractReststopMojo {
         return plugins;
     }
 
-    private File getSourceDirectory(Plugin plugin) {
-        String path = repoSession.getLocalRepositoryManager().getPathForLocalArtifact(new DefaultArtifact(plugin.getGroupId(), plugin.getArtifactId(), "sourceDir", plugin.getVersion()));
-
-        File file = new File(repoSession.getLocalRepository().getBasedir(), path);
-        try {
-            return file.exists() ? new File(Files.readAllLines(file.toPath(), Charset.forName("utf-8")).get(0)) : null;
-        } catch (IOException e) {
-            throw new RuntimeException(e.getMessage(), e);
-        }
-    }
 }

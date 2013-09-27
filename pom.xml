@@ -41,6 +41,7 @@
 
         <module>plugins</module>
         <module>integration-tests/hello-world</module>
+        <module>integration-tests/custom-app</module>
     </modules>
 
     <dependencies>
