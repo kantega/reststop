@@ -65,7 +65,6 @@ public class ErrorReporter {
                     {
                         sb.append("description:").append("\"").append(escapeJavascript(failure.getDescription().toString())).append("\",");
                         sb.append("exceptionClass:").append("\"").append(escapeJavascript(failure.getException().getClass().getName())).append("\",");
-                        String message = failure.getMessage();
 
                         for (StackTraceElement element : failure.getException().getStackTrace()) {
                             if(element.getClassName().equals(failure.getDescription().getTestClass().getName())) {
@@ -85,7 +84,10 @@ public class ErrorReporter {
                             sb.append("stackTrace:").append("\"").append(escapeJavascript(sw.toString())).append("\"\n,");
                         }
 
-                        sb.append("message:").append("\"").append(escapeJavascript(message)).append("\"");
+                        String message = failure.getMessage();
+                        if(message != null) {
+                            sb.append("message:").append("\"").append(escapeJavascript(message)).append("\"");
+                        }
 
                     }
                     sb.append("}");

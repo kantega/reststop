@@ -17,7 +17,7 @@ window.addEventListener("load", function() {
             var lineNumber = document.createElement("div");
             lineNumber.innerHTML = "Line " + diag.lineNumber +":";
             container.appendChild(lineNumber);
-            var message = document.createElement("pre");
+            var message = document.createElement("p");
             message.textContent= diag.message;
 
             container.appendChild(message);
@@ -54,14 +54,16 @@ window.addEventListener("load", function() {
 
             container.appendChild(h2);
 
-            var message = document.createElement("pre");
+            if(fail.message) {
+                var message = document.createElement("p");
 
-            message.textContent = fail.message;
-            container.appendChild(message);
+                message.textContent = "Message: " + fail.message;
+                container.appendChild(message);
 
+            }
             if(fail.sourceFile) {
                 var source = document.createElement("div");
-                source.innerHTML = fail.sourceFile +". Line " + fail.sourceLine +":";
+                source.innerHTML = "At " + fail.sourceFile +". Line " + fail.sourceLine +":";
                 container.appendChild(source);
             }
 
