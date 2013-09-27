@@ -67,6 +67,8 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         final DefaultPluginManager<ReststopPlugin> manager = buildPluginManager(servletContext);
 
+        servletContext.setAttribute("reststopPluginManager", manager);
+
         manager.addPluginManagerListener(new PluginManagerListener<ReststopPlugin>() {
             @Override
             public void pluginsUpdated(Collection<ReststopPlugin> plugins) {

@@ -28,10 +28,6 @@
     <artifactId>reststop-statistics-plugin</artifactId>
 
     <dependencies>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>reststop-api</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>javax</groupId>

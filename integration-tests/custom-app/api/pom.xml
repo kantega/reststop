@@ -20,41 +20,18 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>org.kantega.reststop</groupId>
-        <artifactId>reststop-parent</artifactId>
+        <artifactId>reststop-custom-app</artifactId>
         <version>1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
-    <artifactId>reststop-plugins</artifactId>
-    <packaging>pom</packaging>
+    <artifactId>reststop-custom-app-api</artifactId>
+    <packaging>jar</packaging>
 
-    <modules>
-        <module>security</module>
-        <module>development</module>
-        <module>statistics</module>
-
-    </modules>
     <dependencies>
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>org.kantega.reststop</groupId>
             <artifactId>reststop-api</artifactId>
-            <scope>provided</scope>
+            <version>${project.version}</version>
         </dependency>
-
     </dependencies>
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.kantega.reststop</groupId>
-                <artifactId>reststop-maven-plugin</artifactId>
-                <version>${project.version}</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>mark-source-dir</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-        </plugins>
-    </build>
+
 </project>

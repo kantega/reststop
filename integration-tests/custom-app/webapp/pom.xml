@@ -36,7 +36,18 @@
             <groupId>org.kantega.reststop</groupId>
             <artifactId>reststop-api</artifactId>
             <version>${project.version}</version>
-            <scope>runtime</scope>
+            <scope>compile</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-custom-app-api</artifactId>
+            <version>${project.version}</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>javax</groupId>
+            <artifactId>javaee-web-api</artifactId>
         </dependency>
     </dependencies>
     <build>
@@ -65,6 +76,12 @@
                                 <plugin>
                                     <groupId>${project.groupId}</groupId>
                                     <artifactId>reststop-hello-world</artifactId>
+                                    <version>${project.version}</version>
+                                </plugin>
+
+                                <plugin>
+                                    <groupId>${project.groupId}</groupId>
+                                    <artifactId>reststop-custom-app-french</artifactId>
                                     <version>${project.version}</version>
                                 </plugin>
                             </plugins>

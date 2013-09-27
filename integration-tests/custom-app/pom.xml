@@ -22,13 +22,15 @@
         <groupId>org.kantega.reststop</groupId>
         <artifactId>reststop-parent</artifactId>
         <version>1.0-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
     <artifactId>reststop-custom-app</artifactId>
     <packaging>pom</packaging>
 
 
     <modules>
+        <module>api</module>
+        <module>french-greeting-plugin</module>
         <module>webapp</module>
     </modules>
 
