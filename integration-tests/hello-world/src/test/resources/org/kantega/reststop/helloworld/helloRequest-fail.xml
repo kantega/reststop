@@ -1,0 +1,3 @@
+<greet xmlns="http://reststop.kantega.org/ws/hello-1.0">
+    <lang xmlns="">Joe</lang>
+</greet>
