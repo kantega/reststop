@@ -16,12 +16,12 @@
 
 package org.kantega.reststop.helloworld;
 
-import org.kantega.reststop.api.DefaultReststopPlugin;
+import org.kantega.reststop.api.jaxrs.DefaultJaxRsPlugin;
 
 /**
  *
  */
-public class HelloworldPlugin extends DefaultReststopPlugin {
+public class HelloworldPlugin extends DefaultJaxRsPlugin {
 
     public HelloworldPlugin() {
         addJaxRsSingletonResource(new HelloworldResource());

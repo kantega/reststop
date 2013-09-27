@@ -31,6 +31,7 @@
         <module>security</module>
         <module>development</module>
         <module>statistics</module>
+        <module>jaxrs</module>
 
     </modules>
     <dependencies>

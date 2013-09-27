@@ -16,21 +16,14 @@
 
 package org.kantega.reststop.core;
 
-import com.google.common.io.Files;
 import org.apache.commons.io.IOUtils;
-import org.glassfish.jersey.server.ResourceConfig;
-import org.glassfish.jersey.servlet.ServletContainer;
-import org.glassfish.jersey.servlet.ServletProperties;
 import org.kantega.jexmec.ClassLoaderProvider;
 import org.kantega.jexmec.PluginManager;
 import org.kantega.jexmec.PluginManagerListener;
 import org.kantega.jexmec.ServiceKey;
 import org.kantega.jexmec.ctor.ConstructorInjectionPluginLoader;
 import org.kantega.jexmec.manager.DefaultPluginManager;
-import org.kantega.reststop.api.FilterPhase;
-import org.kantega.reststop.api.PluginListener;
-import org.kantega.reststop.api.Reststop;
-import org.kantega.reststop.api.ReststopPlugin;
+import org.kantega.reststop.api.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -39,7 +32,6 @@ import org.xml.sax.SAXException;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.core.Application;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
@@ -49,9 +41,9 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.*;
 
-import static java.util.Collections.singletonMap;
 import static org.kantega.jexmec.manager.DefaultPluginManager.buildFor;
 
 /**
@@ -59,7 +51,8 @@ import static org.kantega.jexmec.manager.DefaultPluginManager.buildFor;
  */
 public class ReststopInitializer implements ServletContainerInitializer{
 
-    private ServletContainer container;
+
+    private boolean pluginManagerStarted;
 
     @Override
     public void onStartup(Set<Class<?>> classes, ServletContext servletContext) throws ServletException {
@@ -72,18 +65,30 @@ public class ReststopInitializer implements ServletContainerInitializer{
         manager.addPluginManagerListener(new PluginManagerListener<ReststopPlugin>() {
             @Override
             public void pluginsUpdated(Collection<ReststopPlugin> plugins) {
-                if(container != null) {
-                    container.reload(getResourceConfig(new ReststopApplication(manager)));
+                if (pluginManagerStarted) {
+                    for (ReststopPlugin plugin : manager.getPlugins()) {
+                        for (PluginListener listener : plugin.getPluginListeners()) {
+                            listener.pluginsUpdated(plugins);
+                        }
+                    }
                 }
             }
         });
         manager.addPluginManagerListener(new PluginManagerListener<ReststopPlugin>() {
             @Override
             public void afterPluginManagerStarted(PluginManager pluginManager) {
+                pluginManagerStarted = true;
                 PluginManager<ReststopPlugin> pm = pluginManager;
-                for(ReststopPlugin plugin : pm.getPlugins()) {
+
+                Collection<ReststopPlugin> plugins = pm.getPlugins();
+                for(ReststopPlugin plugin : plugins) {
                     for(PluginListener listener : plugin.getPluginListeners()) {
                         listener.pluginManagerStarted();
+                    }
+                }
+                for (ReststopPlugin plugin : manager.getPlugins()) {
+                    for (PluginListener listener : plugin.getPluginListeners()) {
+                        listener.pluginsUpdated(plugins);
                     }
                 }
             }
@@ -95,7 +100,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         servletContext.addFilter(AssetFilter.class.getName(), new AssetFilter(manager)).addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/assets/*");
 
-        container = addJerseyFilter(servletContext, new ReststopApplication(manager));
+
 
 
     }
@@ -104,6 +109,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         DefaultReststop reststop = new DefaultReststop();
 
+        DefaultReststopPluginManager reststopPluginManager = new DefaultReststopPluginManager();
 
         DefaultPluginManager<ReststopPlugin> manager = buildFor(ReststopPlugin.class)
                 .withClassLoaderProvider(reststop)
@@ -112,8 +118,10 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 .withPluginLoader(new ConstructorInjectionPluginLoader())
                 .withService(ServiceKey.by(Reststop.class), reststop)
                 .withService(ServiceKey.by(ServletContext.class), servletContext)
+                .withService(ServiceKey.by(ReststopPluginManager.class), reststopPluginManager)
                 .build();
 
+        reststopPluginManager.setManager(manager);
         reststop.setManager(manager);
         return manager;
     }
@@ -154,22 +162,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
     }
 
-    private ServletContainer addJerseyFilter(ServletContext servletContext, Application application) {
-        ResourceConfig resourceConfig = getResourceConfig(application);
-        ServletContainer container = new ServletContainer(resourceConfig);
 
-        servletContext.addFilter("jersey", container)
-        .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
-
-        return container;
-    }
-
-    private ResourceConfig getResourceConfig(Application application) {
-        ResourceConfig resourceConfig = ResourceConfig.forApplication(application);
-        resourceConfig.setProperties(singletonMap(ServletProperties.FILTER_FORWARD_ON_404, "true"));
-
-        return resourceConfig;
-    }
 
     private class DefaultReststop implements Reststop, ClassLoaderProvider {
         private Registry registry;
@@ -355,8 +348,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
             List<ClassLoader> loaders = new ArrayList<>();
 
+
             try {
-                List<String> lines = Files.readLines(pluginsTxt, Charset.forName("utf-8"));
+                List<String> lines = Files.readAllLines(pluginsTxt.toPath(), Charset.forName("utf-8"));
                 for (String line : lines) {
 
                     PluginClassloader pluginClassloader = new PluginClassloader(parentClassLoader);
@@ -506,6 +500,32 @@ public class ReststopInitializer implements ServletContainerInitializer{
         @Override
         public void destroy() {
 
+        }
+    }
+
+    private class DefaultReststopPluginManager implements ReststopPluginManager{
+        private volatile DefaultPluginManager<ReststopPlugin> manager;
+
+        @Override
+        public Collection<ReststopPlugin> getPlugins() {
+            assertStarted();
+            return manager.getPlugins();
+        }
+
+        @Override
+        public <T extends ReststopPlugin> Collection<T> getPlugins(Class<T> pluginClass) {
+            assertStarted();
+            return manager.getPlugins(pluginClass);
+        }
+
+        private void assertStarted() {
+            if(manager == null) {
+                throw new IllegalStateException("Illegal to call getPlugins before PluginManager is fully started. Please add a listener instead!");
+            }
+        }
+
+        public void setManager(DefaultPluginManager<ReststopPlugin> manager) {
+            this.manager = manager;
         }
     }
 }

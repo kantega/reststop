@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.core;
+package org.kantega.reststop.jaxrs;
 
-import org.kantega.jexmec.PluginManager;
 import org.kantega.reststop.api.ReststopPlugin;
+import org.kantega.reststop.api.ReststopPluginManager;
+import org.kantega.reststop.api.jaxrs.JaxRsPlugin;
 
 import javax.ws.rs.core.Application;
 import java.util.HashSet;
@@ -28,17 +29,23 @@ import java.util.Set;
  */
 public class ReststopApplication extends Application {
 
-    private final PluginManager<ReststopPlugin> pluginManager;
+    private final ReststopPluginManager pluginManager;
 
-    public ReststopApplication(PluginManager<ReststopPlugin> pluginManager) {
+    public ReststopApplication(ReststopPluginManager pluginManager) {
         this.pluginManager = pluginManager;
+    }
+
+    public ReststopApplication() {
+        pluginManager = null;
     }
 
     @Override
     public Set<Object> getSingletons() {
         Set<Object> singletons = new HashSet<>();
-        for(ReststopPlugin plugin : pluginManager.getPlugins()) {
-            singletons.addAll(plugin.getJaxRsSingletonResources());
+        if(pluginManager != null) {
+            for(JaxRsPlugin plugin : pluginManager.getPlugins(JaxRsPlugin.class)) {
+                singletons.addAll(plugin.getJaxRsSingletonResources());
+            }
         }
         return singletons;
     }
@@ -46,8 +53,10 @@ public class ReststopApplication extends Application {
     @Override
     public Set<Class<?>> getClasses() {
         Set<Class<?>> classes = new HashSet<>();
-        for(ReststopPlugin plugin : pluginManager.getPlugins()) {
-            classes.addAll(plugin.getJaxRsContainerClasses());
+        if(pluginManager != null) {
+            for(JaxRsPlugin plugin : pluginManager.getPlugins(JaxRsPlugin.class)) {
+                classes.addAll(plugin.getJaxRsContainerClasses());
+            }
         }
         return classes;
     }

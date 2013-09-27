@@ -21,41 +21,33 @@
 
     <parent>
         <groupId>org.kantega.reststop</groupId>
-        <artifactId>reststop-parent</artifactId>
+        <artifactId>reststop-plugins</artifactId>
         <version>1.0-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>reststop-core</artifactId>
+    <artifactId>reststop-jaxrs-plugin</artifactId>
 
     <dependencies>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>reststop-api</artifactId>
-            <scope>compile</scope>
-        </dependency>
 
         <dependency>
             <groupId>javax</groupId>
             <artifactId>javaee-web-api</artifactId>
         </dependency>
-
         <dependency>
-            <groupId>org.kantega.jexmec</groupId>
-            <artifactId>jexmec-manager</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.kantega.jexmec</groupId>
-            <artifactId>jexmec-ctor-pl</artifactId>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet</artifactId>
+            <version>${jersey.version}</version>
         </dependency>
         <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-json-provider</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
         <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-            <version>2.0</version>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-xml-provider</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
     </dependencies>
 </project>
