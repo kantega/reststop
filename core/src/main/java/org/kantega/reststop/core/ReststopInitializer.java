@@ -16,7 +16,6 @@
 
 package org.kantega.reststop.core;
 
-import org.apache.commons.io.IOUtils;
 import org.kantega.jexmec.ClassLoaderProvider;
 import org.kantega.jexmec.PluginManager;
 import org.kantega.jexmec.PluginManagerListener;
@@ -37,6 +36,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -488,13 +488,21 @@ public class ReststopInitializer implements ServletContainerInitializer{
                         resp.setContentType(mimeType);
                     }
 
-                    IOUtils.copy(stream, servletResponse.getOutputStream());
+                    copy(stream, servletResponse.getOutputStream());
 
                     return;
                 }
             }
 
             filterChain.doFilter(servletRequest, servletResponse);
+        }
+
+        private void copy(InputStream input, OutputStream output) throws IOException {
+            byte[] buffer = new byte[1024 * 4];
+            int n;
+            while (-1 != (n = input.read(buffer))) {
+                output.write(buffer, 0, n);
+            }
         }
 
         @Override
