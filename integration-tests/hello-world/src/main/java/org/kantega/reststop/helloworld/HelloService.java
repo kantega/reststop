@@ -12,6 +12,7 @@ import javax.jws.WebService;
         name = "Hello",
         targetNamespace = "http://reststop.kantega.org/ws/hello-1.0",
         wsdlLocation = "META-INF/wsdl/HelloService.wsdl")
+
 public class HelloService {
 
 

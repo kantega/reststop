@@ -412,31 +412,23 @@ public class ReststopInitializer implements ServletContainerInitializer{
         @Override
         public void start(Registry registry, ClassLoader parentClassLoader) {
             List<ClassLoader> loaders = new ArrayList<>();
+            Map<String, ClassLoader> byDep  = new HashMap<>();
 
 
-            NodeList pluginElements = pluginsXml.getDocumentElement().getElementsByTagName("plugin");
-            for(int i = 0; i < pluginElements.getLength(); i++) {
+            List<PluginInfo> infos = PluginInfo.sortByRuntimeDependencies(PluginInfo.parse(pluginsXml));
 
-                Element pluginElement = (Element) pluginElements.item(i);
+            for (PluginInfo info : infos) {
 
+                if(info.isDirectDeploy()) {
+                    PluginClassloader pluginClassloader = new PluginClassloader(getParentClassLoader(info, parentClassLoader, byDep));
 
-                boolean directDeploy = !"false".equals(pluginElement.getAttribute("directDeploy"));
-
-                if(directDeploy) {
-                    PluginClassloader pluginClassloader = new PluginClassloader(parentClassLoader);
-
-                    Element runtimeElement = (Element) pluginElement.getElementsByTagName("runtime").item(0);
-
-                    NodeList artifacts = runtimeElement.getElementsByTagName("artifact");
-
-                    File pluginJar = new File(pluginElement.getAttribute("pluginFile"));
+                    File pluginJar = info.getPluginFile();
 
                     try {
                         pluginClassloader.addURL(pluginJar.toURI().toURL());
 
-                        for(int a = 0; a < artifacts.getLength(); a++) {
-                            Element artifact = (Element) artifacts.item(a);
-                            pluginClassloader.addURL(new File(artifact.getAttribute("file")).toURI().toURL());
+                        for (File file : info.getClassPathFiles("runtime")) {
+                            pluginClassloader.addURL(file.toURI().toURL());
 
                         }
                     } catch (MalformedURLException e) {
@@ -444,11 +436,28 @@ public class ReststopInitializer implements ServletContainerInitializer{
                     }
 
                     loaders.add(pluginClassloader);
+                    byDep.put(info.getGroupIdAndArtifactId(), pluginClassloader);
 
                 }
             }
 
             registry.add(loaders);
+        }
+
+        private ClassLoader getParentClassLoader(PluginInfo pluginInfo, ClassLoader parentClassLoader, Map<String, ClassLoader> byDep) {
+            Set<ClassLoader> delegates = new HashSet<ClassLoader>();
+
+            for (Artifact dep : pluginInfo.getClassPath("compile")) {
+                ClassLoader dependencyLoader = byDep.get(dep.getGroupIdAndArtifactId());
+                if (dependencyLoader != null) {
+                    delegates.add(dependencyLoader);
+                }
+            }
+            if (delegates.isEmpty()) {
+                return parentClassLoader;
+            } else {
+                return new ResourceHidingClassLoader(new DelegateClassLoader(parentClassLoader, delegates), ReststopPlugin.class);
+            }
         }
 
         @Override

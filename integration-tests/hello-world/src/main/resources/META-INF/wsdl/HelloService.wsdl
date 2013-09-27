@@ -14,8 +14,8 @@
 
             <xs:complexType name="greet">
                 <xs:sequence>
-                    <xs:element minOccurs="1"  name="receiver" type="xs:string"/>
-                    <xs:element minOccurs="1"  name="lang" type="xs:string"/>
+                    <xs:element minOccurs="1"  nillable="false" name="receiver" type="xs:string"/>
+                    <xs:element minOccurs="1"  nillable="false" name="lang" type="xs:string"/>
                 </xs:sequence>
             </xs:complexType>
 

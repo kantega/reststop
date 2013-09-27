@@ -5,6 +5,7 @@ import org.apache.cxf.wsdl.WSDLManager;
 import org.kantega.reststop.api.*;
 import org.kantega.reststop.api.jaxws.EndpointConfiguration;
 import org.kantega.reststop.api.jaxws.JaxWsPlugin;
+import org.kantega.reststop.cxf.api.CxfPluginPlugin;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -18,7 +19,7 @@ import java.util.*;
 /**
  *
  */
-public class CxfPlugin extends DefaultReststopPlugin {
+public class CxfReststopPlugin extends DefaultReststopPlugin {
 
 
     private final ReststopPluginManager pluginManager;
@@ -26,7 +27,7 @@ public class CxfPlugin extends DefaultReststopPlugin {
 
     public static ThreadLocal<ClassLoader> pluginClassLoader = new ThreadLocal<>();
 
-    public CxfPlugin(Reststop reststop, final ReststopPluginManager pluginManager, ServletContext servletContext) {
+    public CxfReststopPlugin(Reststop reststop, final ReststopPluginManager pluginManager, ServletContext servletContext) {
         this.pluginManager = pluginManager;
 
         CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet();
@@ -72,7 +73,10 @@ public class CxfPlugin extends DefaultReststopPlugin {
                     for(EndpointConfiguration config : plugin.getEndpointConfigurations()) {
                         Endpoint endpoint = Endpoint.create(config.getImplementor());
                         endpoint.publish(config.getPath());
-                        CxfPlugin.this.endpoints.add(endpoint);
+                        for(CxfPluginPlugin cxfPluginPlugin : pluginManager.getPlugins(CxfPluginPlugin.class)) {
+                            cxfPluginPlugin.customizeEndpoint(endpoint);
+                        }
+                        CxfReststopPlugin.this.endpoints.add(endpoint);
                     }
                 }finally {
                     pluginClassLoader.remove();

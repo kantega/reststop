@@ -33,6 +33,7 @@
         <module>statistics</module>
         <module>jaxrs</module>
         <module>cxf</module>
+        <module>cxf-logging</module>
 
     </modules>
     <dependencies>

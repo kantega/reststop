@@ -17,6 +17,11 @@
 package org.kantega.reststop.development;
 
 import org.kantega.reststop.api.Reststop;
+import org.kantega.reststop.api.ReststopPlugin;
+import org.kantega.reststop.core.Artifact;
+import org.kantega.reststop.core.DelegateClassLoader;
+import org.kantega.reststop.core.PluginInfo;
+import org.kantega.reststop.core.ResourceHidingClassLoader;
 
 import java.io.File;
 import java.util.*;
@@ -26,14 +31,15 @@ import java.util.*;
  */
 public class DevelopmentClassLoaderProvider {
 
-    private final Map<String, DevelopmentPlugin.PluginInfo> pluginsInfo = new HashMap<>();
+    private final Map<String, PluginInfo> pluginsInfo = new LinkedHashMap<>();
     private Map<String, DevelopmentClassloader> classloaders = new HashMap<>();
+    private Map<String, DevelopmentClassloader> byDepsId = new HashMap<>();
 
     private Reststop reststop;
 
 
 
-    public void addPluginInfo(DevelopmentPlugin.PluginInfo info) {
+    public void addPluginInfo(PluginInfo info) {
         pluginsInfo.put(info.getPluginId(), info);
     }
 
@@ -47,22 +53,42 @@ public class DevelopmentClassLoaderProvider {
         Reststop.PluginClassLoaderChange change = reststop.changePluginClassLoaders();
 
 
-        for (DevelopmentPlugin.PluginInfo pluginInfo : this.pluginsInfo.values()) {
+        for (PluginInfo pluginInfo : this.pluginsInfo.values()) {
 
             if( !pluginInfo.isDirectDeploy()) {
-                List<File> runtime = pluginInfo.getClassPath("runtime");
-                List<File> compile = pluginInfo.getClassPath("compile");
-                List<File> test = pluginInfo.getClassPath("test");
+                List<File> runtime = pluginInfo.getClassPathFiles("runtime");
+                List<File> compile = pluginInfo.getClassPathFiles("compile");
+                List<File> test = pluginInfo.getClassPathFiles("test");
                 File sourceDir = pluginInfo.getSourceDirectory();
 
-                DevelopmentClassloader classloader = new DevelopmentClassloader(sourceDir, compile, runtime, test, parentClassLoader);
+                DevelopmentClassloader classloader = new DevelopmentClassloader(sourceDir,
+                        compile,
+                        runtime,
+                        test,
+                        getParentClassLoader(pluginInfo, parentClassLoader));
 
                 classloaders.put(pluginInfo.getPluginId(), classloader);
+                byDepsId.put(pluginInfo.getGroupIdAndArtifactId(), classloader);
                 change.add(classloader);
             }
         }
         change.commit();
 
+    }
+    private ClassLoader getParentClassLoader(PluginInfo pluginInfo, ClassLoader parentClassLoader) {
+        Set<ClassLoader> delegates = new HashSet<ClassLoader>();
+
+        for (Artifact dep : pluginInfo.getClassPath("compile")) {
+            DevelopmentClassloader dependencyLoader = byDepsId.get(dep.getGroupIdAndArtifactId());
+            if (dependencyLoader != null) {
+                delegates.add(dependencyLoader);
+            }
+        }
+        if (delegates.isEmpty()) {
+            return parentClassLoader;
+        } else {
+            return new ResourceHidingClassLoader(new DelegateClassLoader(parentClassLoader, delegates), ReststopPlugin.class);
+        }
     }
 
 

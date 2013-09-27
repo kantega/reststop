@@ -76,6 +76,12 @@
 
                         <plugin>
                             <groupId>${project.groupId}</groupId>
+                            <artifactId>reststop-cxf-logging-plugin</artifactId>
+                            <version>${project.version}</version>
+                        </plugin>
+
+                        <plugin>
+                            <groupId>${project.groupId}</groupId>
                             <artifactId>reststop-cxf-plugin</artifactId>
                             <version>${project.version}</version>
                         </plugin>
