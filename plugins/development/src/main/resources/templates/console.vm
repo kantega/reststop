@@ -1,0 +1,25 @@
+#section("body")
+
+<h1>Reststop development console</h1>
+
+<h2>Current plugins by classloader:</h2>
+
+#foreach($classloader in $pluginClassloaders.entrySet())
+
+<h3>$classloader.key.pluginInfo.artifactId</h3>
+    <p style="margin-left: 1em; font-size: smaller">($classloader.key.pluginInfo.version /  $classloader.key.pluginInfo.groupId)</p>
+    </p>
+    <ul>
+        #foreach($plugin in $classloader.value)
+        <li>
+            $plugin.class.simpleName
+            <span>($plugin.class.package.name)</span>
+        </li>
+        #end
+    </ul>
+
+#end
+
+
+#end
+#parse("design.vm")
