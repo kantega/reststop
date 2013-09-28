@@ -1,6 +1,7 @@
 package org.kantega.reststop.development;
 
-import org.apache.commons.io.IOUtils;
+import org.apache.velocity.VelocityContext;
+import org.apache.velocity.app.VelocityEngine;
 import org.junit.runner.notification.Failure;
 
 import javax.servlet.http.HttpServletRequest;
@@ -16,11 +17,13 @@ import java.util.*;
  *
  */
 public class ErrorReporter {
+    private final VelocityEngine velocityEngine;
     private final File basedir;
     private List<JavaCompilationException> compilationExceptions = new ArrayList<>();
     private List<TestFailureException> testFailureExceptions = new ArrayList<>();
 
-    public ErrorReporter(File basedir) {
+    public ErrorReporter(VelocityEngine velocityEngine, File basedir) {
+        this.velocityEngine = velocityEngine;
 
         this.basedir = basedir;
     }
@@ -32,18 +35,15 @@ public class ErrorReporter {
 
 
     public void render(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        OutputStream outputStream = resp.getOutputStream();
-        String contextPath = req.getContextPath();
         resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
         resp.setContentType("text/html");
 
-        Map<String, String> map = new HashMap<>();
-        map.put("contextPath", contextPath);
+        VelocityContext map = new VelocityContext();
+
+        map.put("contextPath", req.getContextPath());
         map.put("compilationExceptions", formatCompilationExceptions());
         map.put("testFailureExceptions", formatTestFailureExceptions());
-        byte[] bytes = render(map);
-        resp.setContentLength(bytes.length);
-        outputStream.write(bytes);
+        velocityEngine.getTemplate("templates/template.vm").merge(map, resp.getWriter());
 
     }
 
@@ -171,19 +171,6 @@ public class ErrorReporter {
     private String escapeHTML(String message) {
         String replaced = message.replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
         return replaced;
-    }
-
-    byte[] render(Map<String, String> values) throws IOException {
-        InputStream stream = getClass().getResourceAsStream("template.html");
-        String template = IOUtils.toString(stream, "utf-8");
-
-        String rendered = template;
-        for (Map.Entry<String, String> entry : values.entrySet()) {
-            rendered = rendered.replace("${" + entry.getKey() + "}", entry.getValue());
-        }
-
-
-        return rendered.getBytes("utf-8");
     }
 
     public ErrorReporter addTestFailulreException(TestFailureException e) {

@@ -11,6 +11,13 @@
     <span style="margin-left: 1em; font-size: smaller">($classloader.key.pluginInfo.version /  $classloader.key.pluginInfo.groupId)</span>
 
         <div style="margin-left: 1em">
+            <p>$classloader.key.loadedClasses.size() classes loaded</p>
+            ##foreach($clazz in $classloader.key.loadedClasses)
+            ##$clazz.name<br>
+            ##end
+            ##foreach($url in $classloader.key.usedUrls)
+            ## $url<br>
+            ###end
             #if($classloader.value.size() > 0)
                 <p>Plugin instances:</p>
     <ul>
@@ -40,7 +47,13 @@
         Runtime classpath:
             <ul>
                 #foreach($artifact in $classloader.key.pluginInfo.getClassPath("runtime"))
-                    <li>$artifact.pluginId</li>
+                    <li>$artifact.pluginId
+                        #set($length = $artifact.file.length()/1024)
+                        (${length}k)
+                    #if($classloader.key.isUnused($artifact))
+                        <strong>(unused)</strong>
+                    #end
+                    </li>
                 #end
             </ul>
         #end

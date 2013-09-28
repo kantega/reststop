@@ -16,6 +16,7 @@
 
 package org.kantega.reststop.development;
 
+import org.kantega.reststop.classloaderutils.Artifact;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
 
@@ -28,10 +29,13 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
+import java.util.*;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.jar.Manifest;
 
 import static java.util.Arrays.asList;
 
@@ -57,6 +61,8 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
     private long lastTestCompile;
     private volatile boolean testsFailed = false;
+    private final List<Class<?>> loadedClasses = new CopyOnWriteArrayList<>();
+    private Set<String> usedUrls = new CopyOnWriteArraySet<>();
 
     public DevelopmentClassloader(DevelopmentClassloader other) {
         this(other.getPluginInfo(), other.basedir, other.compileClasspath, other.runtimeClasspath, other.testClasspath, other.getParent());
@@ -83,6 +89,59 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
         testFileManager = compiler.getStandardFileManager(null, null, null);
 
+    }
+
+    @Override
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
+        Class<?> clazz = super.findClass(name);
+        if(clazz.getClassLoader() == this) {
+            this.loadedClasses.add(clazz);
+            ProtectionDomain protectionDomain = clazz.getProtectionDomain();
+            if(protectionDomain != null) {
+                CodeSource codeSource = protectionDomain.getCodeSource();
+                if(codeSource != null) {
+                    URL location = codeSource.getLocation();
+                    if(location != null) {
+                        this.usedUrls.add(location.toString());
+                    }
+                }
+            }
+
+        }
+        return clazz;
+    }
+
+    @Override
+    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+        return super.loadClass(name, resolve);    //To change body of overridden methods use File | Settings | File Templates.
+    }
+
+    public List<Class<?>> getLoadedClasses() {
+        return loadedClasses;
+    }
+
+    public Set<String> getUsedUrls() {
+        return usedUrls;
+    }
+
+    public List<Artifact> getUnusedArtifacts() {
+
+        List<Artifact> artifacts = new ArrayList<>();
+
+        for (Artifact artifact : artifacts) {
+            if(isUnused(artifact)) {
+                artifacts.add(artifact);
+            }
+        }
+        return artifacts;
+    }
+
+    public boolean isUnused(Artifact artifact) {
+        try {
+            return !usedUrls.contains(artifact.getFile().toURI().toURL().toString());
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

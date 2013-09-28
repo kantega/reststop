@@ -98,7 +98,7 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
         this.velocityEngine = initVelocityEngine();
 
 
-        addServletFilter(reststop.createFilter(new RedeployFilter(provider, reststop), "/*", FilterPhase.UNMARSHAL));
+        addServletFilter(reststop.createFilter(new RedeployFilter(provider, reststop, velocityEngine), "/*", FilterPhase.UNMARSHAL));
 
     }
 

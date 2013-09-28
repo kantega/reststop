@@ -71,7 +71,7 @@
                 <artifactId>reststop-maven-plugin</artifactId>
                 <version>${project.version}</version>
                 <configuration>
-                    <path>helloworld</path>
+                    <path>dev</path>
                     <plugins>
                         <plugin>
                             <groupId>org.kantega.reststop</groupId>

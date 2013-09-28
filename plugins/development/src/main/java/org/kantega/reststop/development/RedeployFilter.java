@@ -16,6 +16,7 @@
 
 package org.kantega.reststop.development;
 
+import org.apache.velocity.app.VelocityEngine;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 import org.kantega.reststop.api.Reststop;
@@ -40,10 +41,12 @@ public class RedeployFilter implements Filter {
     private final Object compileSourcesMonitor = new Object();
     private final Object compileTestsMonitor = new Object();
     private final Object runTestsMonitor = new Object();
+    private final VelocityEngine velocityEngine;
 
-    public RedeployFilter(DevelopmentClassLoaderProvider provider, Reststop reststop) {
+    public RedeployFilter(DevelopmentClassLoaderProvider provider, Reststop reststop, VelocityEngine velocityEngine) {
         this.provider = provider;
         this.reststop = reststop;
+        this.velocityEngine = velocityEngine;
     }
 
     @Override
@@ -102,10 +105,10 @@ public class RedeployFilter implements Filter {
                         }
                     }
                 } catch (JavaCompilationException e) {
-                    new ErrorReporter(classloader.getBasedir()).addCompilationException(e).render(req, resp);
+                    new ErrorReporter(velocityEngine, classloader.getBasedir()).addCompilationException(e).render(req, resp);
                     return;
                 } catch (TestFailureException e) {
-                    new ErrorReporter(classloader.getBasedir()).addTestFailulreException(e).render(req, resp);
+                    new ErrorReporter(velocityEngine, classloader.getBasedir()).addTestFailulreException(e).render(req, resp);
                 }
             }
 
