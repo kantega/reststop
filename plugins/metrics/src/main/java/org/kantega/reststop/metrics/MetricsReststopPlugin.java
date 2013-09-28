@@ -1,6 +1,8 @@
 package org.kantega.reststop.metrics;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.health.HealthCheckRegistry;
+import com.codahale.metrics.servlets.HealthCheckServlet;
 import com.codahale.metrics.servlets.MetricsServlet;
 import org.kantega.reststop.api.DefaultReststopPlugin;
 import org.kantega.reststop.api.FilterPhase;
@@ -17,6 +19,7 @@ import java.util.Enumeration;
 public class MetricsReststopPlugin extends DefaultReststopPlugin {
 
     private final MetricRegistry metricRegistry;
+    private final HealthCheckRegistry healthCheckRegistry;
 
     public MetricsReststopPlugin(Reststop reststop, ServletContext servletContext) throws ServletException {
 
@@ -28,6 +31,18 @@ public class MetricsReststopPlugin extends DefaultReststopPlugin {
                 new ServletWrapper(metricsServlet),
                 "/metrics/*",
                 FilterPhase.USER));
+
+
+        healthCheckRegistry = new HealthCheckRegistry();
+        HealthCheckServlet healthCheckServlet = new HealthCheckServlet(healthCheckRegistry);
+        healthCheckServlet.init(new EmptyServletConfig(servletContext));
+
+        addServletFilter(reststop.createFilter(
+                new ServletWrapper(healthCheckServlet),
+                "/healthchecks/*",
+                FilterPhase.USER
+        ));
+
     }
 
     public MetricRegistry getMetricRegistry() {
