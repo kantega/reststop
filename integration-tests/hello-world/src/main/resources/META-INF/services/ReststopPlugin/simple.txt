@@ -1,2 +1,2 @@
 org.kantega.reststop.helloworld.HelloworldPlugin
-org.kantega.reststop.helloworld.HelloWorldWsPlugin
+org.kantega.reststop.helloworld.HelloworldWsPlugin

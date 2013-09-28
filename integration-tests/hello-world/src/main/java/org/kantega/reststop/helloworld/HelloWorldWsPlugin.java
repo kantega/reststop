@@ -6,9 +6,9 @@ import org.kantega.reststop.jaxwsapi.EndpointConfiguration;
 /**
  *
  */
-public class HelloWorldWsPlugin extends DefaultJaxWsPlugin {
+public class HelloworldWsPlugin extends DefaultJaxWsPlugin {
 
-    public HelloWorldWsPlugin() {
+    public HelloworldWsPlugin() {
         final HelloService service = new HelloService();
         addEndpointConfiguration(new EndpointConfiguration() {
             @Override
