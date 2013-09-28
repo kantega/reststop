@@ -1,6 +1,5 @@
 package org.kantega.reststop.api;
 
-import org.kantega.reststop.api.jaxws.JaxWsPlugin;
 
 import java.util.Collection;
 

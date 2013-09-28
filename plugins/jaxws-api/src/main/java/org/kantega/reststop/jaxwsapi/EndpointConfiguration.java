@@ -1,4 +1,4 @@
-package org.kantega.reststop.api.jaxws;
+package org.kantega.reststop.jaxwsapi;
 
 /**
  *

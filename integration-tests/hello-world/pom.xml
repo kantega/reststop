@@ -42,6 +42,13 @@
         </dependency>
 
         <dependency>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-jaxws-api</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
             <groupId>javax</groupId>
             <artifactId>javaee-web-api</artifactId>
             <scope>provided</scope>
@@ -68,6 +75,11 @@
                         <plugin>
                             <groupId>org.kantega.reststop</groupId>
                             <artifactId>reststop-jaxrs-api</artifactId>
+                            <version>${project.version}</version>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.kantega.reststop</groupId>
+                            <artifactId>reststop-jaxws-api</artifactId>
                             <version>${project.version}</version>
                         </plugin>
                         <plugin>

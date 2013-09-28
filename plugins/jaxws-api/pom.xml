@@ -26,32 +26,13 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>reststop-cxf-plugin</artifactId>
+    <artifactId>reststop-jaxws-api</artifactId>
 
-    <properties>
-        <cxf.version>2.7.7</cxf.version>
-    </properties>
     <dependencies>
 
         <dependency>
-            <groupId>org.kantega.reststop</groupId>
-            <artifactId>reststop-jaxws-api</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>javax</groupId>
             <artifactId>javaee-web-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cxf</groupId>
-            <artifactId>cxf-rt-frontend-jaxws</artifactId>
-            <version>${cxf.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.cxf</groupId>
-            <artifactId>cxf-rt-transports-http</artifactId>
-            <version>${cxf.version}</version>
         </dependency>
     </dependencies>
 </project>

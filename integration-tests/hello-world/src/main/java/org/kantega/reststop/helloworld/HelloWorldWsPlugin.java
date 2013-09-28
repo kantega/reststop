@@ -1,7 +1,7 @@
 package org.kantega.reststop.helloworld;
 
-import org.kantega.reststop.api.jaxws.DefaultJaxWsPlugin;
-import org.kantega.reststop.api.jaxws.EndpointConfiguration;
+import org.kantega.reststop.jaxwsapi.DefaultJaxWsPlugin;
+import org.kantega.reststop.jaxwsapi.EndpointConfiguration;
 
 /**
  *
