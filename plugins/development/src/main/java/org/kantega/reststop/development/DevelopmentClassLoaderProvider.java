@@ -18,10 +18,10 @@ package org.kantega.reststop.development;
 
 import org.kantega.reststop.api.Reststop;
 import org.kantega.reststop.api.ReststopPlugin;
-import org.kantega.reststop.core.Artifact;
-import org.kantega.reststop.core.DelegateClassLoader;
-import org.kantega.reststop.core.PluginInfo;
-import org.kantega.reststop.core.ResourceHidingClassLoader;
+import org.kantega.reststop.classloaderutils.Artifact;
+import org.kantega.reststop.classloaderutils.DelegateClassLoader;
+import org.kantega.reststop.classloaderutils.PluginInfo;
+import org.kantega.reststop.classloaderutils.ResourceHidingClassLoader;
 
 import java.io.File;
 import java.util.*;

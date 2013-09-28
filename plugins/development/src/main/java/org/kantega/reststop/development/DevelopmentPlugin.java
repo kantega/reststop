@@ -20,19 +20,13 @@ import org.kantega.reststop.api.DefaultReststopPlugin;
 import org.kantega.reststop.api.FilterPhase;
 import org.kantega.reststop.api.PluginListener;
 import org.kantega.reststop.api.Reststop;
-import org.kantega.reststop.core.PluginInfo;
+import org.kantega.reststop.classloaderutils.PluginInfo;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 
 import javax.servlet.ServletContext;
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import static java.util.Arrays.asList;
 
 /**
  *

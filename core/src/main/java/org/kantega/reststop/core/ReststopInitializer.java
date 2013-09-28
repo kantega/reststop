@@ -23,9 +23,11 @@ import org.kantega.jexmec.ServiceKey;
 import org.kantega.jexmec.ctor.ConstructorInjectionPluginLoader;
 import org.kantega.jexmec.manager.DefaultPluginManager;
 import org.kantega.reststop.api.*;
+import org.kantega.reststop.classloaderutils.Artifact;
+import org.kantega.reststop.classloaderutils.DelegateClassLoader;
+import org.kantega.reststop.classloaderutils.PluginInfo;
+import org.kantega.reststop.classloaderutils.ResourceHidingClassLoader;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.servlet.*;

@@ -1,4 +1,4 @@
-package org.kantega.reststop.core;
+package org.kantega.reststop.classloaderutils;
 
 import java.io.File;
 

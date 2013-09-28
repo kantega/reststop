@@ -1,4 +1,4 @@
-package org.kantega.reststop.core;
+package org.kantega.reststop.classloaderutils;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
