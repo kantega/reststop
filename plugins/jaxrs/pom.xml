@@ -31,6 +31,12 @@
     <dependencies>
 
         <dependency>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-jaxrs-api</artifactId>
+            <scope>provided</scope>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
             <groupId>javax</groupId>
             <artifactId>javaee-web-api</artifactId>
         </dependency>

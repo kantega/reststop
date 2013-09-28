@@ -1,4 +1,4 @@
-package org.kantega.reststop.api.jaxrs;
+package org.kantega.reststop.jaxrsapi;
 
 import org.kantega.reststop.api.ReststopPlugin;
 

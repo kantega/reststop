@@ -1,7 +1,7 @@
 package org.kantega.reststop.api.jaxws;
 
 import org.kantega.reststop.api.DefaultReststopPlugin;
-import org.kantega.reststop.api.jaxrs.JaxRsPlugin;
+
 
 import java.util.ArrayList;
 import java.util.Collection;

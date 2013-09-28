@@ -17,16 +17,9 @@
 package org.kantega.reststop.security;
 
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
-import org.kantega.reststop.api.DefaultReststopPlugin;
 import org.kantega.reststop.api.FilterPhase;
 import org.kantega.reststop.api.Reststop;
-import org.kantega.reststop.api.jaxrs.DefaultJaxRsPlugin;
-
-import javax.servlet.Filter;
-import javax.ws.rs.container.DynamicFeature;
-import javax.ws.rs.container.ResourceInfo;
-import javax.ws.rs.core.FeatureContext;
-import javax.ws.rs.ext.Provider;
+import org.kantega.reststop.jaxrsapi.DefaultJaxRsPlugin;
 
 /**
  *

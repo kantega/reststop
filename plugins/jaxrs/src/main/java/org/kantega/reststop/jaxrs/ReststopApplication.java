@@ -16,9 +16,8 @@
 
 package org.kantega.reststop.jaxrs;
 
-import org.kantega.reststop.api.ReststopPlugin;
 import org.kantega.reststop.api.ReststopPluginManager;
-import org.kantega.reststop.api.jaxrs.JaxRsPlugin;
+import org.kantega.reststop.jaxrsapi.JaxRsPlugin;
 
 import javax.ws.rs.core.Application;
 import java.util.HashSet;

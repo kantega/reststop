@@ -16,7 +16,7 @@
 
 package org.kantega.reststop.helloworld;
 
-import org.kantega.reststop.api.jaxrs.DefaultJaxRsPlugin;
+import org.kantega.reststop.jaxrsapi.DefaultJaxRsPlugin;
 
 /**
  *
