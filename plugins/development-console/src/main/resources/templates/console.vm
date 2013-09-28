@@ -2,13 +2,17 @@
 
 <h1>Reststop development console</h1>
 
-<h2>Current plugins by classloader:</h2>
+<h2>Current plugins:</h2>
 
 #foreach($classloader in $pluginClassloaders.entrySet())
 
-<h3>$classloader.key.pluginInfo.artifactId</h3>
-    <p style="margin-left: 1em; font-size: smaller">($classloader.key.pluginInfo.version /  $classloader.key.pluginInfo.groupId)</p>
-    </p>
+    <div style="margin-top: 1.5em">
+<strong>$classloader.key.pluginInfo.artifactId</strong>
+    <span style="margin-left: 1em; font-size: smaller">($classloader.key.pluginInfo.version /  $classloader.key.pluginInfo.groupId)</span>
+
+        <div style="margin-left: 1em">
+            #if($classloader.value.size() > 0)
+                <p>Plugin instances:</p>
     <ul>
         #foreach($plugin in $classloader.value)
         <li>
@@ -16,8 +20,33 @@
             <span>($plugin.class.package.name)</span>
         </li>
         #end
-    </ul>
 
+    </ul>
+            #end
+
+
+        #set($deps = $classloader.key.pluginInfo.getDependsOn($pluginInfos))
+
+        #if($deps.size() > 0)
+            <p>Depends on:</p>
+            <ul>
+            #foreach($dep in $deps)
+                <li>$dep.artifactId</li>
+            #end
+            </ul>
+        #end
+
+        #if($classloader.key.pluginInfo.getClassPath("runtime").size() > 0)
+        Runtime classpath:
+            <ul>
+                #foreach($artifact in $classloader.key.pluginInfo.getClassPath("runtime"))
+                    <li>$artifact.pluginId</li>
+                #end
+            </ul>
+        #end
+
+    </div>
+    </div>
 #end
 
 

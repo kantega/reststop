@@ -3,16 +3,15 @@ package org.kantega.reststop.developmentconsole;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.kantega.reststop.api.*;
+import org.kantega.reststop.classloaderutils.PluginClassLoader;
+import org.kantega.reststop.classloaderutils.PluginInfo;
 import org.kantega.reststop.development.DevelopmentPlugin;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.IdentityHashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  *
@@ -46,24 +45,50 @@ public class DevelopmentConsolePlugin extends DefaultReststopPlugin {
 
             VelocityContext context = new VelocityContext();
             context.put("contextPath", req.getContextPath());
-            context.put("plugins", pluginManager.getPlugins());
             context.put("pluginClassloaders", getPluginClassLoaders(pluginManager));
+
+            context.put("pluginInfos", getPluginInfos(pluginManager));
             getEngine().getTemplate("templates/console.vm").merge(context, resp.getWriter());
+        }
+
+        private List<PluginInfo> getPluginInfos(ReststopPluginManager pluginManager) {
+            List<PluginInfo> infos = new ArrayList<>();
+            for (ClassLoader classLoader : pluginManager.getPluginClassLoaders()) {
+                if(classLoader instanceof PluginClassLoader) {
+                    PluginClassLoader loader = (PluginClassLoader) classLoader;
+                    infos.add(loader.getPluginInfo());
+                }
+            }
+            return infos;
         }
 
         private Map<ClassLoader, Collection<ReststopPlugin>> getPluginClassLoaders(ReststopPluginManager pluginManager) {
             Map<ClassLoader, Collection<ReststopPlugin>> map = new IdentityHashMap<>();
 
-            for (ReststopPlugin plugin : pluginManager.getPlugins()) {
-                ClassLoader classLoader = pluginManager.getClassLoader(plugin);
-                if (!map.containsKey(classLoader)) {
+            Map<PluginInfo, ClassLoader> infos = new IdentityHashMap<>();
+
+            for (ClassLoader classLoader : pluginManager.getPluginClassLoaders()) {
+                if ( classLoader instanceof PluginClassLoader && !map.containsKey(classLoader)) {
                     map.put(classLoader, new ArrayList<ReststopPlugin>());
+                    infos.put(((PluginClassLoader) classLoader).getPluginInfo(), classLoader);
                 }
-                Collection<ReststopPlugin> reststopPlugins = map.get(classLoader);
-                reststopPlugins.add(plugin);
+            }
+            for (ReststopPlugin plugin : pluginManager.getPlugins()) {
+                map.get(pluginManager.getClassLoader(plugin)).add(plugin);
             }
 
-            return map;
+            List<PluginInfo> sorted = PluginInfo.sortByRuntimeDependencies(new ArrayList<>(infos.keySet()));
+
+            Map<ClassLoader, Collection<ReststopPlugin>> map2 = new LinkedHashMap<>();
+
+            for (PluginInfo info : sorted) {
+                ClassLoader classLoader = infos.get(info);
+                map2.put(classLoader, map.get(classLoader));
+            }
+
+
+
+            return map2;
         }
 
 

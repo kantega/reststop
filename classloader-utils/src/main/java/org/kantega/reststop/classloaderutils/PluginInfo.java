@@ -89,6 +89,20 @@ public class PluginInfo {
         return infos;
     }
 
+    public List<PluginInfo> getDependsOn(Collection<PluginInfo> all) {
+        List<PluginInfo> deps = new ArrayList<>();
+
+        for (Artifact compile : getClassPath("compile")) {
+            for (PluginInfo info : all) {
+                if(compile.getGroupIdAndArtifactId().equals(info.getGroupIdAndArtifactId())) {
+                    deps.add(info);
+                }
+            }
+        }
+
+        return deps;
+    }
+
     @Override
     public String toString() {
         return "Plugin " + getGroupId() +":" + getArtifactId() +":" + getVersion();

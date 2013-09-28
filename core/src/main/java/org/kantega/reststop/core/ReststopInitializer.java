@@ -460,6 +460,8 @@ public class ReststopInitializer implements ServletContainerInitializer{
     private class DefaultReststopPluginManager implements ReststopPluginManager{
         private volatile DefaultPluginManager<ReststopPlugin> manager;
 
+        private final IdentityHashMap<ClassLoader, ClassLoader> classLoaders = new IdentityHashMap<>();
+
         @Override
         public Collection<ReststopPlugin> getPlugins() {
             assertStarted();
@@ -486,6 +488,30 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         public void setManager(DefaultPluginManager<ReststopPlugin> manager) {
             this.manager = manager;
+            manager.addPluginManagerListener(new PluginManagerListener<ReststopPlugin>() {
+                @Override
+                public void afterClassLoaderAdded(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
+                    synchronized (classLoaders) {
+                        classLoaders.put(classLoader, classLoader);
+                    }
+                }
+
+                @Override
+                public void beforeClassLoaderRemoved(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
+                    synchronized (classLoaders) {
+                        classLoaders.remove(classLoader);
+                    }
+                }
+            });
+        }
+
+        @Override
+        public Collection<ClassLoader> getPluginClassLoaders() {
+            ArrayList<ClassLoader> copy;
+            synchronized (classLoaders) {
+                copy = new ArrayList<>(classLoaders.keySet());
+            }
+            return copy;
         }
     }
 }
