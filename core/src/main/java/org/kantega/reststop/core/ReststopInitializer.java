@@ -282,28 +282,39 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
     }
 
+    private class ClassLoaderFilter {
+        final ClassLoader classLoader;
+        final Filter filter;
+
+        private ClassLoaderFilter(ClassLoader classLoader, Filter filter) {
+            this.classLoader = classLoader;
+            this.filter = filter;
+        }
+    }
     private FilterChain buildFilterChain(FilterChain filterChain, PluginManager<ReststopPlugin> pluginManager) {
-        List<Filter> filters = new ArrayList<>();
+        List<ClassLoaderFilter> filters = new ArrayList<>();
         for(ReststopPlugin plugin : pluginManager.getPlugins()) {
-            filters.addAll(plugin.getServletFilters());
+            for (Filter filter : plugin.getServletFilters()) {
+                filters.add(new ClassLoaderFilter(pluginManager.getClassLoader(plugin), filter));
+            }
         }
 
-        Collections.sort(filters, new Comparator<Filter>() {
+        Collections.sort(filters, new Comparator<ClassLoaderFilter>() {
             @Override
-            public int compare(Filter o1, Filter o2) {
-                FilterPhase phase1 = o1 instanceof MappingWrappedFilter ? ((MappingWrappedFilter)o1).phase : FilterPhase.USER;
-                FilterPhase phase2 = o2 instanceof MappingWrappedFilter ? ((MappingWrappedFilter)o2).phase : FilterPhase.USER;
+            public int compare(ClassLoaderFilter o1, ClassLoaderFilter o2) {
+                FilterPhase phase1 = o1.filter instanceof MappingWrappedFilter ? ((MappingWrappedFilter)o1.filter).phase : FilterPhase.USER;
+                FilterPhase phase2 = o2.filter instanceof MappingWrappedFilter ? ((MappingWrappedFilter)o2.filter).phase : FilterPhase.USER;
                 return phase1.ordinal() - phase2.ordinal();
             }
         });
         return new PluginFilterChain(filters, filterChain);
     }
     private static class PluginFilterChain implements FilterChain {
-        private final List<Filter> filters;
+        private final List<ClassLoaderFilter> filters;
         private final FilterChain filterChain;
         private int filterIndex;
 
-        public PluginFilterChain(List<Filter> filters, FilterChain filterChain) {
+        public PluginFilterChain(List<ClassLoaderFilter> filters, FilterChain filterChain) {
             this.filters = filters;
             this.filterChain = filterChain;
         }
@@ -311,7 +322,15 @@ public class ReststopInitializer implements ServletContainerInitializer{
             if(filterIndex == filters.size()) {
                 filterChain.doFilter(request, response);
             } else {
-                filters.get(filterIndex++).doFilter(request, response, this);
+                ClassLoader loader = Thread.currentThread().getContextClassLoader();
+
+                try {
+                    ClassLoaderFilter classLoaderFilter = filters.get(filterIndex++);
+                    Thread.currentThread().setContextClassLoader(classLoaderFilter.classLoader);
+                    classLoaderFilter.filter.doFilter(request, response, this);
+                } finally {
+                    Thread.currentThread().setContextClassLoader(loader);
+                }
             }
         }
 

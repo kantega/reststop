@@ -33,7 +33,7 @@ public class DevelopmentClassLoaderProvider {
 
     private final Map<String, PluginInfo> pluginsInfo = new LinkedHashMap<>();
     private Map<String, DevelopmentClassloader> classloaders = new HashMap<>();
-    private Map<String, DevelopmentClassloader> byDepsId = new HashMap<>();
+    private Map<String, ClassLoader> byDepsId = new HashMap<>();
 
     private Reststop reststop;
 
@@ -79,7 +79,7 @@ public class DevelopmentClassLoaderProvider {
         Set<ClassLoader> delegates = new HashSet<ClassLoader>();
 
         for (Artifact dep : pluginInfo.getClassPath("compile")) {
-            DevelopmentClassloader dependencyLoader = byDepsId.get(dep.getGroupIdAndArtifactId());
+            ClassLoader dependencyLoader = byDepsId.get(dep.getGroupIdAndArtifactId());
             if (dependencyLoader != null) {
                 delegates.add(dependencyLoader);
             }
@@ -124,4 +124,7 @@ public class DevelopmentClassLoaderProvider {
 
     }
 
+    public void addByDepartmentId(PluginInfo info, ClassLoader classLoader) {
+        byDepsId.put(info.getGroupIdAndArtifactId(), classLoader);
+    }
 }

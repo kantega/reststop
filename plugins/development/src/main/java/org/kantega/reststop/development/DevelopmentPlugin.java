@@ -20,7 +20,6 @@ import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.kantega.reststop.api.*;
 import org.kantega.reststop.classloaderutils.PluginInfo;
-import org.kantega.reststop.development.console.DeveloperConsole;
 import org.kantega.reststop.development.velocity.SectionDirective;
 import org.w3c.dom.Document;
 
@@ -34,6 +33,7 @@ import java.util.List;
  */
 public class DevelopmentPlugin extends DefaultReststopPlugin {
     private boolean pluginManagerStarted;
+    private VelocityEngine velocityEngine;
 
     public DevelopmentPlugin(final Reststop reststop, ServletContext servletContext, ReststopPluginManager pluginManager) {
 
@@ -74,6 +74,7 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
         for (PluginInfo info : sortedInfos) {
             if(info.isDevelopmentPlugin()) {
                 provider.addExistingClassLoader(info.getPluginId(), createClassLoader(info, reststop.getPluginParentClassLoader()));
+                provider.addByDepartmentId(info, getClass().getClassLoader());
             }
 
             if(!info.isDirectDeploy()) {
@@ -94,12 +95,10 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
             provider.start(reststop);
         }
 
-        VelocityEngine engine = initVelocityEngine();
+        this.velocityEngine = initVelocityEngine();
 
 
         addServletFilter(reststop.createFilter(new RedeployFilter(provider, reststop), "/*", FilterPhase.UNMARSHAL));
-
-        addServletFilter(reststop.createFilter(new DeveloperConsole(engine, pluginManager), "/dev*", FilterPhase.USER));
 
     }
 
@@ -138,4 +137,7 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
         return files;
     }
 
+    public VelocityEngine getVelocityEngine() {
+        return velocityEngine;
+    }
 }
