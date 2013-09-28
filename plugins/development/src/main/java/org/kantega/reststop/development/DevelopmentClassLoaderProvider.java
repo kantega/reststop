@@ -61,7 +61,7 @@ public class DevelopmentClassLoaderProvider {
                 List<File> test = pluginInfo.getClassPathFiles("test");
                 File sourceDir = pluginInfo.getSourceDirectory();
 
-                DevelopmentClassloader classloader = new DevelopmentClassloader(sourceDir,
+                DevelopmentClassloader classloader = new DevelopmentClassloader(pluginInfo, sourceDir,
                         compile,
                         runtime,
                         test,

@@ -16,11 +16,12 @@
 
 package org.kantega.reststop.development;
 
-import org.kantega.reststop.api.DefaultReststopPlugin;
-import org.kantega.reststop.api.FilterPhase;
-import org.kantega.reststop.api.PluginListener;
-import org.kantega.reststop.api.Reststop;
+import org.apache.velocity.app.VelocityEngine;
+import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
+import org.kantega.reststop.api.*;
 import org.kantega.reststop.classloaderutils.PluginInfo;
+import org.kantega.reststop.development.console.DeveloperConsole;
+import org.kantega.reststop.development.velocity.SectionDirective;
 import org.w3c.dom.Document;
 
 import javax.servlet.ServletContext;
@@ -34,7 +35,7 @@ import java.util.List;
 public class DevelopmentPlugin extends DefaultReststopPlugin {
     private boolean pluginManagerStarted;
 
-    public DevelopmentPlugin(final Reststop reststop, ServletContext servletContext) {
+    public DevelopmentPlugin(final Reststop reststop, ServletContext servletContext, ReststopPluginManager pluginManager) {
 
         Document pluginsXml = (Document) servletContext.getAttribute("pluginsXml");
 
@@ -93,8 +94,27 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
             provider.start(reststop);
         }
 
+        VelocityEngine engine = initVelocityEngine();
+
+
         addServletFilter(reststop.createFilter(new RedeployFilter(provider, reststop), "/*", FilterPhase.UNMARSHAL));
 
+        addServletFilter(reststop.createFilter(new DeveloperConsole(engine, pluginManager), "/dev*", FilterPhase.USER));
+
+    }
+
+    private VelocityEngine initVelocityEngine() {
+        VelocityEngine engine = new VelocityEngine();
+
+        engine.addProperty("resource.loader", "classloader");
+
+        engine.addProperty("classloader.resource.loader.class", ClasspathResourceLoader.class.getName());
+
+        engine.addProperty("userdirective", SectionDirective.class.getName());
+        engine.addProperty("eventhandler.include.class", "org.apache.velocity.app.event.implement.IncludeRelativePath");
+
+        engine.init();
+        return engine;
     }
 
     private DevelopmentClassloader createClassLoader(PluginInfo info, ClassLoader pluginParentClassLoader) {
@@ -102,7 +122,7 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
         List<File> compile  = info.getClassPathFiles("compile");
         List<File> test  = info.getClassPathFiles("test");
 
-        return new DevelopmentClassloader(info.getSourceDirectory(), compile, runtime, test, pluginParentClassLoader);
+        return new DevelopmentClassloader(info, info.getSourceDirectory(), compile, runtime, test, pluginParentClassLoader);
     }
 
     private boolean loadedByDevelopmentClassLoader() {

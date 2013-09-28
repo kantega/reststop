@@ -16,6 +16,9 @@
 
 package org.kantega.reststop.development;
 
+import org.kantega.reststop.classloaderutils.PluginClassLoader;
+import org.kantega.reststop.classloaderutils.PluginInfo;
+
 import javax.tools.*;
 import java.io.File;
 import java.io.IOException;
@@ -35,7 +38,7 @@ import static java.util.Arrays.asList;
 /**
  *
  */
-public class DevelopmentClassloader extends URLClassLoader {
+public class DevelopmentClassloader extends PluginClassLoader{
     private final long created;
     private final File basedir;
     private final List<File> compileClasspath;
@@ -53,13 +56,13 @@ public class DevelopmentClassloader extends URLClassLoader {
     }
 
     private long lastTestCompile;
-    private volatile boolean testsFailed = true;
+    private volatile boolean testsFailed = false;
 
     public DevelopmentClassloader(DevelopmentClassloader other) {
-        this(other.basedir, other.compileClasspath, other.runtimeClasspath, other.testClasspath, other.getParent());
+        this(other.getPluginInfo(), other.basedir, other.compileClasspath, other.runtimeClasspath, other.testClasspath, other.getParent());
     }
-    public DevelopmentClassloader(File baseDir, List<File> compileClasspath, List<File> runtimeClasspath, List<File> testClasspath, ClassLoader parent) {
-        super(new URL[0], parent);
+    public DevelopmentClassloader(PluginInfo info, File baseDir, List<File> compileClasspath, List<File> runtimeClasspath, List<File> testClasspath, ClassLoader parent) {
+        super(info, new URL[0], parent);
         this.basedir = baseDir;
         this.compileClasspath = compileClasspath;
         this.runtimeClasspath = runtimeClasspath;

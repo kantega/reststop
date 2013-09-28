@@ -23,10 +23,7 @@ import org.kantega.jexmec.ServiceKey;
 import org.kantega.jexmec.ctor.ConstructorInjectionPluginLoader;
 import org.kantega.jexmec.manager.DefaultPluginManager;
 import org.kantega.reststop.api.*;
-import org.kantega.reststop.classloaderutils.Artifact;
-import org.kantega.reststop.classloaderutils.DelegateClassLoader;
-import org.kantega.reststop.classloaderutils.PluginInfo;
-import org.kantega.reststop.classloaderutils.ResourceHidingClassLoader;
+import org.kantega.reststop.classloaderutils.*;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -130,17 +127,6 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
     private ClassLoaderProvider[] findClassLoaderProviders(ServletContext servletContext) throws ServletException {
         List<ClassLoaderProvider> providers = new ArrayList<>();
-
-        {
-            String pluginsTxtPath = servletContext.getInitParameter("plugins.txt");
-            if(pluginsTxtPath != null) {
-                File pluginsTxt = new File(pluginsTxtPath);
-                if(!pluginsTxt.exists()) {
-                    throw new ServletException("Path not found: " + pluginsTxt.getAbsolutePath());
-                }
-                providers.add(new PluginsTxtClassLoaderProvider(pluginsTxt));
-            }
-        }
 
         {
             Document pluginsXml = (Document) servletContext.getAttribute("pluginsXml");
@@ -334,76 +320,6 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
     }
 
-    private class PluginsTxtClassLoaderProvider implements ClassLoaderProvider {
-
-        private final File pluginsTxt;
-
-        public PluginsTxtClassLoaderProvider(File pluginsTxt) {
-
-            this.pluginsTxt = pluginsTxt;
-        }
-
-        @Override
-        public void start(Registry registry, ClassLoader parentClassLoader) {
-
-            File repository = new File(pluginsTxt.getParentFile(), "repository");
-
-            List<ClassLoader> loaders = new ArrayList<>();
-
-
-            try {
-                List<String> lines = Files.readAllLines(pluginsTxt.toPath(), Charset.forName("utf-8"));
-                for (String line : lines) {
-
-                    PluginClassloader pluginClassloader = new PluginClassloader(parentClassLoader);
-                    String[] coords = line.split(",");
-                    for (String coord : coords) {
-                        coord = coord.trim();
-                        if(!coord.isEmpty()) {
-                            pluginClassloader.addURL(new File(repository, toMavenPath(coord)).toURI().toURL());
-                        }
-                    }
-                    loaders.add(pluginClassloader);
-
-                }
-                registry.add(loaders);
-
-            } catch (IOException e) {
-                try {
-                    throw new ServletException("Can't read plugins descriptor " +pluginsTxt.getAbsolutePath());
-                } catch (ServletException e1) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
-
-        private String toMavenPath(String coord) {
-            String[] gav = coord.split(":");
-            return gav[0].replace('.','/')
-                    +"/" +
-                    gav[1] +
-                    "/" +
-                    gav[2] +"/" + gav[1] +"-" + gav[2] +".jar";
-        }
-
-        @Override
-        public void stop() {
-
-        }
-    }
-
-    public class PluginClassloader extends URLClassLoader {
-
-        public PluginClassloader(ClassLoader parentClassLoader) {
-            super(new URL[0], parentClassLoader);
-        }
-
-        @Override
-        public void addURL(URL url) {
-            super.addURL(url);
-        }
-    }
-
     private class PluginLinesClassLoaderProvider implements ClassLoaderProvider {
         private final Document pluginsXml;
 
@@ -422,7 +338,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
             for (PluginInfo info : infos) {
 
                 if(info.isDirectDeploy()) {
-                    PluginClassloader pluginClassloader = new PluginClassloader(getParentClassLoader(info, parentClassLoader, byDep));
+                    PluginClassLoader pluginClassloader = new PluginClassLoader(info, getParentClassLoader(info, parentClassLoader, byDep));
 
                     File pluginJar = info.getPluginFile();
 
