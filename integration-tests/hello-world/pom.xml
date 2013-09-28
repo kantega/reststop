@@ -75,6 +75,11 @@
                     <plugins>
                         <plugin>
                             <groupId>org.kantega.reststop</groupId>
+                            <artifactId>reststop-metrics-plugin</artifactId>
+                            <version>${project.version}</version>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.kantega.reststop</groupId>
                             <artifactId>reststop-jaxrs-api</artifactId>
                             <version>${project.version}</version>
                         </plugin>

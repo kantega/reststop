@@ -37,6 +37,7 @@
         <module>jaxws-api</module>
         <module>cxf</module>
         <module>cxf-logging</module>
+        <module>metrics</module>
 
     </modules>
     <dependencies>
