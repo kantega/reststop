@@ -38,6 +38,7 @@
         <module>cxf</module>
         <module>cxf-logging</module>
         <module>metrics</module>
+        <module>cxf-metrics</module>
 
     </modules>
     <dependencies>
