@@ -46,8 +46,17 @@
                     <ul>
                         #foreach($plugin in $classloader.value)
                             <li>
-                                $plugin.class.simpleName
-                                <span>($plugin.class.package.name)</span>
+                                <div>$plugin.class.simpleName
+                                    <span>($plugin.class.package.name)</span>
+                                </div>
+                                <ul>
+                                    #foreach($service in $plugin.serviceTypes)
+                                        <li>
+                                            $service.name : $plugin.getService($service)
+                                        </li>
+                                    #end
+                                </ul>
+
                             </li>
                         #end
 
