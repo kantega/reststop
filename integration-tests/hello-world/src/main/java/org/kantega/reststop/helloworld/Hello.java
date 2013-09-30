@@ -16,6 +16,10 @@
 
 package org.kantega.reststop.helloworld;
 
+import java.net.URI;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  *
  */
@@ -30,4 +34,6 @@ public class Hello {
     public String getMessage() {
         return message;
     }
+
+
 }

@@ -17,20 +17,33 @@
 package org.kantega.reststop.helloworld;
 
 import javax.annotation.security.RolesAllowed;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
+import javax.ws.rs.*;
+import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
+
+import static java.util.Arrays.asList;
 
 /**
  *
  */
-@Path("helloworld")
+@Path("helloworld/{lang}")
 public class HelloworldResource {
 
     @GET
     @Produces({"application/json", "application/xml", })
     @RolesAllowed("manager")
-    public Hello hello() {
-        return new Hello("Hello world");
+    public Hello hello(@PathParam(value = "lang") String lang) {
+
+
+        String message = "Hello world";
+
+        switch(lang) {
+            case "no": message = "Hei verden";break;
+            case "se": message = "Hej värden";break;
+            case "fr": message = "Bonjour tout le monde";break;
+        }
+
+
+        return new Hello(message);
     }
 }
