@@ -57,6 +57,13 @@
         </dependency>
 
         <dependency>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-spring-plugin</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
             <groupId>javax</groupId>
             <artifactId>javaee-web-api</artifactId>
             <scope>provided</scope>
@@ -69,11 +76,6 @@
             <scope>test</scope>
         </dependency>
 
-        <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-webmvc</artifactId>
-            <version>3.2.4.RELEASE</version>
-        </dependency>
 
     </dependencies>
 
@@ -86,6 +88,11 @@
                 <configuration>
                     <path>dev</path>
                     <plugins>
+                        <plugin>
+                            <groupId>org.kantega.reststop</groupId>
+                            <artifactId>reststop-spring-plugin</artifactId>
+                            <version>${project.version}</version>
+                        </plugin>
                         <plugin>
                             <groupId>org.kantega.reststop</groupId>
                             <artifactId>reststop-metrics-plugin</artifactId>
