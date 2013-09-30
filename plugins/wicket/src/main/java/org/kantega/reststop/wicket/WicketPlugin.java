@@ -1,5 +1,6 @@
 package org.kantega.reststop.wicket;
 
+import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.http.WicketFilter;
 import org.kantega.reststop.api.DefaultReststopPlugin;
 import org.kantega.reststop.api.FilterPhase;
@@ -21,7 +22,9 @@ public class WicketPlugin extends DefaultReststopPlugin {
 
         try {
             Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-            WicketFilter filter = new WicketFilter(new WicketApplication());
+            WicketApplication wicketApplication = new WicketApplication();
+            addService(WebApplication.class, wicketApplication);
+            WicketFilter filter = new WicketFilter(wicketApplication);
             Properties properties = new Properties();
             String filterPath = "/wicket/*";
             properties.setProperty(WicketFilter.FILTER_MAPPING_PARAM, filterPath);

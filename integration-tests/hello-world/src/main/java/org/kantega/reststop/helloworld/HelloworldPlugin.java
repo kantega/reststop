@@ -16,6 +16,7 @@
 
 package org.kantega.reststop.helloworld;
 
+import org.apache.wicket.protocol.http.WebApplication;
 import org.kantega.reststop.jaxrsapi.DefaultJaxRsPlugin;
 
 /**
@@ -23,9 +24,11 @@ import org.kantega.reststop.jaxrsapi.DefaultJaxRsPlugin;
  */
 public class HelloworldPlugin extends DefaultJaxRsPlugin {
 
-    public HelloworldPlugin() {
+    public HelloworldPlugin(WebApplication webApplication) {
         addJaxRsSingletonResource(new HelloWorldRootResource());
         addJaxRsSingletonResource(new HelloworldResource());
+
+        webApplication.mountPage("/hello", HelloPage.class);
     }
 
 }
