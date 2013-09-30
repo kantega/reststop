@@ -24,9 +24,6 @@ public class StartMojo extends AbstractReststopMojo {
 
         plugins.add(new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion()));
 
-        for (Plugin plugin : plugins) {
-            plugin.setDirectDeploy(true);
-        }
         return plugins;
     }
 

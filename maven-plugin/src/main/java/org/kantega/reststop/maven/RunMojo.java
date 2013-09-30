@@ -62,15 +62,25 @@ public class RunMojo extends AbstractReststopMojo {
     protected List<Plugin> getPlugins() {
         ArrayList<Plugin> plugins = new ArrayList<>(super.getPlugins());
 
+        Plugin projectPlugin = new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion());
+        projectPlugin.setSourceDirectory(mavenProject.getBasedir());
+        plugins.add(projectPlugin);
+
+        {
+            Plugin devConsolePlugin = new Plugin("org.kantega.reststop", "reststop-development-console", mavenProject.getVersion());
+            plugins.add(devConsolePlugin);
+            devConsolePlugin.setDirectDeploy(false);
+        }
+
+        for (Plugin plugin : plugins) {
+            plugin.setDirectDeploy(false);
+        }
         {
             Plugin developmentPlugin = new Plugin("org.kantega.reststop", "reststop-development-plugin", mavenProject.getVersion());
             plugins.add(developmentPlugin);
             developmentPlugin.setDirectDeploy(true);
         }
-        {
-            Plugin devConsolePlugin = new Plugin("org.kantega.reststop", "reststop-development-console", mavenProject.getVersion());
-            plugins.add(devConsolePlugin);
-        }
+
 
 
 
@@ -80,9 +90,6 @@ public class RunMojo extends AbstractReststopMojo {
 
 
 
-        Plugin projectPlugin = new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion());
-        projectPlugin.setSourceDirectory(mavenProject.getBasedir());
-        plugins.add(projectPlugin);
 
         return plugins;
     }
