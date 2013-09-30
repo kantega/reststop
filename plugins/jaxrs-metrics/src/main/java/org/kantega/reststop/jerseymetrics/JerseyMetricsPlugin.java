@@ -10,19 +10,16 @@ import org.kantega.reststop.metrics.MetricsReststopPlugin;
  */
 public class JerseyMetricsPlugin extends DefaultJaxRsPlugin{
 
-    private static ReststopPluginManager pluginManager;
 
-    public JerseyMetricsPlugin(ReststopPluginManager pluginManager) {
-        JerseyMetricsPlugin.pluginManager = pluginManager;
+    public static MetricRegistry metricRegistry;
+
+    public JerseyMetricsPlugin(MetricRegistry metricRegistry) {
+        this.metricRegistry = metricRegistry;
         addJaxRsContainerClass(TimerBeforeFilter.class);
         addJaxRsContainerClass(TimerAfterFilter.class);
-
     }
 
     public static MetricRegistry getMetricRegistry() {
-        return pluginManager.getPlugins(MetricsReststopPlugin.class).iterator().next().getMetricRegistry();
+        return metricRegistry;
     }
-
-
-
 }

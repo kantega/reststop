@@ -25,12 +25,12 @@ import java.util.concurrent.TimeUnit;
  */
 public class MetricsReststopPlugin extends DefaultReststopPlugin {
 
-    private final MetricRegistry metricRegistry;
+
     private final HealthCheckRegistry healthCheckRegistry;
 
     public MetricsReststopPlugin(Reststop reststop, ServletContext servletContext) throws ServletException {
 
-        metricRegistry = initMetricsRegistry();
+        MetricRegistry metricRegistry = addService(initMetricsRegistry());
         MetricsServlet metricsServlet = new MetricsServlet(metricRegistry);
         metricsServlet.init(new EmptyServletConfig(createProxy(servletContext)));
 
@@ -84,9 +84,6 @@ public class MetricsReststopPlugin extends DefaultReststopPlugin {
         return registry;
     }
 
-    public MetricRegistry getMetricRegistry() {
-        return metricRegistry;
-    }
 
     private class ServletWrapper implements Filter {
         private final Servlet metricsServlet;

@@ -28,21 +28,19 @@ import static com.codahale.metrics.MetricRegistry.name;
 public class CxfMetricsPlugin extends DefaultCxfPluginPlugin {
 
 
-    private final ReststopPluginManager pluginManager;
+    private final MetricRegistry metricRegistry;
 
-    public CxfMetricsPlugin(ReststopPluginManager pluginManager) {
+    public CxfMetricsPlugin(MetricRegistry metricRegistry) {
 
-        this.pluginManager = pluginManager;
+        this.metricRegistry = metricRegistry;
     }
 
     @Override
     public void customizeEndpoint(Endpoint endpoint) {
         EndpointImpl e = (EndpointImpl) endpoint;
 
-        MetricRegistry registry = pluginManager.getPlugins(MetricsReststopPlugin.class).iterator().next().getMetricRegistry();
-
         e.getServer().getEndpoint().getInInterceptors().add(new TimingBeforeInterceptor(Phase.RECEIVE));
-        e.getServer().getEndpoint().getOutInterceptors().add(new TimingAfterInterceptor(Phase.SEND, registry));
+        e.getServer().getEndpoint().getOutInterceptors().add(new TimingAfterInterceptor(Phase.SEND, metricRegistry));
     }
 
     private class TimingBeforeInterceptor extends AbstractPhaseInterceptor<Message> {

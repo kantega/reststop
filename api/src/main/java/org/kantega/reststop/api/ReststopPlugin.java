@@ -18,6 +18,8 @@ package org.kantega.reststop.api;
 
 import javax.servlet.Filter;
 import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
 /**
  *
@@ -28,4 +30,7 @@ public interface ReststopPlugin {
 
     Collection<PluginListener> getPluginListeners();
 
+    <T> T getService(Class<T> type);
+
+    Set<Class<?>> getServiceTypes();
 }

@@ -17,9 +17,8 @@
 package org.kantega.reststop.api;
 
 import javax.servlet.Filter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  *
@@ -28,6 +27,7 @@ public class DefaultReststopPlugin implements ReststopPlugin {
 
     private final List<Filter> servletFilters = new ArrayList<>();
     private final List<PluginListener> pluginListeners = new ArrayList<>();
+    private final Map<Class<?>, Object> services = new ConcurrentHashMap<>();
 
     protected void addServletFilter(Filter filter) {
         servletFilters.add(filter);
@@ -35,6 +35,30 @@ public class DefaultReststopPlugin implements ReststopPlugin {
 
     public List<Filter> getServletFilters() {
         return servletFilters;
+    }
+
+    protected  <T> T addService(T service) {
+        Class<T> type = (Class<T>) service.getClass();
+        return addService(type, service);
+    }
+
+    protected <T> T addService(Class<T> type, T service) {
+        if(services.containsKey(type)) {
+            throw new IllegalArgumentException("Service already added with type " + type.getName());
+        }
+        services.put(type, service);
+        return service;
+    }
+
+
+    @Override
+    public <T> T getService(Class<T> type) {
+        return type.cast(services.get(type));
+    }
+
+    @Override
+    public Set<Class<?>> getServiceTypes() {
+        return services.keySet();
     }
 
     @Override
