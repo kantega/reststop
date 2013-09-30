@@ -89,7 +89,7 @@ public class PluginInfo {
         return infos;
     }
 
-    public List<PluginInfo> getDependsOn(Collection<PluginInfo> all) {
+    public List<PluginInfo> getParents(Collection<PluginInfo> all) {
         List<PluginInfo> deps = new ArrayList<>();
 
         for (Artifact compile : getClassPath("compile")) {
@@ -99,6 +99,21 @@ public class PluginInfo {
                 }
             }
         }
+
+        return deps;
+    }
+
+    public List<PluginInfo> getChildren(Collection<PluginInfo> all) {
+        List<PluginInfo> deps = new ArrayList<>();
+
+            for (PluginInfo info : all) {
+                for (Artifact compile : info.getClassPath("compile")) {
+                    if(compile.getGroupIdAndArtifactId().equals(getGroupIdAndArtifactId())) {
+                        deps.add(info);
+                    }
+                }
+            }
+
 
         return deps;
     }

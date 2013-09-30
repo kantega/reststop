@@ -16,3 +16,13 @@ body {
 .error {
     color: red;
 }
+
+div.plugininfo {
+    margin-left: 2em;
+}
+div.plugindetails {
+    display: none;
+}
+div.withDetails div.plugindetails {
+    display: block;
+}

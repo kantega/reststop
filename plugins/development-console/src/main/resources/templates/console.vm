@@ -4,64 +4,80 @@
 
 <h2>Current plugins:</h2>
 
+<p>
+    <a href="#" onclick="document.querySelector('#pluginList').setAttribute('class','withDetails');return false">Details</a>
+</p>
+<div id="pluginList">
 #foreach($classloader in $pluginClassloaders.entrySet())
 
-    <div style="margin-top: 1.5em">
-<strong>$classloader.key.pluginInfo.artifactId</strong>
-    <span style="margin-left: 1em; font-size: smaller">($classloader.key.pluginInfo.version /  $classloader.key.pluginInfo.groupId)</span>
+    <div class="plugin" style="margin-top: 1.5em">
 
-        <div style="margin-left: 1em">
-            <p>$classloader.key.loadedClasses.size() classes loaded</p>
-            ##foreach($clazz in $classloader.key.loadedClasses)
-            ##$clazz.name<br>
-            ##end
-            ##foreach($url in $classloader.key.usedUrls)
-            ## $url<br>
-            ###end
-            #if($classloader.value.size() > 0)
-                <p>Plugin instances:</p>
-    <ul>
-        #foreach($plugin in $classloader.value)
-        <li>
-            $plugin.class.simpleName
-            <span>($plugin.class.package.name)</span>
-        </li>
-        #end
+        <a name="$classloader.key.pluginInfo.pluginId"></a><strong>$classloader.key.pluginInfo.artifactId</strong>
+        <span style="margin-left: 1em; font-size: smaller">($classloader.key.pluginInfo.version /  $classloader.key.pluginInfo.groupId)</span>
 
-    </ul>
-            #end
+        <div class="plugininfo">
+            <div class="dependson">
+                #set($parents = $classloader.key.pluginInfo.getParents($pluginInfos))
+                #set($children = $classloader.key.pluginInfo.getChildren($pluginInfos))
 
+                #if($parents.size() > 0)
+                    <p>Parents:
+                        #foreach($parent in $parents)
+                            <a href="#$parent.pluginId">$parent.artifactId</a>
 
-        #set($deps = $classloader.key.pluginInfo.getDependsOn($pluginInfos))
-
-        #if($deps.size() > 0)
-            <p>Depends on:</p>
-            <ul>
-            #foreach($dep in $deps)
-                <li>$dep.artifactId</li>
-            #end
-            </ul>
-        #end
-
-        #if($classloader.key.pluginInfo.getClassPath("runtime").size() > 0)
-        Runtime classpath:
-            <ul>
-                #foreach($artifact in $classloader.key.pluginInfo.getClassPath("runtime"))
-                    <li>$artifact.pluginId
-                        #set($length = $artifact.file.length()/1024)
-                        (${length}k)
-                    #if($classloader.key.isUnused($artifact))
-                        <strong>(unused)</strong>
-                    #end
-                    </li>
+                            #if($velocityHasNext), #end
+                        #end
+                    </p>
                 #end
-            </ul>
-        #end
+                #if($children.size() > 0)
+                    <p>Children:
+                        #foreach($child in $children)
+                            <a href="#$child.pluginId">$child.artifactId</a>
 
+                            #if($velocityHasNext), #end
+                        #end
+                    </p>
+                #end
+            </div>
+            <div class="plugindetails">
+                <p>$classloader.key.loadedClasses.size() classes loaded</p>
+                #if($classloader.value.size() > 0)
+                    <p>Plugin instances:</p>
+                    <ul>
+                        #foreach($plugin in $classloader.value)
+                            <li>
+                                $plugin.class.simpleName
+                                <span>($plugin.class.package.name)</span>
+                            </li>
+                        #end
+
+                    </ul>
+                #end
+
+
+
+
+                #if($classloader.key.pluginInfo.getClassPath("runtime").size() > 0)
+                    Runtime classpath:
+                    <ul>
+                        #foreach($artifact in $classloader.key.pluginInfo.getClassPath("runtime"))
+                            <li>$artifact.pluginId
+                                #set($length = $artifact.file.length()/1024)
+                                (${length}k)
+                                #if($classloader.key.isUnused($artifact))
+                                    <strong>(unused)</strong>
+                                #end
+                            </li>
+                        #end
+                    </ul>
+                #end
+
+            </div>
+        </div>
     </div>
-    </div>
+
 #end
-
+</div>
 
 #end
 #parse("design.vm")
