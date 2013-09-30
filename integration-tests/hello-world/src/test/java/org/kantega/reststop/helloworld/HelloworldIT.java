@@ -39,6 +39,7 @@ public class HelloworldIT {
     @Test
     public void shouldReturnHelloWorld() throws IOException {
 
+
         HttpURLConnection connection = (HttpURLConnection) new URL("http://localhost:" + System.getProperty("reststopPort") + "/helloworld/en").openConnection();
         connection.setRequestProperty("Authorization", "Basic " + DatatypeConverter.printBase64Binary("joe:joe".getBytes("utf-8")));
         connection.setRequestProperty("Accept", "application/json");

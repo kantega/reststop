@@ -16,7 +16,7 @@ public class HelloController {
 
     @RequestMapping(method = RequestMethod.GET)
     public String hello(HttpServletResponse response) throws IOException {
-        response.getWriter().println("Hello world!");
+        response.getWriter().println("Hello, my world!");
         return null;
     }
 }

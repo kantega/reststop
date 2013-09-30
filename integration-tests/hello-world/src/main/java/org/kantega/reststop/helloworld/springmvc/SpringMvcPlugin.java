@@ -20,7 +20,7 @@ public class SpringMvcPlugin extends DefaultReststopPlugin {
         try {
             AnnotationConfigWebApplicationContext context = new AnnotationConfigWebApplicationContext();
 
-            context.register(HelloConfig.class);
+            context.scan(getClass().getPackage().getName());
 
             DispatcherServlet servlet = new DispatcherServlet(context);
 
