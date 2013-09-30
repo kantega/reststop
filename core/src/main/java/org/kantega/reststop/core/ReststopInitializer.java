@@ -25,7 +25,9 @@ import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
 import javax.servlet.*;
+import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
@@ -222,6 +224,11 @@ public class ReststopInitializer implements ServletContainerInitializer{
             return new MappingWrappedFilter(filter, mapping, phase);
         }
 
+        @Override
+        public Filter createServletFilter(HttpServlet servlet, String path) {
+            return createFilter(new ServletWrapperFilter(servlet, path), path, FilterPhase.USER);
+        }
+
         public void setManager(DefaultPluginManager<ReststopPlugin> manager) {
             this.manager = manager;
         }
@@ -302,6 +309,48 @@ public class ReststopInitializer implements ServletContainerInitializer{
             @Override
             public Enumeration<String> getInitParameterNames() {
                 return Collections.enumeration(properties.stringPropertyNames());
+            }
+        }
+
+        private class ServletWrapperFilter implements Filter {
+            private final HttpServlet servlet;
+            private final String path;
+
+            public ServletWrapperFilter(HttpServlet servlet, String path) {
+                this.servlet = servlet;
+                this.path = path.endsWith("*") ? path.substring(0, path.length()-1) : path;
+            }
+
+            @Override
+            public void init(FilterConfig filterConfig) throws ServletException {
+
+            }
+
+            @Override
+            public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+                HttpServletRequest req = (HttpServletRequest) servletRequest;
+                HttpServletResponse resp = (HttpServletResponse) servletResponse;
+
+
+
+                servlet.service(new HttpServletRequestWrapper(req) {
+                    @Override
+                    public String getServletPath() {
+                        return path;
+                    }
+
+                    @Override
+                    public String getPathInfo() {
+                        String requestURI = getRequestURI();
+                        return requestURI.substring(path.length());
+                    }
+                }, resp);
+
+            }
+
+            @Override
+            public void destroy() {
+
             }
         }
     }

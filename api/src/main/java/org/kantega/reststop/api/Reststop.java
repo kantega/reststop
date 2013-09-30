@@ -20,6 +20,7 @@ import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletConfig;
+import javax.servlet.http.HttpServlet;
 import java.util.Properties;
 
 /**
@@ -35,6 +36,8 @@ public interface Reststop {
 
     ServletConfig createServletConfig(String name, Properties properties);
     FilterConfig createFilterConfig(String name, Properties properties);
+
+    Filter createServletFilter(HttpServlet servlet, String path);
 
     interface PluginClassLoaderChange {
         PluginClassLoaderChange add(ClassLoader classLoader);

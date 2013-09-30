@@ -35,20 +35,18 @@ public class MetricsReststopPlugin extends DefaultReststopPlugin {
         MetricsServlet metricsServlet = new MetricsServlet(metricRegistry);
         metricsServlet.init(new EmptyServletConfig(createProxy(servletContext)));
 
-        addServletFilter(reststop.createFilter(
-                new ServletWrapper(metricsServlet),
-                "/metrics/*",
-                FilterPhase.USER));
+        addServletFilter(reststop.createServletFilter(
+                metricsServlet,
+                "/metrics/*"));
 
 
         healthCheckRegistry = initHealthCheckRegistry();
         HealthCheckServlet healthCheckServlet = new HealthCheckServlet(healthCheckRegistry);
         healthCheckServlet.init(reststop.createServletConfig("healthcheck", new Properties()));
 
-        addServletFilter(reststop.createFilter(
-                new ServletWrapper(healthCheckServlet),
-                "/healthchecks/*",
-                FilterPhase.USER
+        addServletFilter(reststop.createServletFilter(
+                healthCheckServlet,
+                "/healthchecks/*"
         ));
 
     }
@@ -85,29 +83,6 @@ public class MetricsReststopPlugin extends DefaultReststopPlugin {
         return registry;
     }
 
-
-    private class ServletWrapper implements Filter {
-        private final Servlet metricsServlet;
-
-        public ServletWrapper(Servlet metricsServlet) {
-            this.metricsServlet = metricsServlet;
-        }
-
-        @Override
-        public void init(FilterConfig filterConfig) throws ServletException {
-
-        }
-
-        @Override
-        public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-            metricsServlet.service(servletRequest, servletResponse);
-        }
-
-        @Override
-        public void destroy() {
-
-        }
-    }
 
     private class EmptyServletConfig implements ServletConfig {
         private final ServletContext servletContext;

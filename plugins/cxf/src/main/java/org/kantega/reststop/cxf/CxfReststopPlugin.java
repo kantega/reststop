@@ -41,9 +41,8 @@ public class CxfReststopPlugin extends DefaultReststopPlugin {
         } finally {
             Thread.currentThread().setContextClassLoader(loader);
         }
-        CXFFilter cxfFilter = new CXFFilter(cxfNonSpringServlet);
 
-        addServletFilter(reststop.createFilter(cxfFilter, "/ws/*", FilterPhase.USER));
+        addServletFilter(reststop.createServletFilter(cxfNonSpringServlet, "/ws/*"));
 
         addPluginListener(new PluginListener() {
             @Override
@@ -84,54 +83,6 @@ public class CxfReststopPlugin extends DefaultReststopPlugin {
                 }
         } finally {
             Thread.currentThread().setContextClassLoader(loader);
-        }
-    }
-
-    class CXFFilter implements Filter {
-
-
-        private final CXFNonSpringServlet cxfNonSpringServlet;
-
-        public CXFFilter(CXFNonSpringServlet cxfNonSpringServlet) {
-
-            this.cxfNonSpringServlet = cxfNonSpringServlet;
-        }
-
-        @Override
-        public void init(FilterConfig filterConfig) throws ServletException {
-
-        }
-
-        @Override
-        public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
-            HttpServletRequest req = (HttpServletRequest) servletRequest;
-            HttpServletResponse resp = (HttpServletResponse) servletResponse;
-
-            ClassLoader loader = Thread.currentThread().getContextClassLoader();
-
-            try {
-                Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-
-                cxfNonSpringServlet.service(new HttpServletRequestWrapper(req) {
-                    @Override
-                    public String getServletPath() {
-                        return "/ws";
-                    }
-
-                    @Override
-                    public String getPathInfo() {
-                        String requestURI = getRequestURI();
-                        return requestURI.substring("/ws".length());
-                    }
-                }, resp);
-            } finally {
-                Thread.currentThread().setContextClassLoader(loader);
-            }
-        }
-
-        @Override
-        public void destroy() {
-
         }
     }
 
