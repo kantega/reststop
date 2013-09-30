@@ -5,7 +5,6 @@ import org.apache.velocity.app.VelocityEngine;
 import org.kantega.reststop.api.*;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
-import org.kantega.reststop.development.DevelopmentPlugin;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -25,10 +24,10 @@ public class DevelopmentConsolePlugin extends DefaultReststopPlugin {
     public DevelopmentConsolePlugin(Reststop reststop, ReststopPluginManager pluginManager, VelocityEngine velocityEngine) {
         this.pluginManager = pluginManager;
         this.velocityEngine = velocityEngine;
-        addServletFilter(reststop.createFilter(new DeveloperConsole(), "/dev*", FilterPhase.USER));
+        addServletFilter(reststop.createFilter(new DevelopentConsole(), "/dev*", FilterPhase.USER));
     }
 
-    public class DeveloperConsole implements Filter {
+    public class DevelopentConsole implements Filter {
 
 
         @Override
