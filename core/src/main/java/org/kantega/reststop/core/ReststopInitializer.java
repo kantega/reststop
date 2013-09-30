@@ -91,8 +91,8 @@ public class ReststopInitializer implements ServletContainerInitializer{
                     try {
 
                         for(PluginListener listener : plugin.getPluginListeners()) {
-                        listener.pluginManagerStarted();
-                    }
+                            listener.pluginManagerStarted();
+                        }
                     } finally {
                         Thread.currentThread().setContextClassLoader(loader);
                     }
