@@ -28,7 +28,7 @@ public class Plugin {
     private String groupId;
     private String artifactId;
     private String version;
-    private boolean directDeploy;
+    private boolean directDeploy = true;
     private File sourceDirectory;
 
     public Plugin(String groupId, String artifactId, String version) {
