@@ -125,6 +125,12 @@
                             <artifactId>reststop-cxf-plugin</artifactId>
                             <version>${project.version}</version>
                         </plugin>
+
+                        <plugin>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>reststop-wicket-plugin</artifactId>
+                            <version>${project.version}</version>
+                        </plugin>
                     </plugins>
                 </configuration>
                 <executions>
