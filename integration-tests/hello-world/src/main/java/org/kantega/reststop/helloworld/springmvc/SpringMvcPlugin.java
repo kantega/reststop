@@ -14,23 +14,15 @@ import java.util.Properties;
 public class SpringMvcPlugin extends DefaultReststopPlugin {
     public SpringMvcPlugin(Reststop reststop) throws ServletException {
 
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        AnnotationConfigWebApplicationContext context = new AnnotationConfigWebApplicationContext();
 
-        Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-        try {
-            AnnotationConfigWebApplicationContext context = new AnnotationConfigWebApplicationContext();
+        context.scan(getClass().getPackage().getName());
 
-            context.scan(getClass().getPackage().getName());
+        DispatcherServlet servlet = new DispatcherServlet(context);
 
-            DispatcherServlet servlet = new DispatcherServlet(context);
-
-            Properties properties = new Properties();
-            String filterPath = "/spring/*";
-            servlet.init(reststop.createServletConfig("spring", properties));
-            addServletFilter(reststop.createServletFilter(servlet, filterPath));
-        } finally {
-            Thread.currentThread().setContextClassLoader(loader);
-        }
-
+        Properties properties = new Properties();
+        String filterPath = "/spring/*";
+        servlet.init(reststop.createServletConfig("spring", properties));
+        addServletFilter(reststop.createServletFilter(servlet, filterPath));
     }
 }

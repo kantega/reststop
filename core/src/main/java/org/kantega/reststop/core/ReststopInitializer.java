@@ -66,7 +66,13 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 if (pluginManagerStarted) {
                     for (ReststopPlugin plugin : manager.getPlugins()) {
                         for (PluginListener listener : plugin.getPluginListeners()) {
-                            listener.pluginsUpdated(plugins);
+                            ClassLoader loader = Thread.currentThread().getContextClassLoader();
+                            Thread.currentThread().setContextClassLoader(manager.getClassLoader(plugin));
+                            try {
+                                listener.pluginsUpdated(plugins);
+                            } finally {
+                                Thread.currentThread().setContextClassLoader(loader);
+                            }
                         }
                     }
                 }
@@ -80,13 +86,27 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
                 Collection<ReststopPlugin> plugins = pm.getPlugins();
                 for(ReststopPlugin plugin : plugins) {
-                    for(PluginListener listener : plugin.getPluginListeners()) {
+                    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+                    Thread.currentThread().setContextClassLoader(manager.getClassLoader(plugin));
+                    try {
+
+                        for(PluginListener listener : plugin.getPluginListeners()) {
                         listener.pluginManagerStarted();
+                    }
+                    } finally {
+                        Thread.currentThread().setContextClassLoader(loader);
                     }
                 }
                 for (ReststopPlugin plugin : manager.getPlugins()) {
-                    for (PluginListener listener : plugin.getPluginListeners()) {
-                        listener.pluginsUpdated(plugins);
+                    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+                    Thread.currentThread().setContextClassLoader(manager.getClassLoader(plugin));
+                    try {
+
+                        for (PluginListener listener : plugin.getPluginListeners()) {
+                            listener.pluginsUpdated(plugins);
+                        }
+                    } finally {
+                        Thread.currentThread().setContextClassLoader(loader);
                     }
                 }
             }
@@ -652,11 +672,18 @@ public class ReststopInitializer implements ServletContainerInitializer{
         public void setManager(DefaultPluginManager<ReststopPlugin> manager) {
             this.manager = manager;
             manager.addPluginManagerListener(new PluginManagerListener<ReststopPlugin>() {
+
+                private ThreadLocal<ClassLoader> classLoader = new ThreadLocal<ClassLoader>();
+
                 @Override
                 public void afterClassLoaderAdded(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
+                    Thread.currentThread().setContextClassLoader(this.classLoader.get());
+                    this.classLoader.remove();
+
                     synchronized (classLoaders) {
                         classLoaders.put(classLoader, classLoader);
                     }
+
                 }
 
                 @Override
@@ -665,6 +692,16 @@ public class ReststopInitializer implements ServletContainerInitializer{
                         classLoaders.remove(classLoader);
                     }
                 }
+
+                @Override
+                public void beforeClassLoaderAdded(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
+                   this.classLoader.set(classLoader);
+                    Thread.currentThread().setContextClassLoader(classLoader);
+                }
+
+
+
+
             });
         }
 

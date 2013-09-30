@@ -27,20 +27,12 @@ public class CxfReststopPlugin extends DefaultReststopPlugin {
 
     public static ThreadLocal<ClassLoader> pluginClassLoader = new ThreadLocal<>();
 
-    public CxfReststopPlugin(Reststop reststop, final ReststopPluginManager pluginManager, ServletContext servletContext) {
+    public CxfReststopPlugin(Reststop reststop, final ReststopPluginManager pluginManager, ServletContext servletContext) throws ServletException {
         this.pluginManager = pluginManager;
 
         CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet();
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        try {
-            Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
+        cxfNonSpringServlet.init(reststop.createServletConfig("cxf", new Properties()));
 
-            cxfNonSpringServlet.init(reststop.createServletConfig("cxf", new Properties()));
-        } catch (ServletException e) {
-            throw new RuntimeException("Failed starting CXF", e);
-        } finally {
-            Thread.currentThread().setContextClassLoader(loader);
-        }
 
         addServletFilter(reststop.createServletFilter(cxfNonSpringServlet, "/ws/*"));
 
@@ -53,37 +45,32 @@ public class CxfReststopPlugin extends DefaultReststopPlugin {
     }
 
     private void deployEndpoints() {
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        try {
-            Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-            for (Endpoint endpoint : endpoints) {
-                endpoint.stop();
-            }
-
-            WSDLManager wsdlManager = WSDLManagerDefinitionCacheCleaner.getWsdlManager();
-            for(Definition def : wsdlManager.getDefinitions().values()) {
-                wsdlManager.removeDefinition(def);
-            }
-            for(JaxWsPlugin plugin : pluginManager.getPlugins(JaxWsPlugin.class)) {
-
-                try {
-                    pluginClassLoader.set(pluginManager.getClassLoader(plugin));
-
-                    for(EndpointConfiguration config : plugin.getEndpointConfigurations()) {
-                        Endpoint endpoint = Endpoint.create(config.getImplementor());
-                        endpoint.publish(config.getPath());
-                        for(CxfPluginPlugin cxfPluginPlugin : pluginManager.getPlugins(CxfPluginPlugin.class)) {
-                            cxfPluginPlugin.customizeEndpoint(endpoint);
-                        }
-                        CxfReststopPlugin.this.endpoints.add(endpoint);
-                    }
-                }finally {
-                    pluginClassLoader.remove();
-                }
-                }
-        } finally {
-            Thread.currentThread().setContextClassLoader(loader);
+        for (Endpoint endpoint : endpoints) {
+            endpoint.stop();
         }
+
+        WSDLManager wsdlManager = WSDLManagerDefinitionCacheCleaner.getWsdlManager();
+        for (Definition def : wsdlManager.getDefinitions().values()) {
+            wsdlManager.removeDefinition(def);
+        }
+        for (JaxWsPlugin plugin : pluginManager.getPlugins(JaxWsPlugin.class)) {
+
+            try {
+                pluginClassLoader.set(pluginManager.getClassLoader(plugin));
+
+                for (EndpointConfiguration config : plugin.getEndpointConfigurations()) {
+                    Endpoint endpoint = Endpoint.create(config.getImplementor());
+                    endpoint.publish(config.getPath());
+                    for (CxfPluginPlugin cxfPluginPlugin : pluginManager.getPlugins(CxfPluginPlugin.class)) {
+                        cxfPluginPlugin.customizeEndpoint(endpoint);
+                    }
+                    CxfReststopPlugin.this.endpoints.add(endpoint);
+                }
+            } finally {
+                pluginClassLoader.remove();
+            }
+        }
+
     }
 
 }

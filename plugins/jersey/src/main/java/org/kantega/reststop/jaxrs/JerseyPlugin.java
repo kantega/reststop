@@ -18,18 +18,11 @@ import static java.util.Collections.singletonMap;
 public class JerseyPlugin extends DefaultReststopPlugin {
 
 
-    public JerseyPlugin(Reststop reststop, final ReststopPluginManager pluginManager) {
+    public JerseyPlugin(Reststop reststop, final ReststopPluginManager pluginManager) throws ServletException {
 
         final ServletContainer filter = addJerseyFilter( new ReststopApplication());
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        try {
-            Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
-            filter.init(reststop.createFilterConfig("jersey", new Properties()));
-        } catch (ServletException e) {
-            throw new RuntimeException("Exception starting Jersey", e);
-        } finally {
-            Thread.currentThread().setContextClassLoader(loader);
-        }
+
+        filter.init(reststop.createFilterConfig("jersey", new Properties()));
 
         addServletFilter(reststop.createFilter(filter, "/*", FilterPhase.USER));
 

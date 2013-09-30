@@ -16,22 +16,20 @@ import java.util.Properties;
 public class WicketPlugin extends DefaultReststopPlugin {
 
 
-    public WicketPlugin(Reststop reststop, final ReststopPluginManager pluginManager) throws ServletException {
+    public WicketPlugin(Reststop reststop) throws ServletException {
 
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-
-        try {
-            Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
             WicketApplication wicketApplication = new WicketApplication();
             addService(WebApplication.class, wicketApplication);
+
             WicketFilter filter = new WicketFilter(wicketApplication);
+
             Properties properties = new Properties();
             String filterPath = "/wicket/*";
             properties.setProperty(WicketFilter.FILTER_MAPPING_PARAM, filterPath);
+
             filter.init(reststop.createFilterConfig("wicket", properties));
+
             addServletFilter(reststop.createFilter(filter, filterPath, FilterPhase.USER));
-        } finally {
-            Thread.currentThread().setContextClassLoader(loader);
-        }
+
     }
 }
