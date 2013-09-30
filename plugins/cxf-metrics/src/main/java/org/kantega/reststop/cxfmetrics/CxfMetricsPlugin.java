@@ -20,6 +20,8 @@ import javax.xml.namespace.QName;
 import javax.xml.ws.Endpoint;
 import java.util.concurrent.TimeUnit;
 
+import static com.codahale.metrics.MetricRegistry.name;
+
 /**
  *
  */
@@ -68,17 +70,12 @@ public class CxfMetricsPlugin extends DefaultCxfPluginPlugin {
             Long time_before = (Long) message.getExchange().get("time_before");
             if(time_before != null) {
                 QName operation = (QName) message.get(Message.WSDL_OPERATION);
-                QName service = (QName) message.get(Message.WSDL_SERVICE);
 
-                String name = operation.toString();
-                Timer timer;
-                if(!registry.getTimers().containsKey(name)) {
-                    timer = registry.register(name, new Timer());
-                } else {
-                    timer = registry.getTimers().get(name);
-                }
+                String requestUri = (String) message.getExchange().getInMessage().get(Message.REQUEST_URI);
 
-                timer.update(System.nanoTime() - time_before, TimeUnit.NANOSECONDS);
+                String name = name("WS", operation.toString(), requestUri );
+
+                registry.timer(name).update(System.nanoTime() - time_before, TimeUnit.NANOSECONDS);
 
             }
         }
