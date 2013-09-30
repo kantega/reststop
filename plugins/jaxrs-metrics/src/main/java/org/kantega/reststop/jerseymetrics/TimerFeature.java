@@ -15,8 +15,9 @@ public class TimerFeature implements DynamicFeature {
     @Override
     public void configure(ResourceInfo resourceInfo, FeatureContext context) {
 
-        if(resourceInfo.getResourceClass().getAnnotation(Path.class) != null) {
-            context.register(TimerBeforeFilter.class);
+        Path path = resourceInfo.getResourceClass().getAnnotation(Path.class);
+        if(path != null) {
+            context.register(new TimerBeforeFilter(path.value()));
             context.register(TimerAfterFilter.class);
         }
     }

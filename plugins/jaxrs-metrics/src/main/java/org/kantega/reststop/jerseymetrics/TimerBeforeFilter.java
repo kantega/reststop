@@ -17,13 +17,19 @@ import static com.codahale.metrics.MetricRegistry.name;
 public class TimerBeforeFilter implements ContainerRequestFilter {
 
 
+    private final String path;
+
+    public TimerBeforeFilter(String path) {
+
+        this.path = path;
+    }
 
     @Override
     public void filter(ContainerRequestContext requestContext) throws IOException {
 
         MetricRegistry registry = JerseyMetricsPlugin.getMetricRegistry();
 
-        String name = name("REST", requestContext.getUriInfo().getPath(),
+        String name = name("REST", path,
                             requestContext.getMethod());
 
         Timer.Context context = registry.timer(name).time();
