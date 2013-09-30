@@ -12,15 +12,12 @@ import static java.util.Arrays.asList;
 /**
  *
  */
-public class PluginInfo {
+public class PluginInfo extends Artifact {
 
     private Map<String, List<Artifact>> classpaths = new HashMap<>();
-    private String groupId;
-    private String artifactId;
-    private String version;
-    private File pluginFile;
     private File sourceDirectory;
     private boolean directDeploy;
+    private List<Artifact> dependsOn = new ArrayList<>();
 
     public List<Artifact> getClassPath(String scope) {
         if (!classpaths.containsKey(scope)) {
@@ -51,42 +48,66 @@ public class PluginInfo {
 
             Element pluginElement = (Element) pluginElements.item(i);
 
-            pluginInfo.setGroupId(pluginElement.getAttribute("groupId"));
-            pluginInfo.setArtifactId(pluginElement.getAttribute("artifactId"));
-            pluginInfo.setVersion(pluginElement.getAttribute("version"));
-            pluginInfo.setDirectDeploy("true".equals(pluginElement.getAttribute("directDeploy")));
-            File pluginJar = new File(pluginElement.getAttribute("pluginFile"));
-            pluginInfo.setPluginFile(pluginJar);
+            parseGav(pluginInfo, pluginElement);
+
+            pluginInfo.setDirectDeploy(!"false".equals(pluginElement.getAttribute("directDeploy")));
+            String pluginFile = pluginElement.getAttribute("pluginFile");
+            if(!pluginFile.isEmpty()) {
+                File pluginJar = new File(pluginFile);
+                pluginInfo.setFile(pluginJar);
+            }
             String sourceDir = pluginElement.getAttribute("sourceDirectory");
-            if (sourceDir != null && !sourceDir.trim().isEmpty()) {
+            if(sourceDir != null && !sourceDir.trim().isEmpty()) {
                 pluginInfo.setSourceDirectory(new File(sourceDir));
             }
 
+            NodeList dependsOnElems = pluginElement.getElementsByTagName("depends-on");
+            for(int d = 0; d < dependsOnElems.getLength(); d++) {
+                Element depElem = (Element) dependsOnElems.item(d);
+                Artifact depArt = new Artifact();
+                parseGav(depArt, depElem);
+                pluginInfo.addDependsOn(depArt);
+            }
 
             for (String scope : asList("test", "runtime", "compile")) {
 
-                Element runtimeElement = (Element) pluginElement.getElementsByTagName(scope).item(0);
+                NodeList classPathElems = pluginElement.getElementsByTagName(scope);
+                if(classPathElems.getLength() > 0) {
+                    Element runtimeElement = (Element) classPathElems.item(0);
 
 
-                NodeList artifacts = runtimeElement.getElementsByTagName("artifact");
+                    NodeList artifacts = runtimeElement.getElementsByTagName("artifact");
 
 
-                for (int a = 0; a < artifacts.getLength(); a++) {
-                    Element artifactElement = (Element) artifacts.item(a);
-                    File file = new File(artifactElement.getAttribute("file"));
+                    for (int a = 0; a < artifacts.getLength(); a++) {
+                        Element artifactElement = (Element) artifacts.item(a);
+                        String filePath = artifactElement.getAttribute("file");
+                        File file = null;
+                        if(filePath != null) {
+                            file = new File(filePath);
+                        }
+                        Artifact artifact = new Artifact(artifactElement.getAttribute("groupId"),
+                                artifactElement.getAttribute("artifactId"),
+                                artifactElement.getAttribute("version"), file);
 
-                    Artifact artifact = new Artifact(artifactElement.getAttribute("groupId"),
-                            artifactElement.getAttribute("artifactId"),
-                            artifactElement.getAttribute("version"), file);
+                        pluginInfo.getClassPath(scope).add(artifact);
 
-                    pluginInfo.getClassPath(scope).add(artifact);
-
+                    }
                 }
-
 
             }
         }
         return infos;
+    }
+
+    public void addDependsOn(Artifact depArt) {
+        dependsOn.add(depArt);
+    }
+
+    private static void parseGav(Artifact pluginInfo, Element pluginElement) {
+        pluginInfo.setGroupId(pluginElement.getAttribute("groupId"));
+        pluginInfo.setArtifactId(pluginElement.getAttribute("artifactId"));
+        pluginInfo.setVersion(pluginElement.getAttribute("version"));
     }
 
     public List<PluginInfo> getParents(Collection<PluginInfo> all) {
@@ -122,39 +143,6 @@ public class PluginInfo {
     public String toString() {
         return "Plugin " + getGroupId() +":" + getArtifactId() +":" + getVersion();
     }
-
-    public void setGroupId(String groupId) {
-        this.groupId = groupId;
-    }
-
-    public String getGroupId() {
-        return groupId;
-    }
-
-    public void setArtifactId(String artifactId) {
-        this.artifactId = artifactId;
-    }
-
-    public String getArtifactId() {
-        return artifactId;
-    }
-
-    public void setVersion(String version) {
-        this.version = version;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public void setPluginFile(File pluginFile) {
-        this.pluginFile = pluginFile;
-    }
-
-    public File getPluginFile() {
-        return pluginFile;
-    }
-
 
     public void setSourceDirectory(File sourceDirectory) {
         this.sourceDirectory = sourceDirectory;
@@ -199,7 +187,7 @@ public class PluginInfo {
 
     private static void dfs(PluginInfo info, Map<String, PluginInfo> plugins, Map<String, Boolean> colors, List<PluginInfo> sorted) {
         colors.put(info.getGroupIdAndArtifactId(), Boolean.FALSE);
-        for (Artifact dep : info.getClassPath("compile")) {
+        for (Artifact dep : info.getDependsOn()) {
             String key = dep.getGroupIdAndArtifactId();
             if (plugins.containsKey(key) && !colors.containsKey(key)) {
                 dfs(plugins.get(key), plugins, colors, sorted);
@@ -211,5 +199,9 @@ public class PluginInfo {
 
     public String getGroupIdAndArtifactId() {
         return getGroupId() +":" + getArtifactId();
+    }
+
+    public List<Artifact> getDependsOn() {
+        return dependsOn;
     }
 }

@@ -36,7 +36,11 @@ import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.*;
 import org.eclipse.aether.util.filter.ScopeDependencyFilter;
+import org.w3c.dom.Document;
 
+import javax.xml.transform.*;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -53,35 +57,16 @@ import static java.util.Collections.singleton;
 @Mojo(name = "dist",
         defaultPhase = LifecyclePhase.PACKAGE,
 requiresDependencyResolution = ResolutionScope.COMPILE)
-public class DistMojo extends AbstractMojo {
+public class DistMojo extends AbstractReststopMojo {
 
 
-    @Component
-    private RepositorySystem repoSystem;
-
-    @Parameter(defaultValue ="${repositorySystemSession}" ,readonly = true)
-    private RepositorySystemSession repoSession;
-
-    @Parameter(defaultValue = "${project.remoteProjectRepositories}")
-    private List<RemoteRepository> remoteRepos;
 
     @Parameter(defaultValue = "${plugin}")
     private Object plugin;
 
-    @Parameter (defaultValue = "org.kantega.reststop:reststop-webapp:war:${plugin.version}")
-    private String warCoords;
-
-    @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}.${project.packaging}")
-    private File pluginJar;
-
     @Parameter(defaultValue = "${project.build.directory}/reststop/dist/")
     private File workDirectory;
 
-    @Parameter(defaultValue = "${project}")
-    private MavenProject mavenProject;
-
-    @Parameter
-    private List<Plugin> plugins;
 
     @Parameter
     private final String jettyVersion = "9.0.5.v20130815";
@@ -104,6 +89,8 @@ public class DistMojo extends AbstractMojo {
 
         copyPlugins(getPlugins(), manager);
 
+        writePluginsXml();
+
         Artifact warArifact = resolveArtifactFile(warCoords);
         copyArtifactToRepository(warArifact, manager);
 
@@ -115,6 +102,21 @@ public class DistMojo extends AbstractMojo {
 
         createTomcatContextXml(warArifact, manager);
 
+    }
+
+    private void writePluginsXml() throws MojoFailureException, MojoExecutionException {
+        Document pluginXmlDocument = createPluginXmlDocument(true);
+
+
+        try {
+            Transformer transformer = TransformerFactory.newInstance().newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+            transformer.transform(new DOMSource(pluginXmlDocument), new StreamResult(new File(workDirectory, "plugins.xml")));
+        }
+        catch (TransformerException e) {
+            throw new MojoFailureException(e.getMessage(), e);
+        }
     }
 
     private void createTomcatContextXml(Artifact warArifact, LocalRepositoryManager manager) throws MojoExecutionException {
@@ -243,16 +245,11 @@ public class DistMojo extends AbstractMojo {
 
     }
 
-    private String coords(org.apache.maven.artifact.Artifact artifact) {
-        return artifact.getGroupId() +":" + artifact.getArtifactId() +":" + artifact.getVersion();
-    }
 
     private void copyPlugins(List<Plugin> plugins, LocalRepositoryManager manager) throws MojoFailureException, MojoExecutionException {
         if(plugins != null) {
-            List<String> coords = new ArrayList<>();
 
             for (Plugin plugin : plugins) {
-                String line = plugin.getCoords();
 
                 Artifact pluginArtifact = resolveArtifactFile(plugin.getCoords());
                 copyArtifactToRepository(pluginArtifact, manager);
@@ -270,18 +267,11 @@ public class DistMojo extends AbstractMojo {
                 for(ArtifactResult result : dependencyResult.getArtifactResults()) {
                     Artifact artifact = result.getArtifact();
                         if(!artifact.equals(pluginArtifact)) {
-                            line += ", " + artifact.getGroupId() +":" + artifact.getArtifactId() +":" + artifact.getVersion();
                             copyArtifactToRepository(artifact, manager);
                         }
                 }
-                coords.add(line);
             }
 
-            try {
-                Files.write(new File(workDirectory, "plugins.txt").toPath(), coords, Charset.forName("utf-8"));
-            } catch (Exception e) {
-                throw new MojoExecutionException("Failed writing plugins.txt", e);
-            }
         }
     }
 

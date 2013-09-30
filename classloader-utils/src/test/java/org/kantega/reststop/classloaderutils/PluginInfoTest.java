@@ -41,9 +41,9 @@ public class PluginInfoTest {
         infos.add(c);
 
         // c depends on b
-        c.getClassPath("compile").add(new Artifact(b));
+        c.addDependsOn(b);
         // b depends on a
-        b.getClassPath("compile").add(new Artifact(a));
+        b.addDependsOn(a);
 
         for(int i = 0; i < 200; i++) {
             Collections.shuffle(infos);

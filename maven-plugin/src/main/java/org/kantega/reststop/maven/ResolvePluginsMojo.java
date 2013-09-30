@@ -36,7 +36,7 @@ public class ResolvePluginsMojo extends AbstractReststopMojo {
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         try {
-            Document xmlDocument = createPluginXmlDocument();
+            Document xmlDocument = createPluginXmlDocument(false);
 
             pluginsXmlFile.getParentFile().mkdirs();
 

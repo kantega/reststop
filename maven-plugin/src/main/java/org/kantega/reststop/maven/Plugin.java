@@ -16,6 +16,9 @@
 
 package org.kantega.reststop.maven;
 
+import org.eclipse.aether.artifact.Artifact;
+import org.kantega.reststop.classloaderutils.PluginInfo;
+
 import java.io.File;
 
 /**
@@ -81,5 +84,24 @@ public class Plugin {
 
     public void setSourceDirectory(File sourceDirectory) {
         this.sourceDirectory = sourceDirectory;
+    }
+
+    public PluginInfo asPluginInfo() {
+        PluginInfo info = new PluginInfo();
+
+
+        info.setGroupId(getGroupId());
+        info.setArtifactId(getArtifactId());
+        info.setVersion(getVersion());
+
+
+        info.setDirectDeploy(isDirectDeploy());
+
+        info.setSourceDirectory(getSourceDirectory());
+
+
+
+        return info;
+
     }
 }

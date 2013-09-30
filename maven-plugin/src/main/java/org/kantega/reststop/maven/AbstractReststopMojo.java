@@ -38,6 +38,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.kantega.reststop.classloaderutils.PluginInfo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
@@ -62,16 +63,16 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
 
     @Component
-    private RepositorySystem repoSystem;
+    protected RepositorySystem repoSystem;
 
     @Parameter(defaultValue ="${repositorySystemSession}" ,readonly = true)
     protected RepositorySystemSession repoSession;
 
     @Parameter(defaultValue = "${project.remoteProjectRepositories}")
-    private List<RemoteRepository> remoteRepos;
+    protected List<RemoteRepository> remoteRepos;
 
     @Parameter (defaultValue = "org.kantega.reststop:reststop-webapp:war:${plugin.version}")
-    private String warCoords;
+    protected String warCoords;
 
     @Parameter(defaultValue = "${project.build.directory}/reststop/temp")
     private File tempDirectory;
@@ -83,7 +84,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
     protected MavenProject mavenProject;
 
     @Parameter
-    private List<Plugin> plugins;
+    protected List<Plugin> plugins;
 
 
     @Override
@@ -113,7 +114,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
             JettyWebAppContext context = new JettyWebAppContext();
 
             context.setWar(war.getAbsolutePath());
-            context.getServletContext().setAttribute("pluginsXml", createPluginXmlDocument());
+            context.getServletContext().setAttribute("pluginsXml", createPluginXmlDocument(false));
 
             customizeContext(context);
 
@@ -144,36 +145,20 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
     }
 
-    protected Document createPluginXmlDocument() throws MojoFailureException, MojoExecutionException {
+    protected Document createPluginXmlDocument(boolean prod) throws MojoFailureException, MojoExecutionException {
         try {
-            Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
 
-            Element pluginsElem = doc.createElement("plugins");
-
-            doc.appendChild(pluginsElem);
+            List<PluginInfo> pluginInfos = new ArrayList<>();
 
             for (Plugin plugin : getPlugins()) {
-
-                Element pluginElem = doc.createElement("plugin");
-                pluginsElem.appendChild(pluginElem);
-
-                pluginElem.setAttribute("groupId", plugin.getGroupId());
-                pluginElem.setAttribute("artifactId", plugin.getArtifactId());
-                pluginElem.setAttribute("version", plugin.getVersion());
-                pluginElem.setAttribute("directDeploy", Boolean.toString(plugin.isDirectDeploy()));
-                if(plugin.getSourceDirectory() != null) {
-                    pluginElem.setAttribute("sourceDirectory", plugin.getSourceDirectory().getAbsolutePath());
-                }
+                PluginInfo info = plugin.asPluginInfo();
+                pluginInfos.add(info);
 
                 Artifact pluginArtifact = resolveArtifact(plugin.getCoords());
 
-                pluginElem.setAttribute("pluginFile", pluginArtifact.getFile().getAbsolutePath());
+                info.setFile(pluginArtifact.getFile());
 
                 for(String scope : asList(JavaScopes.TEST, JavaScopes.RUNTIME, JavaScopes.COMPILE)) {
-
-                    Element scopeElem = doc.createElement(scope);
-
-                    pluginElem.appendChild(scopeElem);
 
                     try {
 
@@ -198,18 +183,78 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
                         for(ArtifactResult result : dependencyResult.getArtifactResults()) {
                             Artifact artifact = result.getArtifact();
-                            Element artifactElement = doc.createElement("artifact");
-                            artifactElement.setAttribute("groupId", artifact.getGroupId());
-                            artifactElement.setAttribute("artifactId", artifact.getArtifactId());
-                            artifactElement.setAttribute("version", artifact.getVersion());
+                            org.kantega.reststop.classloaderutils.Artifact pa  = new org.kantega.reststop.classloaderutils.Artifact();
+                            info.getClassPath(scope).add(pa);
 
-                            artifactElement.setAttribute("file", artifact.getFile().getAbsolutePath());
+                            pa.setGroupId(artifact.getGroupId());
+                            pa.setArtifactId(artifact.getArtifactId());
+                            pa.setVersion(artifact.getVersion());
 
-                            scopeElem.appendChild(artifactElement);
+                            pa.setFile(artifact.getFile());
                         }
 
                     } catch (DependencyResolutionException | ArtifactDescriptorException e) {
                         throw new MojoFailureException("Failed resolving plugin dependencies", e);
+                    }
+
+
+                }
+            }
+
+            Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+
+            Element pluginsElem = doc.createElement("plugins");
+
+            doc.appendChild(pluginsElem);
+
+            for (PluginInfo plugin : pluginInfos) {
+                Element pluginElem = doc.createElement("plugin");
+                pluginsElem.appendChild(pluginElem);
+
+                List<PluginInfo> parents = plugin.getParents(pluginInfos);
+                for (PluginInfo parent : parents) {
+                    Element dependsElem = doc.createElement("depends-on");
+                    pluginElem.appendChild(dependsElem);
+                    dependsElem.setAttribute("groupId", parent.getGroupId());
+                    dependsElem.setAttribute("artifactId", parent.getArtifactId());
+                    dependsElem.setAttribute("version", parent.getVersion());
+
+                }
+
+                pluginElem.setAttribute("groupId", plugin.getGroupId());
+                pluginElem.setAttribute("artifactId", plugin.getArtifactId());
+                pluginElem.setAttribute("version", plugin.getVersion());
+                if(!prod) {
+
+                    if(plugin.getSourceDirectory() != null) {
+                        pluginElem.setAttribute("sourceDirectory", plugin.getSourceDirectory().getAbsolutePath());
+                    }
+
+
+                    pluginElem.setAttribute("pluginFile", plugin.getFile().getAbsolutePath());
+                    pluginElem.setAttribute("directDeploy", Boolean.toString(plugin.isDirectDeploy()));
+                }
+
+
+                List<String> scopes = prod ? Collections.singletonList(JavaScopes.RUNTIME) : asList(JavaScopes.TEST, JavaScopes.RUNTIME, JavaScopes.COMPILE);
+
+                for(String scope : scopes) {
+
+                    Element scopeElem = doc.createElement(scope);
+
+                    pluginElem.appendChild(scopeElem);
+
+                    for (org.kantega.reststop.classloaderutils.Artifact artifact : plugin.getClassPath(scope)) {
+                        Element artifactElement = doc.createElement("artifact");
+                        artifactElement.setAttribute("groupId", artifact.getGroupId());
+                        artifactElement.setAttribute("artifactId", artifact.getArtifactId());
+                        artifactElement.setAttribute("version", artifact.getVersion());
+
+                        if(!prod) {
+                            artifactElement.setAttribute("file", artifact.getFile().getAbsolutePath());
+                        }
+
+                        scopeElem.appendChild(artifactElement);
                     }
 
 

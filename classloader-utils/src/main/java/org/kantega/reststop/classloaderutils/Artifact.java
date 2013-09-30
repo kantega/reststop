@@ -6,10 +6,10 @@ import java.io.File;
  *
  */
 public class Artifact {
-    private final String groupId;
-    private final String artifactId;
-    private final String version;
-    private final File file;
+    private String groupId;
+    private String artifactId;
+    private String version;
+    private File file;
 
     public Artifact(String groupId, String artifactId, String version, File file) {
         this.groupId = groupId;
@@ -18,8 +18,11 @@ public class Artifact {
         this.file = file;
     }
 
-    public Artifact(PluginInfo info) {
-        this(info.getGroupId(), info.getArtifactId(), info.getVersion(), null);
+    public Artifact(Artifact artifact) {
+        this(artifact.getGroupId(), artifact.getArtifactId(), artifact.getVersion(), artifact.getFile());
+    }
+
+    public Artifact() {
     }
 
     public String getGroupId() {
@@ -44,5 +47,26 @@ public class Artifact {
 
     public String getGroupIdAndArtifactId() {
         return getGroupId() +":" + getArtifactId();
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+
+    public void setArtifactId(String artifactId) {
+        this.artifactId = artifactId;
+    }
+
+    public void setVersion(String version) {
+        this.version = version;
+    }
+
+    public void setFile(File file) {
+        this.file = file;
+    }
+
+    @Override
+    public String toString() {
+        return "Artifact " + getGroupId() +":" + getArtifactId() +":" + getVersion();
     }
 }

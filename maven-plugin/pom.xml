@@ -32,6 +32,10 @@
 
     <dependencies>
         <dependency>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-classloader-utils</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.maven.plugin-tools</groupId>
             <artifactId>maven-plugin-annotations</artifactId>
             <version>3.2</version>

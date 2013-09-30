@@ -20,7 +20,11 @@
     <Set name="contextPath">/</Set>
     <Set name="war"><SystemProperty name="jetty.home" default="." />/RESTSTOPWAR</Set>
     <Call name="setInitParameter">
-        <Arg>plugins.txt</Arg>
-        <Arg>../plugins.txt</Arg>
+        <Arg>plugins.xml</Arg>
+        <Arg><SystemProperty name="jetty.home" default="." />/../plugins.xml</Arg>
+    </Call>
+    <Call name="setInitParameter">
+        <Arg>repositoryPath</Arg>
+        <Arg><SystemProperty name="jetty.home" default="." />/../repository</Arg>
     </Call>
 </Configure>
