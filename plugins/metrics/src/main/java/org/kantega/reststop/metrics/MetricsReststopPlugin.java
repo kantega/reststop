@@ -18,6 +18,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Properties;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -42,7 +43,7 @@ public class MetricsReststopPlugin extends DefaultReststopPlugin {
 
         healthCheckRegistry = initHealthCheckRegistry();
         HealthCheckServlet healthCheckServlet = new HealthCheckServlet(healthCheckRegistry);
-        healthCheckServlet.init(new EmptyServletConfig(servletContext));
+        healthCheckServlet.init(reststop.createServletConfig("healthcheck", new Properties()));
 
         addServletFilter(reststop.createFilter(
                 new ServletWrapper(healthCheckServlet),

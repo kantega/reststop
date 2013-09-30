@@ -18,6 +18,9 @@ package org.kantega.reststop.api;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
+import javax.servlet.FilterConfig;
+import javax.servlet.ServletConfig;
+import java.util.Properties;
 
 /**
  *
@@ -29,6 +32,9 @@ public interface Reststop {
     PluginClassLoaderChange changePluginClassLoaders();
 
     FilterChain newFilterChain(FilterChain filterChain);
+
+    ServletConfig createServletConfig(String name, Properties properties);
+    FilterConfig createFilterConfig(String name, Properties properties);
 
     interface PluginClassLoaderChange {
         PluginClassLoaderChange add(ClassLoader classLoader);

@@ -46,10 +46,13 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
 
     private boolean pluginManagerStarted;
+    private ServletContext servletContext;
 
     @Override
     public void onStartup(Set<Class<?>> classes, ServletContext servletContext) throws ServletException {
 
+
+        this.servletContext = servletContext;
 
         final DefaultPluginManager<ReststopPlugin> manager = buildPluginManager(servletContext);
 
@@ -224,6 +227,16 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
 
         @Override
+        public ServletConfig createServletConfig(String name, Properties properties) {
+            return new PropertiesWebConfig(name, properties);
+        }
+
+        @Override
+        public FilterConfig createFilterConfig(String name, Properties properties) {
+            return new PropertiesWebConfig(name, properties);
+        }
+
+        @Override
         public FilterChain newFilterChain(FilterChain filterChain) {
 
             PluginFilterChain orig = (PluginFilterChain) filterChain;
@@ -254,6 +267,41 @@ public class ReststopInitializer implements ServletContainerInitializer{
             @Override
             public void commit() {
                 registry.replace(removes, adds);
+            }
+        }
+
+        private class PropertiesWebConfig implements ServletConfig, FilterConfig  {
+            private final String name;
+            private final Properties properties;
+
+            public PropertiesWebConfig(String name, Properties properties) {
+                this.name = name;
+                this.properties = properties;
+            }
+
+            @Override
+            public String getFilterName() {
+                return name;
+            }
+
+            @Override
+            public String getServletName() {
+                return name;
+            }
+
+            @Override
+            public ServletContext getServletContext() {
+                return servletContext;
+            }
+
+            @Override
+            public String getInitParameter(String name) {
+                return properties.getProperty(name);
+            }
+
+            @Override
+            public Enumeration<String> getInitParameterNames() {
+                return Collections.enumeration(properties.stringPropertyNames());
             }
         }
     }

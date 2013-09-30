@@ -35,7 +35,7 @@ public class CxfReststopPlugin extends DefaultReststopPlugin {
         try {
             Thread.currentThread().setContextClassLoader(getClass().getClassLoader());
 
-            cxfNonSpringServlet.init(new EmptyServletConfig(servletContext));
+            cxfNonSpringServlet.init(reststop.createServletConfig("cxf", new Properties()));
         } catch (ServletException e) {
             throw new RuntimeException("Failed starting CXF", e);
         } finally {
@@ -135,33 +135,4 @@ public class CxfReststopPlugin extends DefaultReststopPlugin {
         }
     }
 
-    private class EmptyServletConfig implements ServletConfig {
-
-        private final ServletContext servletContext;
-
-        public EmptyServletConfig(ServletContext servletContext) {
-
-            this.servletContext = servletContext;
-        }
-
-        @Override
-        public String getServletName() {
-            return "cxf";
-        }
-
-        @Override
-        public ServletContext getServletContext() {
-            return servletContext;
-        }
-
-        @Override
-        public String getInitParameter(String s) {
-            return null;
-        }
-
-        @Override
-        public Enumeration<String> getInitParameterNames() {
-            return Collections.emptyEnumeration();
-        }
-    }
 }
