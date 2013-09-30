@@ -110,7 +110,7 @@
                         </plugin>
                         <plugin>
                             <groupId>${project.groupId}</groupId>
-                            <artifactId>reststop-jaxrs-plugin</artifactId>
+                            <artifactId>reststop-jersey-plugin</artifactId>
                             <version>${project.version}</version>
                         </plugin>
 
