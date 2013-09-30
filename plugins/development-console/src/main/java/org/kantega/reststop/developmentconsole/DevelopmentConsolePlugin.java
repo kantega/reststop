@@ -20,9 +20,11 @@ public class DevelopmentConsolePlugin extends DefaultReststopPlugin {
 
 
     private final ReststopPluginManager pluginManager;
+    private final VelocityEngine velocityEngine;
 
-    public DevelopmentConsolePlugin(Reststop reststop, ReststopPluginManager pluginManager) {
+    public DevelopmentConsolePlugin(Reststop reststop, ReststopPluginManager pluginManager, VelocityEngine velocityEngine) {
         this.pluginManager = pluginManager;
+        this.velocityEngine = velocityEngine;
         addServletFilter(reststop.createFilter(new DeveloperConsole(), "/dev*", FilterPhase.USER));
     }
 
@@ -48,7 +50,7 @@ public class DevelopmentConsolePlugin extends DefaultReststopPlugin {
             context.put("pluginClassloaders", getPluginClassLoaders(pluginManager));
 
             context.put("pluginInfos", getPluginInfos(pluginManager));
-            getEngine().getTemplate("templates/console.vm").merge(context, resp.getWriter());
+            velocityEngine.getTemplate("templates/console.vm").merge(context, resp.getWriter());
         }
 
         private List<PluginInfo> getPluginInfos(ReststopPluginManager pluginManager) {
@@ -96,9 +98,5 @@ public class DevelopmentConsolePlugin extends DefaultReststopPlugin {
         public void destroy() {
 
         }
-    }
-
-    private VelocityEngine getEngine() {
-       return pluginManager.getPlugins(DevelopmentPlugin.class).iterator().next().getVelocityEngine();
     }
 }

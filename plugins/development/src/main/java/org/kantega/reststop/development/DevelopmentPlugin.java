@@ -25,17 +25,16 @@ import org.w3c.dom.Document;
 
 import javax.servlet.ServletContext;
 import java.io.File;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
  *
  */
 public class DevelopmentPlugin extends DefaultReststopPlugin {
-    private boolean pluginManagerStarted;
-    private VelocityEngine velocityEngine;
+    private volatile boolean providerStarted = false;
 
-    public DevelopmentPlugin(final Reststop reststop, ServletContext servletContext, ReststopPluginManager pluginManager) {
+    public DevelopmentPlugin(final Reststop reststop, ServletContext servletContext) {
 
         Document pluginsXml = (Document) servletContext.getAttribute("pluginsXml");
 
@@ -54,7 +53,6 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
                         addPluginListener(new PluginListener() {
                             @Override
                             public void pluginManagerStarted() {
-                                pluginManagerStarted = true;
                                 reststop.changePluginClassLoaders().remove(getClass().getClassLoader()).add(devloader).commit();
                             }
                         });
@@ -65,6 +63,8 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
                 }
             }
         }
+
+        VelocityEngine velocityEngine = addService(initVelocityEngine());
 
         final DevelopmentClassLoaderProvider provider = new DevelopmentClassLoaderProvider();
 
@@ -92,10 +92,22 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
                 }
             });
         } else {
-            provider.start(reststop);
+            addPluginListener(new PluginListener() {
+                @Override
+                public void pluginsUpdated(Collection<ReststopPlugin> plugins) {
+                    if(!providerStarted) {
+                        providerStarted = true;
+                        for (ReststopPlugin plugin : plugins) {
+                            if(plugin == DevelopmentPlugin.this) {
+                                provider.start(reststop);
+                            }
+                        }
+                    }
+                }
+            });
         }
 
-        this.velocityEngine = initVelocityEngine();
+
 
 
         addServletFilter(reststop.createFilter(new RedeployFilter(provider, reststop, velocityEngine), "/*", FilterPhase.UNMARSHAL));
@@ -128,16 +140,4 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
         return getClass().getClassLoader().getClass().getName().equals(DevelopmentClassloader.class.getName());
     }
 
-    private List<File> parseClasspath(String classPath) {
-        List<File> files = new ArrayList<>();
-        for(String path : classPath.split(File.pathSeparator)) {
-            File file = new File(path);
-            files.add(file);
-        }
-        return files;
-    }
-
-    public VelocityEngine getVelocityEngine() {
-        return velocityEngine;
-    }
 }
