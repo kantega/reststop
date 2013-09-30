@@ -44,6 +44,7 @@ public class ErrorReporter {
         map.put("compilationExceptions", formatCompilationExceptions());
         map.put("testFailureExceptions", formatTestFailureExceptions());
         velocityEngine.getTemplate("templates/template.vm").merge(map, resp.getWriter());
+        resp.getWriter().flush();
 
     }
 
