@@ -97,7 +97,7 @@ public class CreateMojo extends AbstractMojo {
 
     private void createClasses(String pack, List<String> classNames, File sourceDir) throws IOException {
         for (String className : classNames) {
-            String source = IOUtils.toString(getClass().getResourceAsStream(className), "utf-8");
+            String source = IOUtils.toString(getClass().getResourceAsStream(className +".txt"), "utf-8");
 
             source= source
                     .replace("package org.kantega.reststop.maven", "package " + pack);
