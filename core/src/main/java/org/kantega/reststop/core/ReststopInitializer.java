@@ -330,7 +330,11 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
             public ServletWrapperFilter(HttpServlet servlet, String path) {
                 this.servlet = servlet;
-                this.path = path.endsWith("*") ? path.substring(0, path.length()-1) : path;
+                while(path.endsWith("*") || path.endsWith("/")) {
+                    path = path.substring(0, path.length()-1);
+                }
+                this.path = path;
+
             }
 
             @Override
@@ -354,7 +358,8 @@ public class ReststopInitializer implements ServletContainerInitializer{
                     @Override
                     public String getPathInfo() {
                         String requestURI = getRequestURI();
-                        return requestURI.substring(path.length());
+                        String substring = requestURI.substring(path.length());
+                        return substring;
                     }
                 }, resp);
 
