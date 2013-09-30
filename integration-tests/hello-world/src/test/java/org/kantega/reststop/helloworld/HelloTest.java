@@ -1,6 +1,7 @@
 package org.kantega.reststop.helloworld;
 
 import org.junit.Test;
+import org.kantega.reststop.helloworld.jaxrs.Hello;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;

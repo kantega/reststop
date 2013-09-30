@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.helloworld;
+package org.kantega.reststop.helloworld.wicket;
 
 import org.apache.wicket.protocol.http.WebApplication;
+import org.kantega.reststop.helloworld.jaxrs.HelloWorldRootResource;
+import org.kantega.reststop.helloworld.jaxrs.HelloworldResource;
 import org.kantega.reststop.jaxrsapi.DefaultJaxRsPlugin;
 
 /**
  *
  */
-public class HelloworldPlugin extends DefaultJaxRsPlugin {
+public class HelloworldWicketPlugin extends DefaultJaxRsPlugin {
 
-    public HelloworldPlugin(WebApplication webApplication) {
-        addJaxRsSingletonResource(new HelloWorldRootResource());
-        addJaxRsSingletonResource(new HelloworldResource());
-
+    public HelloworldWicketPlugin(WebApplication webApplication) {
         webApplication.mountPage("/hello", HelloPage.class);
     }
 

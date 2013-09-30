@@ -1,4 +1,4 @@
-package org.kantega.reststop.helloworld;
+package org.kantega.reststop.helloworld.jaxrs;
 
 import java.net.URI;
 import java.util.Map;

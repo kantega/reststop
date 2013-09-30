@@ -1,2 +1,3 @@
-org.kantega.reststop.helloworld.HelloworldPlugin
-org.kantega.reststop.helloworld.HelloworldWsPlugin
+org.kantega.reststop.helloworld.jaxrs.HelloworldJaxRsPlugin
+org.kantega.reststop.helloworld.jaxws.HelloworldWsPlugin
+org.kantega.reststop.helloworld.wicket.HelloworldWicketPlugin

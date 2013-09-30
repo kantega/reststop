@@ -1,4 +1,4 @@
-package org.kantega.reststop.helloworld;
+package org.kantega.reststop.helloworld.wicket;
 
 import org.apache.wicket.markup.html.WebPage;
 import org.apache.wicket.markup.html.basic.Label;

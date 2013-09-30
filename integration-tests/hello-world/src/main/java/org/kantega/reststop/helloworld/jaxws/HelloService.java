@@ -1,4 +1,4 @@
-package org.kantega.reststop.helloworld;
+package org.kantega.reststop.helloworld.jaxws;
 
 import javax.jws.WebMethod;
 import javax.jws.WebParam;

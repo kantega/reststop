@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.helloworld;
+package org.kantega.reststop.helloworld.jaxrs;
 
 import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.*;
-import javax.ws.rs.core.UriBuilder;
-import java.net.URI;
-
-import static java.util.Arrays.asList;
 
 /**
  *
