@@ -33,6 +33,9 @@ public class ResolvePluginsMojo extends AbstractReststopMojo {
     @Parameter(defaultValue = "${project.build.directory}/reststop/plugins.xml")
     private File pluginsXmlFile;
 
+    @Parameter(defaultValue = "false")
+    private boolean addDevelopmentPlugins;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         try {
@@ -51,15 +54,10 @@ public class ResolvePluginsMojo extends AbstractReststopMojo {
 
     @Override
     protected List<Plugin> getPlugins() {
-        ArrayList<Plugin> plugins = new ArrayList<>(super.getPlugins());
+        List<Plugin> plugins = new ArrayList<>(super.getPlugins());
 
-        Plugin developmentPlugin = new Plugin("org.kantega.reststop", "reststop-development-plugin", mavenProject.getVersion());
-        plugins.add(developmentPlugin);
-        developmentPlugin.setDirectDeploy(true);
-
-
-        for (Plugin plugin : plugins) {
-            plugin.setSourceDirectory(getSourceDirectory(plugin));
+        if(addDevelopmentPlugins) {
+            addDevelopmentPlugins(plugins);
         }
 
         return plugins;

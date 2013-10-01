@@ -62,6 +62,7 @@
                             <goal>resolve-plugins</goal>
                         </goals>
                         <configuration>
+                            <addDevelopmentPlugins>true</addDevelopmentPlugins>
                             <plugins>
                                 <plugin>
                                     <groupId>${project.groupId}</groupId>

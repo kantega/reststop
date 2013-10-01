@@ -412,6 +412,28 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
         }
     }
 
+    protected void addDevelopmentPlugins(List<Plugin> plugins) {
+        {
+            Plugin devConsolePlugin = new Plugin("org.kantega.reststop", "reststop-development-console", mavenProject.getVersion());
+            plugins.add(devConsolePlugin);
+            devConsolePlugin.setDirectDeploy(false);
+        }
+
+        for (Plugin plugin : plugins) {
+            plugin.setDirectDeploy(false);
+        }
+        {
+            Plugin developmentPlugin = new Plugin("org.kantega.reststop", "reststop-development-plugin", mavenProject.getVersion());
+            plugins.add(developmentPlugin);
+            developmentPlugin.setDirectDeploy(true);
+        }
+
+
+        for (Plugin plugin : plugins) {
+            plugin.setSourceDirectory(getSourceDirectory(plugin));
+        }
+    }
+
     private class ShutdownHandler extends AbstractHandler {
         private final Server server;
         private final Log log;
