@@ -16,10 +16,11 @@
 
 package org.kantega.reststop.jaxrs;
 
-import org.kantega.reststop.api.ReststopPluginManager;
+import org.kantega.reststop.api.ReststopPlugin;
 import org.kantega.reststop.jaxrsapi.JaxRsPlugin;
 
 import javax.ws.rs.core.Application;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -28,23 +29,26 @@ import java.util.Set;
  */
 public class ReststopApplication extends Application {
 
-    private final ReststopPluginManager pluginManager;
+    private final Collection<ReststopPlugin> plugins;
 
-    public ReststopApplication(ReststopPluginManager pluginManager) {
-        this.pluginManager = pluginManager;
+    public ReststopApplication(Collection<ReststopPlugin> plugins) {
+        this.plugins = plugins;
     }
 
     public ReststopApplication() {
-        pluginManager = null;
+        plugins = null;
     }
 
     @Override
     public Set<Object> getSingletons() {
         Set<Object> singletons = new HashSet<>();
-        if(pluginManager != null) {
-            for(JaxRsPlugin plugin : pluginManager.getPlugins(JaxRsPlugin.class)) {
-                for (Application application : plugin.getJaxRsApplications()) {
-                    singletons.addAll(application.getSingletons());
+        if(plugins != null) {
+            for(ReststopPlugin plugin : plugins) {
+                if(plugin instanceof JaxRsPlugin) {
+                    JaxRsPlugin jaxRsPlugin = JaxRsPlugin.class.cast(plugin);
+                    for (Application application : jaxRsPlugin.getJaxRsApplications()) {
+                        singletons.addAll(application.getSingletons());
+                    }
                 }
             }
         }
@@ -54,10 +58,13 @@ public class ReststopApplication extends Application {
     @Override
     public Set<Class<?>> getClasses() {
         Set<Class<?>> classes = new HashSet<>();
-        if(pluginManager != null) {
-            for(JaxRsPlugin plugin : pluginManager.getPlugins(JaxRsPlugin.class)) {
-                for (Application application : plugin.getJaxRsApplications()) {
-                    classes.addAll(application.getClasses());
+        if(plugins != null) {
+            for(ReststopPlugin plugin : plugins) {
+                if(plugin instanceof JaxRsPlugin) {
+                    JaxRsPlugin jaxRsPlugin = JaxRsPlugin.class.cast(plugin);
+                    for (Application application : jaxRsPlugin.getJaxRsApplications()) {
+                        classes.addAll(application.getClasses());
+                    }
                 }
             }
         }

@@ -18,18 +18,39 @@ import static java.util.Collections.singletonMap;
 public class JerseyPlugin extends DefaultReststopPlugin {
 
 
-    public JerseyPlugin(Reststop reststop, final ReststopPluginManager pluginManager) throws ServletException {
+    private ServletContainer filter;
 
-        final ServletContainer filter = addJerseyFilter( new ReststopApplication());
+    public JerseyPlugin(final Reststop reststop, final ReststopPluginManager pluginManager) throws ServletException {
 
-        filter.init(reststop.createFilterConfig("jersey", new Properties()));
-
-        addServletFilter(reststop.createFilter(filter, "/*", FilterPhase.USER));
 
         addPluginListener(new PluginListener() {
             @Override
             public void pluginsUpdated(Collection<ReststopPlugin> plugins) {
-                filter.reload(getResourceConfig(new ReststopApplication(pluginManager)));
+                reloadFromPlugins(plugins);
+            }
+
+            @Override
+            public void pluginManagerStarted() {
+                reloadFromPlugins(pluginManager.getPlugins());
+            }
+
+            private void reloadFromPlugins(Collection<ReststopPlugin> plugins) {
+                synchronized (JerseyPlugin.this) {
+                    try {
+                        if(filter == null) {
+                            filter = addJerseyFilter( new ReststopApplication(plugins));
+                            filter.init(reststop.createFilterConfig("jersey", new Properties()));
+
+                            addServletFilter(reststop.createFilter(filter, "/*", FilterPhase.USER));
+                        } else {
+                            filter.reload(getResourceConfig(new ReststopApplication(plugins)));
+                        }
+                    } catch (ServletException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                }
+
             }
         });
     }

@@ -41,6 +41,11 @@ public class CxfReststopPlugin extends DefaultReststopPlugin {
             public void pluginsUpdated(Collection<ReststopPlugin> plugins) {
                 deployEndpoints();
             }
+
+            @Override
+            public void pluginManagerStarted() {
+                deployEndpoints();
+            }
         });
     }
 
