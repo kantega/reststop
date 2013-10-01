@@ -75,6 +75,8 @@ window.addEventListener("load", function() {
                     sr.removeChild(sr.firstChild)
                 }
                 sr.appendChild(pre);
+
+                document.querySelector(".soapExchange").style.display="block";
                 SyntaxHighlighter.highlight()
             }
         }

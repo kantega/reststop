@@ -19,6 +19,6 @@ public class HelloService {
     @WebMethod(operationName = "greet")
     @WebResult(name = "messageResult")
     public String sayHello(@WebParam(name = "receiver") String receiver, @WebParam(name = "lang") String lang) {
-        return (lang.equals("no")? "Hei" : "Hello")  +", " + receiver +"!";
+        return ("se".equals(lang) ? "Hej" : "Hello")  +", " + receiver +"!";
     }
 }
