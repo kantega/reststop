@@ -34,7 +34,7 @@ public class CxfReststopPlugin extends DefaultReststopPlugin {
         cxfNonSpringServlet.init(reststop.createServletConfig("cxf", new Properties()));
 
 
-        addServletFilter(reststop.createServletFilter(cxfNonSpringServlet, "/ws/*"));
+        addServletFilter(reststop.createServletFilter(cxfNonSpringServlet, "/ws*"));
 
         addPluginListener(new PluginListener() {
             @Override
