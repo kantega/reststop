@@ -427,6 +427,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         @Override
         public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
 
+            servletResponse.setCharacterEncoding("utf-8");
             buildFilterChain(filterChain, manager).doFilter(servletRequest, servletResponse);
         }
 
