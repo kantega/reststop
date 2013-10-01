@@ -66,19 +66,20 @@ public class RedeployFilter implements Filter {
             if (!testing &&  !req.getRequestURI().startsWith("/assets")) {
                 try {
 
-                    boolean staleSources;
+
 
                     synchronized (compileSourcesMonitor) {
-                        staleSources = classloader.isStaleSources();
-                        if (staleSources) {
+                        if (classloader.isStaleSources()) {
                             classloader = provider.redeploy(pluginId, classloader);
+                            req.setAttribute("wasStaleSources", Boolean.TRUE);
                             reststop.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
                             return;
                         }
                     }
 
                     boolean staleTests = classloader.isStaleTests();
-                    if (staleSources || staleTests || classloader.hasFailingTests()) {
+                    boolean wasStaleSources = req.getAttribute("wasStaleSources") != null;
+                    if (wasStaleSources || staleTests || classloader.hasFailingTests()) {
 
                         synchronized (compileTestsMonitor) {
                             classloader.compileJavaTests();
@@ -109,6 +110,7 @@ public class RedeployFilter implements Filter {
                     return;
                 } catch (TestFailureException e) {
                     new ErrorReporter(velocityEngine, classloader.getBasedir()).addTestFailulreException(e).render(req, resp);
+                    return;
                 }
             }
 
