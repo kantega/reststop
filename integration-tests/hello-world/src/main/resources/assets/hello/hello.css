@@ -5,3 +5,18 @@ body {
 .soapexchange {
     margin-left: 1em;
 }
+
+#soapRequest, .ok, .error {
+    padding: 1em;
+}
+
+#soapRequest {
+    border: 5px solid orange;
+}
+.error {
+    border: 5px solid red;
+}
+
+.ok {
+    border: 5px solid darkgreen;
+}

@@ -57,7 +57,7 @@ window.addEventListener("load", function() {
         return out;
     }
 
-    function sendSoap(evt) {
+    function sendSoap(evt, content) {
         evt.preventDefault();
 
         var xhr = new XMLHttpRequest();
@@ -78,31 +78,88 @@ window.addEventListener("load", function() {
 
                 document.querySelector(".soapExchange").style.display="block";
                 SyntaxHighlighter.highlight()
+
+
+                sr.setAttribute("class",xhr.status === 200 ? "ok" : "error");
+
             }
         }
 
         xhr.open("POST", "ws/hello-1.0");
+        xhr.setRequestHeader("Content-Type", "application/xml; charset=utf-8");
 
-        var template = document.querySelector("#soapMessageTemplate").innerHTML;
+
+
+
+        var sr = document.querySelector("#soapRequest");
+        sr.setAttribute("data-xml", content);
+        var pre = document.createElement("pre");
+        pre.setAttribute("class", "brush: xml;");
+        pre.textContent = content;
+
+        while(sr.firstChild) {
+            sr.removeChild(sr.firstChild)
+        }
+        sr.appendChild(pre);
+
+        xhr.send(content);
+    }
+
+    function requestClicked() {
+        var sr = document.querySelector("#soapRequest");
+        if(sr.getAttribute("is-edit")) {
+            return;
+        }
+        var pre = document.createElement("pre");
+        pre.textContent = sr.getAttribute("data-xml");
+
+        while(sr.firstChild) {
+            sr.removeChild(sr.firstChild)
+        }
+        sr.appendChild(pre);
+
+        pre.addEventListener("blur", function() {
+            console.log("Updating sr-xml to " + pre.textContent)
+            sr.setAttribute("data-xml", pre.textContent);
+            sr.removeAttribute("is-edit");
+
+            var newpre = document.createElement("pre");
+            newpre.setAttribute("class", "brush: xml;");
+            newpre.textContent = pre.textContent;
+
+            while(sr.firstChild) {
+                sr.removeChild(sr.firstChild)
+            }
+            sr.appendChild(newpre);
+            SyntaxHighlighter.highlight()
+
+        });
+        pre.setAttribute("contenteditable", true);
+        sr.setAttribute("is-edit", true);
+    }
+
+    document.querySelector("#soapRequest").addEventListener("click", requestClicked)
+    function sendSoapTemplate(evt) {
+        var template = document.querySelector("#soapMessageTemplate").textContent;
 
         template = template.replace("NAME", document.querySelector("input[name='receiver']").value);
         template = template.replace("LANG", document.querySelector("input[name='lang']").value);
 
         console.log("Template: " +template);
 
+        sendSoap(evt, template)
 
-        var sr = document.querySelector("#soapRequest");
-        var pre = document.createElement("pre");
-        pre.setAttribute("class", "brush: xml;");
-        pre.textContent = template;
-        while(sr.firstChild) {
-            sr.removeChild(sr.firstChild)
-        }
-        sr.appendChild(pre);
-        xhr.send(template);
     }
 
-    document.querySelector("#send").addEventListener("click", sendSoap)
+    document.querySelector("#send").addEventListener("click", sendSoapTemplate)
+    function callSoap(evt) {
+        var sr = document.querySelector("#soapRequest").getAttribute("data-xml");
+        console.log("XML is: " + sr)
+        sendSoap(evt, sr);
+
+    }
+
+    document.querySelector("#callXml").addEventListener("click", callSoap)
     findLanguages();
 
 

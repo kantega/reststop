@@ -26,6 +26,7 @@ public class IndexPagePlugin extends DefaultReststopPlugin {
         protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
             response.setContentType("text/html");
+            response.setCharacterEncoding("utf-8");
 
             IOUtils.copy(getClass().getResourceAsStream("index.html"), response.getOutputStream());
         }

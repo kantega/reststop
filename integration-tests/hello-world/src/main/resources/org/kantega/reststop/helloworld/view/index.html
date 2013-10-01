@@ -22,8 +22,7 @@
 
 <h2>SOAP service:</h2>
 <div>
-<script id="soapMessageTemplate" type="text/template">
-<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
+<script id="soapMessageTemplate" type="text/template"><S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
   <S:Body>
     <greet xmlns="http://reststop.kantega.org/ws/hello-1.0">
       <receiver xmlns="">NAME</receiver>
@@ -41,6 +40,7 @@
     <div class="soapExchange" style="display: none">
         <h3>Request:</h3>
         <div id="soapRequest" ></div>
+        <button id="callXml">Call again</button>
         <h3>Response:</h3>
         <div id="soapResponse" ></div>
     </div>
