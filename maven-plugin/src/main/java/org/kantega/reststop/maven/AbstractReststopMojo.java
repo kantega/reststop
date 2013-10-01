@@ -53,6 +53,8 @@ import java.net.ServerSocket;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.*;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 
 import static java.util.Arrays.asList;
 
@@ -201,6 +203,8 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
                 }
             }
 
+            validateTransitivePluginsMissing(pluginInfos);
+
             Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
 
             Element pluginsElem = doc.createElement("plugins");
@@ -266,6 +270,52 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
         }
 
 
+    }
+
+    private void validateTransitivePluginsMissing(List<PluginInfo> pluginInfos) throws MojoExecutionException, MojoFailureException {
+
+        for (PluginInfo pluginInfo : pluginInfos) {
+
+            Map<String, org.kantega.reststop.classloaderutils.Artifact> missing = new TreeMap<>();
+
+            for (org.kantega.reststop.classloaderutils.Artifact dep : pluginInfo.getClassPath("compile")) {
+
+
+                try {
+                    JarFile jar = new JarFile(dep.getFile());
+                    ZipEntry entry = jar.getEntry("META-INF/services/ReststopPlugin/");
+                    boolean isPlugin = entry != null;
+                    jar.close();
+
+                    if(isPlugin && !isDeclaredPlugin(dep, pluginInfos)) {
+                        missing.put(dep.getGroupIdAndArtifactId(), dep);
+                        getLog().error("Plugin " + pluginInfo.getPluginId() +" depends on plugin " + dep.getPluginId() +" which must be declared as a <plugin>!");
+                        String decl = String.format("\t<plugin>\n\t\t<groupId>%s</groupId>\n\t\t<artifactId>%s</artifactId>\n\t\t<version>%s</version>\n\t</plugin>", dep.getGroupId(), dep.getArtifactId(), dep.getVersion());
+                        getLog().error("Please add the following to your <plugins> section:\n" + decl);
+                    }
+
+
+                } catch (IOException e) {
+                    throw new MojoExecutionException(e.getMessage(), e);
+                }
+
+            }
+            if(!missing.isEmpty()) {
+                throw new MojoFailureException("Plugin " +pluginInfo.getPluginId() +" has a Maven <dependency> on "
+                        + "one or more plugin artifacts which should be directly declared as a <plugin>: " + missing.values());
+            }
+        }
+
+    }
+
+    private boolean isDeclaredPlugin(org.kantega.reststop.classloaderutils.Artifact dep, List<PluginInfo> pluginInfos) {
+
+        for(PluginInfo declared : pluginInfos) {
+            if(declared.getGroupIdAndArtifactId().equals(dep.getGroupIdAndArtifactId())) {
+                return true;
+            }
+        }
+        return false;
     }
 
     protected List<Plugin> getPlugins() {
