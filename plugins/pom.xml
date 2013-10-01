@@ -41,7 +41,7 @@
         <module>cxf-metrics</module>
         <module>jaxrs-metrics</module>
         <module>wicket</module>
-        <module>spring</module>
+        <module>springmvc</module>
 
     </modules>
     <dependencies>

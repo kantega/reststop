@@ -58,7 +58,7 @@
 
         <dependency>
             <groupId>org.kantega.reststop</groupId>
-            <artifactId>reststop-spring-plugin</artifactId>
+            <artifactId>reststop-springmvc-plugin</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
@@ -90,7 +90,7 @@
                     <plugins>
                         <plugin>
                             <groupId>org.kantega.reststop</groupId>
-                            <artifactId>reststop-spring-plugin</artifactId>
+                            <artifactId>reststop-springmvc-plugin</artifactId>
                             <version>${project.version}</version>
                         </plugin>
                         <plugin>

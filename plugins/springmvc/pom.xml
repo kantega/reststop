@@ -26,7 +26,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>reststop-spring-plugin</artifactId>
+    <artifactId>reststop-springmvc-plugin</artifactId>
 
     <dependencies>
 
