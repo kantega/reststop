@@ -19,14 +19,15 @@ package org.kantega.reststop.api;
 import javax.servlet.Filter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  *
  */
 public class DefaultReststopPlugin implements ReststopPlugin {
 
-    private final List<Filter> servletFilters = new ArrayList<>();
-    private final List<PluginListener> pluginListeners = new ArrayList<>();
+    private final List<Filter> servletFilters = new CopyOnWriteArrayList<>();
+    private final List<PluginListener> pluginListeners = new CopyOnWriteArrayList<>();
     private final Map<Class<?>, Object> services = new ConcurrentHashMap<>();
 
     protected void addServletFilter(Filter filter) {
