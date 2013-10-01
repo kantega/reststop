@@ -4,6 +4,7 @@ import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
 import org.apache.cxf.wsdl.WSDLManager;
 import org.kantega.reststop.api.*;
 import org.kantega.reststop.jaxwsapi.EndpointConfiguration;
+import org.kantega.reststop.jaxwsapi.EndpointConfigurationBuilder;
 import org.kantega.reststop.jaxwsapi.JaxWsPlugin;
 import org.kantega.reststop.cxf.api.CxfPluginPlugin;
 
@@ -47,6 +48,8 @@ public class CxfReststopPlugin extends DefaultReststopPlugin {
                 deployEndpoints();
             }
         });
+
+        addService(EndpointConfigurationBuilder.class, new DefaultEndpointConfigurationBuilder());
     }
 
     private void deployEndpoints() {
@@ -78,4 +81,41 @@ public class CxfReststopPlugin extends DefaultReststopPlugin {
 
     }
 
+    private class DefaultEndpointConfigurationBuilder implements EndpointConfigurationBuilder {
+
+        @Override
+        public Build service(Object service) {
+            return new DefaultBuild(service);
+        }
+        private class DefaultBuild implements Build {
+            private final Object service;
+            private String path;
+
+            public DefaultBuild(Object service) {
+                this.service = service;
+            }
+
+            @Override
+            public Build path(String path) {
+                this.path = path;
+                return this;
+            }
+
+            @Override
+            public EndpointConfiguration build() {
+                return new EndpointConfiguration() {
+                    @Override
+                    public Object getImplementor() {
+                        return service;
+                    }
+
+                    @Override
+                    public String getPath() {
+                        return path;
+                    }
+                };
+            }
+
+        }
+    }
 }

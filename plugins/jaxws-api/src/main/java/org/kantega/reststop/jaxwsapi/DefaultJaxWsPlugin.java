@@ -22,4 +22,8 @@ public class DefaultJaxWsPlugin extends DefaultReststopPlugin implements JaxWsPl
     public void addEndpointConfiguration(EndpointConfiguration endpointConfiguration) {
         this.endpointConfigurations.add(endpointConfiguration);
     }
+
+    public void addEndpointConfiguration(EndpointConfigurationBuilder.Build endpointConfiguration) {
+        this.endpointConfigurations.add(endpointConfiguration.build());
+    }
 }
