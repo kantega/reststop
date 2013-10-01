@@ -1,10 +1,43 @@
 <html>
-<head></head>
+<head>
+    <script type="text/javascript" src="assets/syntaxhighlighter/scripts/shCore.js"></script>
+    <script type="text/javascript" src="assets/syntaxhighlighter/scripts/shBrushJScript.js"></script>
+    <script type="text/javascript" src="assets/syntaxhighlighter/scripts/shBrushXml.js"></script>
+    <link type="text/css" rel="stylesheet" href="assets/syntaxhighlighter/styles/shCoreDefault.css"/>
+    <script type="text/javascript">
+        SyntaxHighlighter.defaults['gutter'] = false;
+        SyntaxHighlighter.defaults['toolbar'] = false;
+    </script>
+
+</head>
 <body>
 <h1>Hello world!</h1>
 
+
 <ul id="hellos"></ul>
 
+
+<div>
+<script id="soapMessageTemplate" type="text/template">
+<S:Envelope xmlns:S="http://schemas.xmlsoap.org/soap/envelope/">
+  <S:Body>
+    <greet xmlns="http://reststop.kantega.org/ws/hello-1.0">
+      <receiver xmlns="">NAME</receiver>
+        <lang xmlns="">LANG</lang>
+      </greet>
+  </S:Body>
+</S:Envelope>
+</script>
+    <form id="soapForm">
+        Receiver: <input name="receiver" value="Jane">
+        Lang: <input name="lang" value="en">
+        <button id="send">Send</button>
+    </form>
+
+
+    <div id="soapRequest" ></div>
+    <div id="soapResponse" ></div>
+</div>
 <h2>Resources</h2>
 <ul>
     <li><a href="helloworld">helloworld JAX-RS resource</a></li>

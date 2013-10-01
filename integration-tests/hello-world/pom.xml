@@ -43,6 +43,13 @@
 
         <dependency>
             <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-cxf-plugin</artifactId>
+            <scope>provided</scope>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.kantega.reststop</groupId>
             <artifactId>reststop-jaxws-api</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>

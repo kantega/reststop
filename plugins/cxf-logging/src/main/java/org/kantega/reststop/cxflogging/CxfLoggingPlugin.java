@@ -15,9 +15,6 @@ import javax.xml.ws.Endpoint;
 public class CxfLoggingPlugin extends DefaultCxfPluginPlugin {
 
 
-    public CxfLoggingPlugin() {
-        System.out.println("Hello world " + CXFNonSpringServlet.class);
-    }
 
     @Override
     public void customizeEndpoint(Endpoint endpoint) {
