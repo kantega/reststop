@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -600,19 +601,34 @@ public class ReststopInitializer implements ServletContainerInitializer{
             HttpServletRequest req = (HttpServletRequest) servletRequest;
             HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
+            String requestURI = req.getRequestURI();
+
+            String path = "assets/" +requestURI.substring("/assets/".length());
+
             for(ClassLoader loader : manager.getPluginClassLoaders()) {
-                String requestURI = req.getRequestURI();
 
-                String path = requestURI.substring("/assets/".length());
 
-                InputStream stream = loader.getResourceAsStream("assets/" + path);
-                if(stream != null) {
+                URL resource = loader.getResource(path);
+
+
+                if(resource != null
+                        && resource.getPath().endsWith("/")
+                        && !path.endsWith("/")) {
+                    resp.sendRedirect(req.getRequestURI() +"/");
+                    return;
+
+                }
+                if(path.endsWith("/")) {
+                    path +="index.html";
+                }
+
+                if(resource != null) {
                     String mimeType = req.getServletContext().getMimeType(path.substring(path.lastIndexOf("/") + 1));
                     if(mimeType != null) {
                         resp.setContentType(mimeType);
                     }
 
-                    copy(stream, servletResponse.getOutputStream());
+                    copy(resource.openStream(), servletResponse.getOutputStream());
 
                     return;
                 }
