@@ -171,7 +171,6 @@ public class DistMojo extends AbstractReststopMojo {
 
         try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(spec)))) {
 
-            pw.println("%define _unpackaged_files_terminate_build 0");
             pw.println("Name: " + mavenProject.getArtifactId());
             pw.println("Version: " + safeVersion());
             pw.println("Release: 1");
