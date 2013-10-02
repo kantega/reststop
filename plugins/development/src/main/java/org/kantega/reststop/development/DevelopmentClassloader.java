@@ -164,6 +164,9 @@ public class DevelopmentClassloader extends PluginClassLoader{
     }
 
     private long newest(File directory) {
+        if(! directory.exists()) {
+            return 0;
+        }
         NewestFileVisitor visitor = new NewestFileVisitor();
         try {
             Files.walkFileTree(directory.toPath(), visitor);
