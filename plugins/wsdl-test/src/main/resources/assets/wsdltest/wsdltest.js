@@ -129,17 +129,29 @@ window.addEventListener("load", function() {
 
     function indent(responseText) {
         var level = 0;
-        return responseText.replace(/><(\/?)/g, function(match) {
-            level += match.indexOf("/") == -1 ? 1 : -1;
-            console.log("Match: " + match + " at level " + level);
-            var ret = ">\n";
-            for(var i = 0; i < level;i++) {
-                ret +="  ";
+        var xml = "";
+        return responseText.replace(/(<[^\/][^>]+>)|(<\/[^>]+>)/g, function(match, start, end, offset, string) {
+
+            console.log("Match: " + match + " at level " + level + ", start: " + start +", end: " + end);
+
+
+            var ret = "";
+            if(start) {
+                ret += "\n";
+                for(var i = 0; i < level;i++) {
+                    ret +="  ";
+                }
+                ret += start;
             }
-            ret +="<";
-            if(match.indexOf("/") != -1) {
-                ret +="/";
+            if(end) {
+                if(offset+match.length == string.length) {
+                    ret +="\n";
+                }
+                ret +=end;
+
             }
+            console.log("Replacing " + match + " with " + ret)
+            level += start ? 1 : -1;
             return ret;
         });
     }
