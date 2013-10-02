@@ -111,11 +111,6 @@ public class DevelopmentClassloader extends PluginClassLoader{
         return clazz;
     }
 
-    @Override
-    protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        return super.loadClass(name, resolve);    //To change body of overridden methods use File | Settings | File Templates.
-    }
-
     public List<Class<?>> getLoadedClasses() {
         return loadedClasses;
     }
