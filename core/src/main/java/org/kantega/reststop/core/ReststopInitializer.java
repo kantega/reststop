@@ -56,7 +56,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         this.servletContext = servletContext;
 
-        final DefaultPluginManager<ReststopPlugin> manager = buildPluginManager(servletContext);
+        DefaultReststopPluginManager reststopPluginManager = new DefaultReststopPluginManager();
+        final DefaultPluginManager<ReststopPlugin> manager = buildPluginManager(servletContext, reststopPluginManager);
+        reststopPluginManager.setManager(manager);
 
         servletContext.setAttribute("reststopPluginManager", manager);
 
@@ -104,18 +106,16 @@ public class ReststopInitializer implements ServletContainerInitializer{
         servletContext.addFilter(PluginDelegatingFilter.class.getName(), new PluginDelegatingFilter(manager))
                 .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
 
-        servletContext.addFilter(AssetFilter.class.getName(), new AssetFilter(manager)).addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/assets/*");
+        servletContext.addFilter(AssetFilter.class.getName(), new AssetFilter(reststopPluginManager)).addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/assets/*");
 
 
 
 
     }
 
-    private DefaultPluginManager<ReststopPlugin> buildPluginManager(ServletContext servletContext) throws ServletException {
+    private DefaultPluginManager<ReststopPlugin> buildPluginManager(ServletContext servletContext, DefaultReststopPluginManager reststopPluginManager) throws ServletException {
 
         DefaultReststop reststop = new DefaultReststop();
-
-        DefaultReststopPluginManager reststopPluginManager = new DefaultReststopPluginManager();
 
         final PluginDelegatingServiceLocator pluginDelegatingServiceLocator = new PluginDelegatingServiceLocator();
         DefaultPluginManager<ReststopPlugin> manager = buildFor(ReststopPlugin.class)
@@ -130,7 +130,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 .build();
 
         pluginDelegatingServiceLocator.setPluginManager(manager);
-        reststopPluginManager.setManager(manager);
+
         reststop.setManager(manager);
         return manager;
     }
@@ -334,14 +334,15 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         private class ServletWrapperFilter implements Filter {
             private final HttpServlet servlet;
-            private final String path;
+            private final String servletPath;
 
-            public ServletWrapperFilter(HttpServlet servlet, String path) {
+            public ServletWrapperFilter(final HttpServlet servlet, final String mapping) {
                 this.servlet = servlet;
-                while(path.endsWith("*") || path.endsWith("/")) {
-                    path = path.substring(0, path.length()-1);
+                String servletPath = mapping;
+                while(servletPath.endsWith("*") || servletPath.endsWith("/")) {
+                    servletPath = servletPath.substring(0, servletPath.length()-1);
                 }
-                this.path = path;
+                this.servletPath = servletPath;
 
             }
 
@@ -360,13 +361,13 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 servlet.service(new HttpServletRequestWrapper(req) {
                     @Override
                     public String getServletPath() {
-                        return path;
+                        return servletPath;
                     }
 
                     @Override
                     public String getPathInfo() {
                         String requestURI = getRequestURI();
-                        return requestURI.substring(path.length());
+                        return requestURI.substring(servletPath.length());
                     }
                 }, resp);
 
@@ -399,12 +400,18 @@ public class ReststopInitializer implements ServletContainerInitializer{
         public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
             HttpServletRequest req = (HttpServletRequest) servletRequest;
 
-            if(mapping.equals(req.getRequestURI()) || mapping.endsWith("*") && req.getRequestURI().regionMatches(0, mapping, 0, mapping.length()-1)) {
+            if(mappingMatchesRequest(req, mapping)) {
                 filter.doFilter(servletRequest, servletResponse, filterChain);
             } else {
                 filterChain.doFilter(servletRequest, servletResponse);
             }
         }
+
+        private boolean mappingMatchesRequest(HttpServletRequest req, String mapping) {
+            return mapping.equals(req.getRequestURI()) || mapping.endsWith("*") && req.getRequestURI().regionMatches(0, mapping, 0, mapping.length()-1);
+        }
+
+
 
         @Override
         public void destroy() {
@@ -576,9 +583,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
     }
 
     private class AssetFilter implements Filter {
-        private final PluginManager<ReststopPlugin> manager;
+        private final DefaultReststopPluginManager manager;
 
-        public AssetFilter(PluginManager<ReststopPlugin> manager) {
+        public AssetFilter(DefaultReststopPluginManager manager) {
             this.manager = manager;
         }
 
@@ -593,8 +600,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
             HttpServletRequest req = (HttpServletRequest) servletRequest;
             HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
-            for(ReststopPlugin plugin : manager.getPlugins()) {
-                ClassLoader loader = manager.getClassLoader(plugin);
+            for(ClassLoader loader : manager.getPluginClassLoaders()) {
                 String requestURI = req.getRequestURI();
 
                 String path = requestURI.substring("/assets/".length());
