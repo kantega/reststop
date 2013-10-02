@@ -42,6 +42,7 @@
         <module>jaxrs-metrics</module>
         <module>wicket</module>
         <module>springmvc</module>
+	<module>wsdl-test</module>
 
     </modules>
     <dependencies>
