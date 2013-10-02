@@ -19,10 +19,15 @@ package org.kantega.reststop.maven;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.*;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Untar;
 import org.apache.tools.ant.types.EnumeratedAttribute;
+import org.codehaus.plexus.util.cli.CommandLineException;
+import org.codehaus.plexus.util.cli.CommandLineUtils;
+import org.codehaus.plexus.util.cli.Commandline;
+import org.codehaus.plexus.util.cli.StreamConsumer;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.collection.CollectRequest;
@@ -127,12 +132,39 @@ public class DistMojo extends AbstractReststopMojo {
         writeSpecFile(spec);
 
 
+        buildRpm(rpmDirectory, rootDirectory, spec);
+
+
+
+    }
+
+    private void buildRpm(File rpmDirectory, File rootDirectory, File spec) throws MojoExecutionException {
+
+        Commandline commandline = new Commandline();
+        commandline.setExecutable("rpmbuild");
+        commandline.createArg().setValue("--target");
+        commandline.createArg().setValue("noarch-redhat-linux");
+        commandline.createArg().setValue("--buildroot");
+        commandline.createArg().setFile(rootDirectory);
+        commandline.createArg().setValue("--define");
+        commandline.createArg().setValue("_tmppath " + rpmDirectory.getAbsolutePath());
+        commandline.createArg().setValue("--define");
+        commandline.createArg().setValue("_topdir " + rpmDirectory.getAbsolutePath());
+        commandline.createArg().setValue("-bb");
+        commandline.createArg().setFile(spec);
+        final StreamConsumer stdout = new LogStreamConsumer( getLog());
+        final StreamConsumer stderr = new LogStreamConsumer( getLog());
+
+        try {
+            CommandLineUtils.executeCommandLine(commandline, stdout, stderr);
+        } catch (CommandLineException e) {
+            throw new MojoExecutionException(e.getMessage(), e);
+        }
+
+
         getLog().info("cd " + rpmDirectory.getAbsolutePath());
         getLog().info("rpmbuild --target noarch-redhat-linux  --quiet --buildroot " + rootDirectory.getAbsolutePath()
                 + " --define \"_tmppath " +rpmDirectory.getAbsolutePath() +"\" --define \"_topdir " +rpmDirectory.getAbsolutePath() +"\" -bb " + spec.getAbsolutePath());
-
-
-
     }
 
     private void writeSpecFile(File spec) throws MojoExecutionException {
@@ -396,6 +428,19 @@ public class DistMojo extends AbstractReststopMojo {
         public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
             dir.toFile().delete();
             return FileVisitResult.CONTINUE;
+        }
+    }
+
+    private class LogStreamConsumer implements StreamConsumer {
+        private final Log log;
+
+        public LogStreamConsumer(Log log) {
+            this.log = log;
+        }
+
+        @Override
+        public void consumeLine(String line) {
+            log.info("rpmbuild: " +line);
         }
     }
 }
