@@ -37,14 +37,32 @@
         <button id="send">Call service</button>
     </form>
 
-    <div class="soapExchange" style="display: none">
-        <h3>Request:</h3>
-        <div id="soapRequest" ></div>
-        <button id="callXml">Call again</button>
-        <h3>Response:</h3>
-        <div id="soapResponse" ></div>
+    <div class="soapExchange" style="display: block">
+        <div class="request">
+            <h3>Request:</h3>
+            <div id="soapRequest" ></div>
+            <button id="callXml">Call again</button>
+        </div>
+        <div class="response">
+            <h3>Response:</h3>
+            <div id="soapResponse" ></div>
+
+            <div class="tests">
+                <h3>Response tests:</h3>
+                <textarea cols="60" rows="10" id="asserts">$("messageResult").textIs("Hello Jane!")</textarea>
+                <p>
+                    <button id="check">Run tests!</button>
+                    <span id="testresult">
+
+                </span>
+                </p>
+
+            </div>
+        </div>
+
     </div>
 </div>
+<div style="clear: both"></div>
 <h2>Resources</h2>
 <ul>
     <li><a href="helloworld">helloworld JAX-RS resource</a></li>
@@ -53,6 +71,7 @@
     <li><a href="wicket/hello">Wicket page</a></li>
     <li><a href="ws/">CXF service listing</a></li>
 </ul>
+<script src="assets/hello/assert.js"></script>
 <script src="assets/hello/hello.js"></script>
 </body>
 </html>

@@ -58,7 +58,8 @@ window.addEventListener("load", function() {
     }
 
     function sendSoap(evt, content) {
-        evt.preventDefault();
+        if(evt)
+            evt.preventDefault();
 
         var xhr = new XMLHttpRequest();
 
@@ -81,6 +82,8 @@ window.addEventListener("load", function() {
 
 
                 sr.setAttribute("class",xhr.status === 200 ? "ok" : "error");
+
+                sr["data-dom"] =  xhr.responseXML;
 
             }
         }
@@ -151,18 +154,53 @@ window.addEventListener("load", function() {
 
     }
 
+    function checkAsserts() {
+
+        var asserts = document.getElementById("asserts").value;
+
+        var fun = new Function("$", "dom", asserts);
+
+        var dom = document.querySelector("#soapResponse")["data-dom"];
+
+
+        var $ = function(selector) {
+            var node = dom.querySelector(selector, dom);
+            node.textIs = function(expected) {
+                var text = node.textContent;
+                assert.equal(expected, text, "Text was '" + text +"', expected '" + expected +"'")
+            } ;
+            return  node;
+        }
+
+        console.log("Applying test");
+        var result = document.querySelector("#testresult");
+        try {
+            fun.apply(fun, [$, dom]);
+            result.textContent = "Test passed"
+            result.setAttribute("class", "passed")
+
+        } catch (e) {
+            result.textContent = e.toString();
+            result.setAttribute("class", "failed")
+        }
+
+    }
+
+    sendSoapTemplate();
     document.querySelector("#send").addEventListener("click", sendSoapTemplate)
+
     function callSoap(evt) {
         var sr = document.querySelector("#soapRequest").getAttribute("data-xml");
         console.log("XML is: " + sr)
         sendSoap(evt, sr);
 
     }
-
     document.querySelector("#callXml").addEventListener("click", callSoap)
+
+
     findLanguages();
 
-
+    document.querySelector("#check").addEventListener("click", checkAsserts);
 
 
 });
