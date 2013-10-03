@@ -13,7 +13,8 @@
     <div class="plugin" style="margin-top: 1.5em">
 
         <a name="$classloader.key.pluginInfo.pluginId"></a><strong>$classloader.key.pluginInfo.artifactId</strong>
-        <span style="margin-left: 1em; font-size: smaller">($classloader.key.pluginInfo.version /  $classloader.key.pluginInfo.groupId)</span>
+        <span style="margin-left: 1em; font-size: smaller">($classloader.key.pluginInfo.version /  $classloader.key.pluginInfo.groupId
+            / $dateTool.formatTime($classloader.key.creationTime))</span>
 
         <div class="plugininfo">
             <div class="dependson">
@@ -40,7 +41,7 @@
                 #end
             </div>
             <div class="plugindetails">
-                <p>$classloader.key.loadedClasses.size() classes loaded</p>
+                <p>Classes loaded: $classloader.key.loadedClasses.size()</p>
                 #if($classloader.value.size() > 0)
                     <p>Plugin instances:</p>
                     <ul>
@@ -63,6 +64,14 @@
                     </ul>
                 #end
 
+
+                #if($classloader.key.pluginInfo.sourceDirectory)
+                    <p>Source directory:
+                    <ul>
+                        <li>$classloader.key.pluginInfo.sourceDirectory</li>
+                    </ul>
+                    </p>
+                #end
 
 
 

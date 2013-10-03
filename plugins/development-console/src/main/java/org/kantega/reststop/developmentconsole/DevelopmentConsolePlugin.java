@@ -47,6 +47,8 @@ public class DevelopmentConsolePlugin extends DefaultReststopPlugin {
             VelocityContext context = new VelocityContext();
             context.put("contextPath", req.getContextPath());
             context.put("pluginClassloaders", getPluginClassLoaders(pluginManager));
+            context.put("dateTool", new DateTool());
+
 
             context.put("pluginInfos", getPluginInfos(pluginManager));
             velocityEngine.getTemplate("templates/console.vm").merge(context, resp.getWriter());
