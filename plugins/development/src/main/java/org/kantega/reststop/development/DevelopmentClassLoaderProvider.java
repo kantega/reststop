@@ -53,9 +53,9 @@ public class DevelopmentClassLoaderProvider {
         for (PluginInfo pluginInfo : this.pluginsInfo.values()) {
 
             if( !pluginInfo.isDirectDeploy()) {
-                List<File> runtime = pluginInfo.getClassPathFiles("runtime");
-                List<File> compile = pluginInfo.getClassPathFiles("compile");
-                List<File> test = pluginInfo.getClassPathFiles("test");
+                List<File> runtime = getClasspath(pluginInfo, "runtime");
+                List<File> compile = getClasspath(pluginInfo, "compile");
+                List<File> test = getClasspath(pluginInfo, "test");
                 File sourceDir = pluginInfo.getSourceDirectory();
 
                 DevelopmentClassloader classloader = new DevelopmentClassloader(pluginInfo, sourceDir,
@@ -72,6 +72,20 @@ public class DevelopmentClassLoaderProvider {
         change.commit();
 
     }
+
+    private List<File> getClasspath(PluginInfo pluginInfo, String scope) {
+        List<File> files = new ArrayList<>();
+        for (Artifact artifact : pluginInfo.getClassPath(scope)) {
+            PluginInfo asPlugin = this.pluginsInfo.get(artifact.getPluginId());
+            if(asPlugin != null && asPlugin.getSourceDirectory() != null)  {
+                files.add(new File(asPlugin.getSourceDirectory(), "target/classes"));
+            } else {
+                files.add(artifact.getFile());
+            }
+        }
+        return files;
+    }
+
     private ClassLoader getParentClassLoader(PluginInfo pluginInfo, ClassLoader parentClassLoader) {
         Set<ClassLoader> delegates = new HashSet<>();
 
