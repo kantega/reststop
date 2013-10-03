@@ -31,10 +31,7 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
@@ -204,13 +201,54 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 }
             }
             if(pluginsXml != null) {
-                providers.add(new PluginLinesClassLoaderProvider(PluginInfo.parse(pluginsXml), repoDir));
+                List<PluginInfo> parsed = PluginInfo.parse(pluginsXml);
+                configure(parsed, servletContext);
+                providers.add(new PluginLinesClassLoaderProvider(parsed, repoDir));
             }
         }
         return providers.toArray(new ClassLoaderProvider[providers.size()]);
 
     }
 
+    private void configure(List<PluginInfo> pluginInfos, ServletContext servletContext) {
+        String configDirPath = servletContext.getInitParameter("pluginConfigurationDirectory");
+        if(configDirPath != null) {
+            File configDir = new File(configDirPath);
+            if(configDir.exists()) {
+                for (PluginInfo info : pluginInfos) {
+
+                    File artifact = new File(configDir, info.getArtifactId() +".conf");
+                    File artifactVersion = new File(configDir, info.getArtifactId() +"-" + info.getVersion() +".properties");
+
+                    Properties properties = new Properties();
+                    properties.putAll(info.getConfig());
+
+                    addProperties(properties, artifact, artifactVersion);
+
+                    info.setConfig(properties);
+                }
+            }
+        }
+    }
+
+    private void addProperties(Properties properties, File... files) {
+        if(files != null) {
+            for (File file : files) {
+                if(file.exists()) {
+                    Properties prop = new Properties();
+                    try(FileInputStream in = new FileInputStream(file)) {
+                        prop.load(in);
+                    } catch (FileNotFoundException e) {
+                        throw new RuntimeException(e);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    properties.putAll(prop);
+                }
+            }
+        }
+    }
 
 
     private class DefaultReststop implements Reststop, ClassLoaderProvider {

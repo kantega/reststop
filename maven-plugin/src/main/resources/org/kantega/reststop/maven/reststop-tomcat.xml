@@ -3,5 +3,6 @@
 
     <Parameter name="plugins.xml" value="${catalina.home}/../plugins.xml" override="true"/>
     <Parameter name="repositoryPath" value="${catalina.home}/../repository" override="true"/>
+    <Parameter name="pluginConfigurationDirectory" value="${catalina.home}/../config" override="true"/>
 
 </Context>

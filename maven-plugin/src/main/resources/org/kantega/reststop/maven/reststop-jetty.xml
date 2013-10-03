@@ -27,4 +27,8 @@
         <Arg>repositoryPath</Arg>
         <Arg><SystemProperty name="jetty.home" default="." />/../repository</Arg>
     </Call>
+    <Call name="setInitParameter">
+        <Arg>pluginConfigurationDirectory</Arg>
+        <Arg><SystemProperty name="jetty.home" default="." />/../conf</Arg>
+    </Call>
 </Configure>
