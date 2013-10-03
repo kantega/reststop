@@ -18,10 +18,7 @@ package org.kantega.reststop.development;
 
 import org.kantega.reststop.api.Reststop;
 import org.kantega.reststop.api.ReststopPlugin;
-import org.kantega.reststop.classloaderutils.Artifact;
-import org.kantega.reststop.classloaderutils.DelegateClassLoader;
-import org.kantega.reststop.classloaderutils.PluginInfo;
-import org.kantega.reststop.classloaderutils.ResourceHidingClassLoader;
+import org.kantega.reststop.classloaderutils.*;
 
 import java.io.File;
 import java.util.*;
@@ -33,7 +30,7 @@ public class DevelopmentClassLoaderProvider {
 
     private final Map<String, PluginInfo> pluginsInfo = new LinkedHashMap<>();
     private Map<String, DevelopmentClassloader> classloaders = new HashMap<>();
-    private Map<String, ClassLoader> byDepsId = new HashMap<>();
+    private Map<String, PluginClassLoader> byDepsId = new HashMap<>();
 
     private Reststop reststop;
 
@@ -76,7 +73,7 @@ public class DevelopmentClassLoaderProvider {
 
     }
     private ClassLoader getParentClassLoader(PluginInfo pluginInfo, ClassLoader parentClassLoader) {
-        Set<ClassLoader> delegates = new HashSet<ClassLoader>();
+        Set<ClassLoader> delegates = new HashSet<>();
 
         for (Artifact dep : pluginInfo.getClassPath("compile")) {
             ClassLoader dependencyLoader = byDepsId.get(dep.getGroupIdAndArtifactId());
@@ -100,7 +97,10 @@ public class DevelopmentClassLoaderProvider {
 
         classloader.compileSources();
         classloader.copySourceResorces();
-        DevelopmentClassloader newClassLoader = new DevelopmentClassloader(classloader);
+        PluginInfo info = classloader.getPluginInfo();
+        DevelopmentClassloader newClassLoader = new DevelopmentClassloader(classloader, getParentClassLoader(info, getParentClassLoader(info, reststop.getPluginParentClassLoader())));
+
+        byDepsId.put(info.getGroupIdAndArtifactId(), newClassLoader);
 
         Reststop.PluginClassLoaderChange change = reststop.changePluginClassLoaders();
         if(pluginId.startsWith("org.kantega.reststop:reststop-development-plugin:")) {
@@ -111,20 +111,48 @@ public class DevelopmentClassLoaderProvider {
 
             }
             change.remove(getClass().getClassLoader());
+
             change.add(newClassLoader);
         } else {
-            change
-                    .remove(classloader)
-                    .add(newClassLoader);
+            Map<String, PluginInfo> deps = new HashMap<>();
+            getChildPlugins(info, deps, new ArrayList<>(this.pluginsInfo.values()));
+
+            List<PluginInfo> sorted = PluginInfo.sortByRuntimeDependencies(new ArrayList<>(deps.values()));
+            List<PluginInfo> reverse = new ArrayList<>(sorted);
+            Collections.reverse(reverse);
+
+            for (PluginInfo pluginInfo : reverse) {
+                change.remove(classloaders.get(pluginInfo.getPluginId()));
+            }
+            for (PluginInfo pluginInfo : sorted) {
+                ClassLoader parent = getParentClassLoader(pluginInfo, reststop.getPluginParentClassLoader());
+                DevelopmentClassloader newDepLoader = new DevelopmentClassloader(classloaders.get(pluginInfo.getPluginId()), parent);
+                change.add(newDepLoader);
+                classloaders.put(pluginInfo.getPluginId(), newDepLoader);
+                byDepsId.put(pluginInfo.getGroupIdAndArtifactId(), newDepLoader);
+
+            }
+            change.remove(classloader);
+            change.add(newClassLoader);
+            classloaders.put(pluginId, newClassLoader);
 
         }
         change.commit();
-        classloaders.put(pluginId, newClassLoader);
         return newClassLoader;
 
     }
 
-    public void addByDepartmentId(PluginInfo info, ClassLoader classLoader) {
+    private void getChildPlugins(PluginInfo info, Map<String, PluginInfo> children, List<PluginInfo> all) {
+
+        for (PluginInfo child : info.getChildren(all)) {
+            if(!children.containsKey(child.getPluginId())) {
+                children.put(child.getPluginId(), child);
+                getChildPlugins(child, children, all);
+            }
+        }
+    }
+
+    public void addByDepartmentId(PluginInfo info, PluginClassLoader classLoader) {
         byDepsId.put(info.getGroupIdAndArtifactId(), classLoader);
     }
 }

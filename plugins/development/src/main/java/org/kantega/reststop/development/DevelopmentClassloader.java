@@ -64,9 +64,6 @@ public class DevelopmentClassloader extends PluginClassLoader{
     private final List<Class<?>> loadedClasses = new CopyOnWriteArrayList<>();
     private Set<String> usedUrls = new CopyOnWriteArraySet<>();
 
-    public DevelopmentClassloader(DevelopmentClassloader other) {
-        this(other.getPluginInfo(), other.basedir, other.compileClasspath, other.runtimeClasspath, other.testClasspath, other.getParent());
-    }
     public DevelopmentClassloader(PluginInfo info, File baseDir, List<File> compileClasspath, List<File> runtimeClasspath, List<File> testClasspath, ClassLoader parent) {
         super(info, new URL[0], parent);
         this.basedir = baseDir;
@@ -89,6 +86,10 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
         testFileManager = compiler.getStandardFileManager(null, null, null);
 
+    }
+
+    public DevelopmentClassloader(DevelopmentClassloader other, ClassLoader parentClassLoader) {
+        this(other.getPluginInfo(), other.getBasedir(), other.compileClasspath, other.runtimeClasspath, other.testClasspath, parentClassLoader);
     }
 
     @Override

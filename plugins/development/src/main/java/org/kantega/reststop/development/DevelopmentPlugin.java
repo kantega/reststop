@@ -19,6 +19,7 @@ package org.kantega.reststop.development;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.kantega.reststop.api.*;
+import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
 import org.kantega.reststop.development.velocity.SectionDirective;
 import org.w3c.dom.Document;
@@ -74,7 +75,7 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
         for (PluginInfo info : sortedInfos) {
             if(info.isDevelopmentPlugin()) {
                 provider.addExistingClassLoader(info.getPluginId(), createClassLoader(info, reststop.getPluginParentClassLoader()));
-                provider.addByDepartmentId(info, getClass().getClassLoader());
+                provider.addByDepartmentId(info, (PluginClassLoader) getClass().getClassLoader());
             }
 
             if(!info.isDirectDeploy()) {
