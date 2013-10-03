@@ -242,11 +242,23 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         @Override
         public Filter createFilter(Filter filter, String mapping, FilterPhase phase) {
+            if(filter == null ) {
+                throw new IllegalArgumentException("Filter cannot be null");
+            }
+            if(mapping == null) {
+                throw new IllegalArgumentException("Mapping for filter " + filter + " cannot be null");
+            }
             return new MappingWrappedFilter(filter, mapping, phase);
         }
 
         @Override
         public Filter createServletFilter(HttpServlet servlet, String path) {
+            if(servlet == null ) {
+                throw new IllegalArgumentException("Servlet parameter cannot be null");
+            }
+            if(path == null) {
+                throw new IllegalArgumentException("Path for servlet " +servlet + " cannot be null");
+            }
             return createFilter(new ServletWrapperFilter(servlet, path), path, FilterPhase.USER);
         }
 
