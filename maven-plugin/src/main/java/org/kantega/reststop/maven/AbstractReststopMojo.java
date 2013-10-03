@@ -148,63 +148,17 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
     }
 
     protected Document createPluginXmlDocument(boolean prod) throws MojoFailureException, MojoExecutionException {
+
+        List<PluginInfo> pluginInfos = getPluginInfos();
+
+        return buildPluginsDocument(prod, pluginInfos);
+
+
+    }
+
+    private Document buildPluginsDocument(boolean prod, List<PluginInfo> pluginInfos) throws MojoExecutionException {
+
         try {
-
-            List<PluginInfo> pluginInfos = new ArrayList<>();
-
-            for (Plugin plugin : getPlugins()) {
-                PluginInfo info = plugin.asPluginInfo();
-                pluginInfos.add(info);
-
-                Artifact pluginArtifact = resolveArtifact(plugin.getCoords());
-
-                info.setFile(pluginArtifact.getFile());
-
-                for(String scope : asList(JavaScopes.TEST, JavaScopes.RUNTIME, JavaScopes.COMPILE)) {
-
-                    try {
-
-                        ArtifactDescriptorResult descriptorResult = repoSystem.readArtifactDescriptor(repoSession, new ArtifactDescriptorRequest(pluginArtifact, remoteRepos, null));
-
-                        CollectRequest collectRequest = new CollectRequest();
-
-                        for (RemoteRepository repo : remoteRepos) {
-                            collectRequest.addRepository(repo);
-                        }
-                        for (Dependency dependency : descriptorResult.getDependencies()) {
-                            collectRequest.addDependency(dependency);
-                        }
-
-                        DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, DependencyFilterUtils.classpathFilter(scope));
-
-                        DependencyResult dependencyResult = repoSystem.resolveDependencies(repoSession, dependencyRequest);
-
-                        if(!dependencyResult.getCollectExceptions().isEmpty()) {
-                            throw new MojoFailureException("Failed resolving plugin dependencies", dependencyResult.getCollectExceptions().get(0));
-                        }
-
-                        for(ArtifactResult result : dependencyResult.getArtifactResults()) {
-                            Artifact artifact = result.getArtifact();
-                            org.kantega.reststop.classloaderutils.Artifact pa  = new org.kantega.reststop.classloaderutils.Artifact();
-                            info.getClassPath(scope).add(pa);
-
-                            pa.setGroupId(artifact.getGroupId());
-                            pa.setArtifactId(artifact.getArtifactId());
-                            pa.setVersion(artifact.getVersion());
-
-                            pa.setFile(artifact.getFile());
-                        }
-
-                    } catch (DependencyResolutionException | ArtifactDescriptorException e) {
-                        throw new MojoFailureException("Failed resolving plugin dependencies", e);
-                    }
-
-
-                }
-            }
-
-            validateTransitivePluginsMissing(pluginInfos);
-
             Document doc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
 
             Element pluginsElem = doc.createElement("plugins");
@@ -268,8 +222,64 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
         } catch (ParserConfigurationException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
+    }
+
+    private List<PluginInfo> getPluginInfos() throws MojoFailureException, MojoExecutionException {
+        List<PluginInfo> pluginInfos = new ArrayList<>();
+
+        for (Plugin plugin : getPlugins()) {
+            PluginInfo info = plugin.asPluginInfo();
+            pluginInfos.add(info);
+
+            Artifact pluginArtifact = resolveArtifact(plugin.getCoords());
+
+            info.setFile(pluginArtifact.getFile());
+
+            for(String scope : asList(JavaScopes.TEST, JavaScopes.RUNTIME, JavaScopes.COMPILE)) {
+
+                try {
+
+                    ArtifactDescriptorResult descriptorResult = repoSystem.readArtifactDescriptor(repoSession, new ArtifactDescriptorRequest(pluginArtifact, remoteRepos, null));
+
+                    CollectRequest collectRequest = new CollectRequest();
+
+                    for (RemoteRepository repo : remoteRepos) {
+                        collectRequest.addRepository(repo);
+                    }
+                    for (Dependency dependency : descriptorResult.getDependencies()) {
+                        collectRequest.addDependency(dependency);
+                    }
+
+                    DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, DependencyFilterUtils.classpathFilter(scope));
+
+                    DependencyResult dependencyResult = repoSystem.resolveDependencies(repoSession, dependencyRequest);
+
+                    if(!dependencyResult.getCollectExceptions().isEmpty()) {
+                        throw new MojoFailureException("Failed resolving plugin dependencies", dependencyResult.getCollectExceptions().get(0));
+                    }
+
+                    for(ArtifactResult result : dependencyResult.getArtifactResults()) {
+                        Artifact artifact = result.getArtifact();
+                        org.kantega.reststop.classloaderutils.Artifact pa  = new org.kantega.reststop.classloaderutils.Artifact();
+                        info.getClassPath(scope).add(pa);
+
+                        pa.setGroupId(artifact.getGroupId());
+                        pa.setArtifactId(artifact.getArtifactId());
+                        pa.setVersion(artifact.getVersion());
+
+                        pa.setFile(artifact.getFile());
+                    }
+
+                } catch (DependencyResolutionException | ArtifactDescriptorException e) {
+                    throw new MojoFailureException("Failed resolving plugin dependencies", e);
+                }
 
 
+            }
+        }
+
+        validateTransitivePluginsMissing(pluginInfos);
+        return pluginInfos;
     }
 
     private void validateTransitivePluginsMissing(List<PluginInfo> pluginInfos) throws MojoExecutionException, MojoFailureException {
