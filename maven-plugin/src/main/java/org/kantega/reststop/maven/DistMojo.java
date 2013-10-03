@@ -182,6 +182,8 @@ public class DistMojo extends AbstractReststopMojo {
             pw.println("%{summary}");
             pw.println("%files");
             pw.println("/opt/%{name}");
+            pw.println("%attr(0755, root, root) /opt/%{name}/tomcat/bin/*.sh");
+            pw.println("%attr(0755, root, root) /opt/%{name}/jetty/bin/*.sh");
 
 
         } catch (FileNotFoundException e) {
