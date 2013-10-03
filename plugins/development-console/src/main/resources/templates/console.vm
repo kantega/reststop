@@ -41,6 +41,14 @@
                 #end
             </div>
             <div class="plugindetails">
+                #if($classloader.key.pluginInfo.config.size() > 0)
+                    <p>Config:</p>
+                    <div style="margin-left: 2em;font-family: monospace">
+                    #foreach($prop in $classloader.key.pluginInfo.config.entrySet())
+                        <div>$prop.key = $prop.value</div>
+                    #end
+                    </div>
+                #end
                 <p>Classes loaded: $classloader.key.loadedClasses.size()</p>
                 #if($classloader.value.size() > 0)
                     <p>Plugin instances:</p>

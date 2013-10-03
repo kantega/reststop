@@ -20,6 +20,7 @@ import org.eclipse.aether.artifact.Artifact;
 import org.kantega.reststop.classloaderutils.PluginInfo;
 
 import java.io.File;
+import java.util.Properties;
 
 /**
  *
@@ -30,6 +31,7 @@ public class Plugin {
     private String version;
     private boolean directDeploy = true;
     private File sourceDirectory;
+    private Properties config;
 
     public Plugin(String groupId, String artifactId, String version) {
         this.groupId = groupId;
@@ -98,6 +100,8 @@ public class Plugin {
         info.setDirectDeploy(isDirectDeploy());
 
         info.setSourceDirectory(getSourceDirectory());
+
+        info.setConfig(config);
 
 
 

@@ -70,6 +70,23 @@ public class PluginInfo extends Artifact {
                 pluginInfo.addDependsOn(depArt);
             }
 
+            NodeList configElems = pluginElement.getElementsByTagName("config");
+
+            Properties props = new Properties();
+            for(int c = 0; c < configElems.getLength(); c++) {
+                Element configElem = (Element) configElems.item(c);
+
+                NodeList propElems = configElem.getElementsByTagName("prop");
+                for(int p = 0; p < configElems.getLength(); p++) {
+                    Element propElem = (Element) propElems.item(p);
+
+                    props.setProperty(propElem.getAttribute("name"), propElem.getAttribute("value"));
+                }
+
+            }
+
+            pluginInfo.setConfig(props);
+
             for (String scope : asList("test", "runtime", "compile")) {
 
                 NodeList classPathElems = pluginElement.getElementsByTagName(scope);
@@ -216,7 +233,9 @@ public class PluginInfo extends Artifact {
 
     private static Properties cloneProperties(Properties props) {
         Properties properties = new Properties();
-        properties.putAll(props);
+        if(props != null) {
+            properties.putAll(props);
+        }
         return properties;
     }
 }
