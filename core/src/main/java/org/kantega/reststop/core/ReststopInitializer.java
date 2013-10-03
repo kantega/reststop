@@ -204,7 +204,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 }
             }
             if(pluginsXml != null) {
-                providers.add(new PluginLinesClassLoaderProvider(pluginsXml, repoDir));
+                providers.add(new PluginLinesClassLoaderProvider(PluginInfo.parse(pluginsXml), repoDir));
             }
         }
         return providers.toArray(new ClassLoaderProvider[providers.size()]);
@@ -517,11 +517,11 @@ public class ReststopInitializer implements ServletContainerInitializer{
     }
 
     private class PluginLinesClassLoaderProvider implements ClassLoaderProvider {
-        private final Document pluginsXml;
+        private final List<PluginInfo> pluginInfos;
         private final File repoDir;
 
-        public PluginLinesClassLoaderProvider(Document pluginsXml, File repoDir) {
-            this.pluginsXml = pluginsXml;
+        public PluginLinesClassLoaderProvider(List<PluginInfo> pluginInfos, File repoDir) {
+            this.pluginInfos = pluginInfos;
             this.repoDir = repoDir;
         }
 
@@ -531,7 +531,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
             Map<String, ClassLoader> byDep  = new HashMap<>();
 
 
-            List<PluginInfo> infos = PluginInfo.sortByRuntimeDependencies(PluginInfo.parse(pluginsXml));
+            List<PluginInfo> infos = PluginInfo.sortByRuntimeDependencies(pluginInfos);
 
             for (PluginInfo info : infos) {
 
