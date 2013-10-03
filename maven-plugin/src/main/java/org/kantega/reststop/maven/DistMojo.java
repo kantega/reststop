@@ -150,6 +150,8 @@ public class DistMojo extends AbstractReststopMojo {
         commandline.createArg().setValue("_tmppath " + rpmDirectory.getAbsolutePath());
         commandline.createArg().setValue("--define");
         commandline.createArg().setValue("_topdir " + rpmDirectory.getAbsolutePath());
+        commandline.createArg().setValue("--define");
+        commandline.createArg().setValue("_binaries_in_noarch_packages_terminate_build   0");
         commandline.createArg().setValue("-bb");
         commandline.createArg().setFile(spec);
         final StreamConsumer stdout = new LogStreamConsumer( getLog());
