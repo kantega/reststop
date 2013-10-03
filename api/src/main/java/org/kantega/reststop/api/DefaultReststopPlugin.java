@@ -16,7 +16,11 @@
 
 package org.kantega.reststop.api;
 
+
+import org.kantega.reststop.classloaderutils.PluginClassLoader;
+
 import javax.servlet.Filter;
+import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -29,6 +33,34 @@ public class DefaultReststopPlugin implements ReststopPlugin {
     private final List<Filter> servletFilters = new CopyOnWriteArrayList<>();
     private final List<PluginListener> pluginListeners = new CopyOnWriteArrayList<>();
     private final Map<Class<?>, Object> services = new ConcurrentHashMap<>();
+
+    public DefaultReststopPlugin() {
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        if(loader instanceof PluginClassLoader) {
+            PluginClassLoader pluginClassLoader = (PluginClassLoader) loader;
+            Properties properties = pluginClassLoader.getPluginInfo().getConfig();
+
+            Class clazz = getClass();
+            Field[] fields = clazz.getDeclaredFields();
+            for (Field field : fields) {
+                Config config = field.getAnnotation(Config.class);
+                if(config != null) {
+                    String name = config.property();
+                    String defaultValue = config.defaultValue();
+                    if(String.class.equals(field.getType())) {
+                        field.setAccessible(true);
+                        try {
+                            field.set(this, properties.getProperty(name, defaultValue));
+                        } catch (IllegalAccessException e) {
+                            throw new IllegalStateException(e);
+                        }
+                    } else {
+                        throw new IllegalArgumentException("Don't know how to inject value for @Config annotated field of type " + field.getType());
+                    }
+                }
+            }
+        }
+    }
 
     protected void addServletFilter(Filter filter) {
         servletFilters.add(filter);

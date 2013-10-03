@@ -32,5 +32,10 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-classloader-utils</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>

@@ -28,14 +28,18 @@ public class CxfReststopPlugin extends DefaultReststopPlugin {
 
     public static ThreadLocal<ClassLoader> pluginClassLoader = new ThreadLocal<>();
 
-    public CxfReststopPlugin(Reststop reststop, final ReststopPluginManager pluginManager, ServletContext servletContext) throws ServletException {
+    @Config(property = "mountPoint", defaultValue = "/ws/*")
+    private String mountPoint;
+
+    public CxfReststopPlugin(Reststop reststop,
+                             final ReststopPluginManager pluginManager) throws ServletException {
         this.pluginManager = pluginManager;
 
         CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet();
         cxfNonSpringServlet.init(reststop.createServletConfig("cxf", new Properties()));
 
 
-        addServletFilter(reststop.createServletFilter(cxfNonSpringServlet, "/ws/*"));
+        addServletFilter(reststop.createServletFilter(cxfNonSpringServlet, mountPoint));
 
         addPluginListener(new PluginListener() {
             @Override

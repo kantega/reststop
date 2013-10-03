@@ -18,6 +18,7 @@ public class PluginInfo extends Artifact {
     private File sourceDirectory;
     private boolean directDeploy;
     private List<Artifact> dependsOn = new ArrayList<>();
+    private Properties config = new Properties();
 
     public List<Artifact> getClassPath(String scope) {
         if (!classpaths.containsKey(scope)) {
@@ -203,5 +204,19 @@ public class PluginInfo extends Artifact {
 
     public List<Artifact> getDependsOn() {
         return dependsOn;
+    }
+
+    public void setConfig(Properties config) {
+        this.config = cloneProperties(config);
+    }
+
+    public Properties getConfig() {
+        return cloneProperties(config);
+    }
+
+    private static Properties cloneProperties(Properties props) {
+        Properties properties = new Properties();
+        properties.putAll(props);
+        return properties;
     }
 }
