@@ -77,11 +77,14 @@ public class DistMojo extends AbstractReststopMojo {
 
     private final String tomcatdistCoords  ="org.apache.tomcat:tomcat:tar.gz:" + tomcatVersion;
 
+    @Parameter(defaultValue = "${project.artifactId}")
+    private String name;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
         File rootDirctory = new File(workDirectory, "root/" );
-        File distDirectory = new File(rootDirctory, "opt/" + mavenProject.getArtifactId());
+        File distDirectory = new File(rootDirctory, "opt/" + name);
         distDirectory.mkdirs();
 
         File repository = new File(distDirectory, "repository");
@@ -173,7 +176,7 @@ public class DistMojo extends AbstractReststopMojo {
 
         try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(spec)))) {
 
-            pw.println("Name: " + mavenProject.getArtifactId());
+            pw.println("Name: " + name);
             pw.println("Version: " + safeVersion());
             pw.println("Release: 1");
             pw.println("Summary: " + mavenProject.getDescription());
