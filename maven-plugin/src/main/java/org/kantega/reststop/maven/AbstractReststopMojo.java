@@ -88,6 +88,8 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
     @Parameter
     protected List<Plugin> plugins;
 
+    @Parameter(defaultValue =  "${basedir}/src/config")
+    private File configDir;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -117,6 +119,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
             context.setWar(war.getAbsolutePath());
             context.getServletContext().setAttribute("pluginsXml", createPluginXmlDocument(false));
+            context.setInitParameter("pluginConfigurationDirectory", configDir.getAbsolutePath());
 
             customizeContext(context);
 
