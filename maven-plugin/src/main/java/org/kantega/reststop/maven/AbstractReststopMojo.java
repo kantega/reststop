@@ -91,6 +91,10 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
     @Parameter(defaultValue =  "${basedir}/src/config")
     private File configDir;
 
+    @Parameter (defaultValue = "/")
+    private String contextPath;
+
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
@@ -118,6 +122,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
             JettyWebAppContext context = new JettyWebAppContext();
 
             context.setWar(war.getAbsolutePath());
+            context.setContextPath(contextPath);
             context.getServletContext().setAttribute("pluginsXml", createPluginXmlDocument(false));
             context.setInitParameter("pluginConfigurationDirectory", configDir.getAbsolutePath());
 

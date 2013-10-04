@@ -459,7 +459,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
 
         private boolean mappingMatchesRequest(HttpServletRequest req, String mapping) {
-            return mapping.equals(req.getRequestURI()) || mapping.endsWith("*") && req.getRequestURI().regionMatches(0, mapping, 0, mapping.length()-1);
+
+            String contextRelative = req.getRequestURI().substring(req.getContextPath().length());
+            return mapping.equals(contextRelative) || mapping.endsWith("*") && contextRelative.regionMatches(0, mapping, 0, mapping.length()-1);
         }
 
 
@@ -651,9 +653,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
             HttpServletRequest req = (HttpServletRequest) servletRequest;
             HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
-            String requestURI = req.getRequestURI();
+            String contextRelative = req.getRequestURI().substring(req.getContextPath().length());
 
-            String path = "assets/" +requestURI.substring("/assets/".length());
+            String path = "assets/" +contextRelative.substring("/assets/".length());
 
             for(ClassLoader loader : manager.getPluginClassLoaders()) {
 
