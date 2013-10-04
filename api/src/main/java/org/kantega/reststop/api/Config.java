@@ -16,8 +16,6 @@ public @interface Config {
 
     boolean required() default true;
 
-    String description() default "";
-
     String defaultValue() default "";
 
 }

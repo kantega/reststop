@@ -28,7 +28,7 @@ public class CxfReststopPlugin extends DefaultReststopPlugin {
 
     public static ThreadLocal<ClassLoader> pluginClassLoader = new ThreadLocal<>();
 
-    @Config(property = "mountPoint", defaultValue = "/ws/*")
+    @Config(defaultValue = "/ws/*")
     private String mountPoint;
 
     public CxfReststopPlugin(Reststop reststop,

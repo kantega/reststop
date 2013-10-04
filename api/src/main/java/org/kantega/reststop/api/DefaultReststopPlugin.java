@@ -45,21 +45,30 @@ public class DefaultReststopPlugin implements ReststopPlugin {
             for (Field field : fields) {
                 Config config = field.getAnnotation(Config.class);
                 if(config != null) {
+                    if(! String.class.equals(field.getType())) {
+                        throw new IllegalArgumentException("Don't know how to inject value for @Config annotated field of type " + field.getType());
+                    }
+
                     String name = config.property();
+
                     if( name == null || name.trim().isEmpty())  {
                         name = field.getName();
                     }
-                    String defaultValue = config.defaultValue();
-                    if(String.class.equals(field.getType())) {
-                        field.setAccessible(true);
-                        try {
-                            field.set(this, properties.getProperty(name, defaultValue));
-                        } catch (IllegalAccessException e) {
-                            throw new IllegalStateException(e);
-                        }
-                    } else {
-                        throw new IllegalArgumentException("Don't know how to inject value for @Config annotated field of type " + field.getType());
+                    String defaultValue = config.defaultValue().isEmpty() ? null : config.defaultValue();
+
+                    String value = properties.getProperty(name, defaultValue);
+
+                    if( (value == null || value.trim().isEmpty()) && config.required()) {
+                        throw new IllegalArgumentException("Configuration missing for required @Config field '" +field.getName() +"' in class " + field.getDeclaringClass().getName());
                     }
+
+                    field.setAccessible(true);
+                    try {
+                        field.set(this, value);
+                    } catch (IllegalAccessException e) {
+                        throw new IllegalStateException(e);
+                    }
+
                 }
             }
         }
