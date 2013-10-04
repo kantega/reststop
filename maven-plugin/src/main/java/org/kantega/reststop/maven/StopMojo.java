@@ -24,6 +24,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.util.log.Log;
 
 import java.io.IOException;
 import java.net.SocketException;
@@ -49,7 +50,7 @@ public class StopMojo extends AbstractMojo {
             String url = "http://localhost:" + reststopPort + "/shutdown";
             new URL(url).openStream();
         }  catch (IOException e) {
-            throw new MojoExecutionException("Failed shutting down", e);
+            Log.getLog().ignore(e);
         }
 
 
