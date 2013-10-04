@@ -46,6 +46,9 @@ public class DefaultReststopPlugin implements ReststopPlugin {
                 Config config = field.getAnnotation(Config.class);
                 if(config != null) {
                     String name = config.property();
+                    if( name == null || name.trim().isEmpty())  {
+                        name = field.getName();
+                    }
                     String defaultValue = config.defaultValue();
                     if(String.class.equals(field.getType())) {
                         field.setAccessible(true);

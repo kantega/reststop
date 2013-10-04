@@ -12,7 +12,7 @@ public @interface Config {
     /**
      * The name of the config property
      */
-    String property();
+    String property() default "";
 
     boolean required() default true;
 
