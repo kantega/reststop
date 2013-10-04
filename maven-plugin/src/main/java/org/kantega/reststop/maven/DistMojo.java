@@ -80,6 +80,9 @@ public class DistMojo extends AbstractReststopMojo {
     @Parameter(defaultValue = "${project.artifactId}")
     private String name;
 
+    @Parameter(defaultValue = "/")
+    private String contextPath;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
@@ -222,6 +225,7 @@ public class DistMojo extends AbstractReststopMojo {
             String warLocation = "../../repository/" +manager.getPathForLocalArtifact(warArifact);
 
             xml = xml.replaceAll("RESTSTOPWAR", warLocation);
+            xml = xml.replaceAll("CONTEXTPATH", contextPath);
 
             contextFile.getParentFile().mkdirs();
             Files.write(contextFile.toPath(), singleton(xml), Charset.forName("utf-8"));
@@ -238,6 +242,7 @@ public class DistMojo extends AbstractReststopMojo {
             String warLocation = "../repository/" +manager.getPathForLocalArtifact(warArifact);
 
             xml = xml.replaceAll("RESTSTOPWAR", warLocation);
+            xml = xml.replaceAll("CONTEXTPATH", contextPath);
 
             Files.write(contextXml.toPath(), singleton(xml), Charset.forName("utf-8"));
 
