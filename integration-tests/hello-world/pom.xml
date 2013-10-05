@@ -71,8 +71,12 @@
         </dependency>
 
         <dependency>
-            <groupId>javax</groupId>
-            <artifactId>javaee-web-api</artifactId>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
             <scope>provided</scope>
         </dependency>
 
@@ -182,6 +186,12 @@
                         <id>stop</id>
                         <goals>
                             <goal>stop</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>scan-plugins</id>
+                        <goals>
+                            <goal>scan-plugins</goal>
                         </goals>
                     </execution>
                     <execution>

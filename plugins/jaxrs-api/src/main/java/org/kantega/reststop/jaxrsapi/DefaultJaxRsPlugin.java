@@ -8,7 +8,7 @@ import java.util.*;
 /**
  *
  */
-public class DefaultJaxRsPlugin extends DefaultReststopPlugin implements JaxRsPlugin {
+public abstract class DefaultJaxRsPlugin extends DefaultReststopPlugin implements JaxRsPlugin {
     private final JaxRsApplication application = new JaxRsApplication();
 
     protected void addJaxRsSingletonResource(Object resource) {

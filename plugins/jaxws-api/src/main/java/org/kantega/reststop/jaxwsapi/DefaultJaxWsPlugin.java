@@ -10,7 +10,7 @@ import java.util.List;
 /**
  *
  */
-public class DefaultJaxWsPlugin extends DefaultReststopPlugin implements JaxWsPlugin {
+public abstract class DefaultJaxWsPlugin extends DefaultReststopPlugin implements JaxWsPlugin {
 
     private final List<EndpointConfiguration> endpointConfigurations = new ArrayList<>();
 

@@ -1,5 +1,0 @@
-org.kantega.reststop.helloworld.jaxrs.HelloworldJaxRsPlugin
-org.kantega.reststop.helloworld.jaxws.HelloworldWsPlugin
-org.kantega.reststop.helloworld.wicket.HelloworldWicketPlugin
-org.kantega.reststop.helloworld.springmvc.SpringMvcPlugin
-org.kantega.reststop.helloworld.view.IndexPagePlugin

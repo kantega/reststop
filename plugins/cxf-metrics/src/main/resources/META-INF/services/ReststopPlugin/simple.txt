@@ -1,1 +1,0 @@
-org.kantega.reststop.cxfmetrics.CxfMetricsPlugin
