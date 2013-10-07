@@ -27,7 +27,7 @@
                 <div class="row">
                     <div class="span2">
                         <a href="/" class="logoLink noLinkEffect" title="Til forsiden">
-                            <img src="/assets/development/design/bitmaps/kantega_logo.png" alt="Kantega Logo">
+                            <img src="${contextPath}/assets/development/design/bitmaps/kantega_logo.png" alt="Kantega Logo">
                         </a>
                         <a href="#mobile-navigation" class="mobile-menu-anchor"></a>
                     </div>
