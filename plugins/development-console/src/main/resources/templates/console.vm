@@ -45,7 +45,7 @@
                     <p>Config:</p>
                     <div style="margin-left: 2em;font-family: monospace">
                     #foreach($prop in $classloader.key.pluginInfo.config.entrySet())
-                        <div>$prop.key = $prop.value</div>
+                        <div>$prop.key = $obfTool.obf($prop.key, $prop.value)</div>
                     #end
                     </div>
                 #end
