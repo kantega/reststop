@@ -80,6 +80,14 @@ public class ReststopInitializer implements ServletContainerInitializer{
         });
         manager.addPluginManagerListener(new PluginManagerListener<ReststopPlugin>() {
             @Override
+            public void beforePassivation(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader, PluginLoader<ReststopPlugin> pluginLoader, Collection<ReststopPlugin> plugins) {
+                for (ReststopPlugin plugin : plugins) {
+                    plugin.destroy();
+                }
+            }
+        });
+        manager.addPluginManagerListener(new PluginManagerListener<ReststopPlugin>() {
+            @Override
             public void afterPluginManagerStarted(PluginManager pluginManager) {
                 pluginManagerStarted = true;
                 PluginManager<ReststopPlugin> pm = pluginManager;

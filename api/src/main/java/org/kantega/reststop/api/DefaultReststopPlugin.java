@@ -115,5 +115,8 @@ public class DefaultReststopPlugin implements ReststopPlugin {
         pluginListeners.add(pluginListener);
     }
 
+    @Override
+    public void destroy() {
 
+    }
 }

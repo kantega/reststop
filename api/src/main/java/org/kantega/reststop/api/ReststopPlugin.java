@@ -33,4 +33,6 @@ public interface ReststopPlugin {
     <T> T getService(Class<T> type);
 
     Set<Class<?>> getServiceTypes();
+
+    void destroy();
 }
