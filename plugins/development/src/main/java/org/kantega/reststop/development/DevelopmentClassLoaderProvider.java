@@ -115,6 +115,8 @@ public class DevelopmentClassLoaderProvider {
         DevelopmentClassloader newClassLoader = new DevelopmentClassloader(classloader, getParentClassLoader(info, getParentClassLoader(info, reststop.getPluginParentClassLoader())));
 
         byDepsId.put(info.getGroupIdAndArtifactId(), newClassLoader);
+        classloaders.put(pluginId, newClassLoader);
+
 
         Reststop.PluginClassLoaderChange change = reststop.changePluginClassLoaders();
         if(pluginId.startsWith("org.kantega.reststop:reststop-development-plugin:")) {
@@ -138,6 +140,9 @@ public class DevelopmentClassLoaderProvider {
             for (PluginInfo pluginInfo : reverse) {
                 change.remove(classloaders.get(pluginInfo.getPluginId()));
             }
+            change.remove(classloader);
+            change.add(newClassLoader);
+
             for (PluginInfo pluginInfo : sorted) {
                 ClassLoader parent = getParentClassLoader(pluginInfo, reststop.getPluginParentClassLoader());
                 DevelopmentClassloader newDepLoader = new DevelopmentClassloader(classloaders.get(pluginInfo.getPluginId()), parent);
@@ -146,9 +151,6 @@ public class DevelopmentClassLoaderProvider {
                 byDepsId.put(pluginInfo.getGroupIdAndArtifactId(), newDepLoader);
 
             }
-            change.remove(classloader);
-            change.add(newClassLoader);
-            classloaders.put(pluginId, newClassLoader);
 
         }
         change.commit();

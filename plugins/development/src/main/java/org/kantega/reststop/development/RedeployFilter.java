@@ -20,14 +20,13 @@ import org.apache.velocity.app.VelocityEngine;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 import org.kantega.reststop.api.Reststop;
+import org.kantega.reststop.classloaderutils.PluginInfo;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  *
@@ -60,10 +59,35 @@ public class RedeployFilter implements Filter {
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
         Map<String, DevelopmentClassloader> classloaders = provider.getClassloaders();
-        for (String pluginId : classloaders.keySet()) {
+
+        List<PluginInfo> infos = new ArrayList<>();
+
+
+        for (DevelopmentClassloader classloader : classloaders.values()) {
+            infos.add(classloader.getPluginInfo());
+        }
+
+        List<PluginInfo> sorted = PluginInfo.sortByRuntimeDependencies(infos);
+
+        Collections.sort(sorted, new Comparator<PluginInfo>() {
+            @Override
+            public int compare(PluginInfo o1, PluginInfo o2) {
+                return isDevPlugin(o1) ? -1 : isDevPlugin(o2) ? -1 : 1;
+            }
+
+            private boolean isDevPlugin(PluginInfo o1) {
+                return o1.getPluginId().contains(":reststop-development-plugin");
+            }
+        });
+        Map<String, ClassLoader> sortedLoaders = new LinkedHashMap<>();
+
+        for (PluginInfo pluginInfo : sorted) {
+            sortedLoaders.put(pluginInfo.getPluginId(), classloaders.get(pluginInfo.getPluginId()));
+        }
+        for (String pluginId : sortedLoaders.keySet()) {
             DevelopmentClassloader classloader = classloaders.get(pluginId);
 
-            if (!testing &&  !req.getRequestURI().startsWith("/assets")) {
+            if (!testing &&  !req.getServletPath().startsWith("/assets")) {
                 try {
 
 
