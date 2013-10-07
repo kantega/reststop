@@ -51,6 +51,10 @@ public class ScanForPluginsMojo extends AbstractMojo {
         if (!"jar".equals(mavenProject.getPackaging())) {
             return;
         }
+
+        if(! sourceDirectory.exists()) {
+            return;
+        }
         try {
 
             final Set<String> pluginClassNames = new LinkedHashSet<>(descriptorSource.exists() ? Files.readAllLines(descriptorSource.toPath(), Charset.forName("utf-8"))
