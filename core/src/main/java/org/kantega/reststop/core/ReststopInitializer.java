@@ -680,6 +680,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 }
                 if(path.endsWith("/")) {
                     path +="index.html";
+                    resource = loader.getResource(path);
                 }
 
                 if(resource != null) {
