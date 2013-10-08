@@ -53,6 +53,25 @@ window.addEventListener("load", function() {
             meters.appendChild(tr);
         }
 
+        var gauges = document.querySelector("#gauges");
+
+        for(var g in data.gauges) {
+            var tr = document.createElement("tr");
+            var gauge = data.gauges[g];
+            appendTd(tr, g);
+            var text;
+            console.log("G: " + typeof gauge.value)
+            if(gauge.value.toString().indexOf(".") != -1) {
+                text = parseFloat(gauge.value.toString()).toFixed(2);
+            } else {
+                text = gauge.value.toString()
+            }
+            appendTd(tr, text).style.textAlign="right";
+
+
+            gauges.appendChild(tr);
+        }
+
     }
 
 
