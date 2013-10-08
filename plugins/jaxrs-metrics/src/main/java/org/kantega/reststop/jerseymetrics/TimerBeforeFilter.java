@@ -29,8 +29,7 @@ public class TimerBeforeFilter implements ContainerRequestFilter {
 
         MetricRegistry registry = JerseyMetricsPlugin.getMetricRegistry();
 
-        String name = name("REST", path,
-                            requestContext.getMethod());
+        String name = name("REST", requestContext.getMethod(), path);
 
         Timer.Context context = registry.timer(name).time();
 
