@@ -39,6 +39,20 @@ window.addEventListener("load", function() {
             timers.appendChild(tr);
         }
 
+        var meters = document.querySelector("#meters");
+
+        for(var m in data.meters) {
+            var tr = document.createElement("tr");
+            var meter= data.meters[m];
+            appendTd(tr, m);
+            appendTd(tr, meter.count);
+            appendTdFloat(tr, timer.m1_rate);
+            appendTdFloat(tr, timer.m5_rate);
+            appendTdFloat(tr, timer.m15_rate);
+            appendTdFloat(tr, timer.mean_rate);
+            meters.appendChild(tr);
+        }
+
     }
 
 

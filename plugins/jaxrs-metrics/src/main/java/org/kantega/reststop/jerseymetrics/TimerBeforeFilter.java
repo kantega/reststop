@@ -33,7 +33,9 @@ public class TimerBeforeFilter implements ContainerRequestFilter {
 
         Timer.Context context = registry.timer(name).time();
 
-        requestContext.setProperty("timeContext", context);
+        requestContext.setProperty("metrics.timeContext", context);
+
+        requestContext.setProperty("metrics.path", path);
 
     }
 
