@@ -14,6 +14,7 @@ public class JerseyMetricsPlugin extends DefaultJaxRsPlugin{
     public JerseyMetricsPlugin(MetricRegistry metricRegistry) {
         this.metricRegistry = metricRegistry;
         addJaxRsContainerClass(TimerFeature.class);
+        addJaxRsContainerClass(AroundWriteMeter.class);
     }
 
     public static MetricRegistry getMetricRegistry() {

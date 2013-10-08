@@ -21,12 +21,5 @@ public class TimerAfterFilter implements ContainerResponseFilter{
         if(context != null) {
             context.stop();
         }
-        if(responseContext.getStatus() != Response.Status.OK.getStatusCode()) {
-            MetricRegistry registry = JerseyMetricsPlugin.getMetricRegistry();
-            String path = (String) requestContext.getProperty("metrics.path");
-            String name = name("REST","STATUS", Integer.toString(responseContext.getStatus()), requestContext.getMethod(), path);
-            registry.meter(name).mark();
-
-        }
     }
 }
