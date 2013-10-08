@@ -301,7 +301,42 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
         }
 
         validateTransitivePluginsMissing(pluginInfos);
+        validateNoPluginArtifactsOnRuntimeClasspath(pluginInfos);
         return pluginInfos;
+    }
+
+    private void validateNoPluginArtifactsOnRuntimeClasspath(List<PluginInfo> pluginInfos) throws MojoExecutionException, MojoFailureException {
+        for (PluginInfo pluginInfo : pluginInfos) {
+
+            Map<String, org.kantega.reststop.classloaderutils.Artifact> shouldBeProvided = new TreeMap<>();
+
+            for (org.kantega.reststop.classloaderutils.Artifact dep : pluginInfo.getClassPath("runtime")) {
+
+
+                try {
+                    JarFile jar = new JarFile(dep.getFile());
+                    ZipEntry entry = jar.getEntry("META-INF/services/ReststopPlugin/");
+                    boolean isPlugin = entry != null;
+                    jar.close();
+
+                    if(isPlugin) {
+                        shouldBeProvided.put(dep.getGroupIdAndArtifactId(), dep);
+                        getLog().error("Plugin " + pluginInfo.getPluginId() +" depends on plugin artifact " + dep.getPluginId() +" which must be in <scope>provided</scope> and declared as a <plugin>!");
+                        String decl = String.format("\t<plugin>\n\t\t<groupId>%s</groupId>\n\t\t<artifactId>%s</artifactId>\n\t\t<version>%s</version>\n\t</plugin>", dep.getGroupId(), dep.getArtifactId(), dep.getVersion());
+                        getLog().error("Please add the following to your <plugins> section:\n" + decl);
+                    }
+
+
+                } catch (IOException e) {
+                    throw new MojoExecutionException(e.getMessage(), e);
+                }
+
+            }
+            if(!shouldBeProvided.isEmpty()) {
+                throw new MojoFailureException("Plugin " +pluginInfo.getPluginId() +" has a Maven <dependency> on "
+                        + "one or more plugin artifacts which should be made <scope>provided</scope> and directly declared as a <plugin>: " + shouldBeProvided.values());
+            }
+        }
     }
 
     private void validateTransitivePluginsMissing(List<PluginInfo> pluginInfos) throws MojoExecutionException, MojoFailureException {
