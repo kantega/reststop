@@ -44,6 +44,12 @@
         <module>integration-tests/custom-app</module>
     </modules>
 
+    <distributionManagement>
+        <snapshotRepository>
+            <id>kantega-snapshots</id>
+            <url>http://opensource.kantega.no/nexus/content/repositories/snapshots/</url>
+        </snapshotRepository>
+    </distributionManagement>
     <dependencies>
         <dependency>
             <groupId>junit</groupId>
