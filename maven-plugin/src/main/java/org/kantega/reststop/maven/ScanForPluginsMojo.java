@@ -88,7 +88,7 @@ public class ScanForPluginsMojo extends AbstractMojo {
                     if (file.toFile().getName().endsWith(".java")) {
                         String className = rootPath.relativize(file).toString();
 
-                        className = className.substring(0, className.indexOf(".java")).replace('/', '.');
+                        className = className.substring(0, className.indexOf(".java")).replace(File.separatorChar, '.');
 
                         try {
                             Class<?> clazz = loader.loadClass(className);
