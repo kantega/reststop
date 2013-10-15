@@ -48,9 +48,15 @@ public class HelloJsonRootResource {
                 .get();
 
         String respBody = resp.readEntity(String.class);
+        System.out.println(respBody);
         try {
-            return getMapper().readValue(respBody, new TypeReference<ArrayList<SeriesBean>>() {
+            List<SeriesBean> original= getMapper().readValue(respBody, new TypeReference<ArrayList<SeriesBean>>() {
             });
+            List<MySeriesBean> transformed = new ArrayList<MySeriesBean>();
+            for( SeriesBean orig : original)
+                transformed.add(new MySeriesBean(orig));
+
+            return transformed;
         } catch (IOException e) {
             throw new RuntimeException("Failed to parse JSON", e);
         }
