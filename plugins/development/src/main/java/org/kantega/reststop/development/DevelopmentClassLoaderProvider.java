@@ -58,7 +58,7 @@ public class DevelopmentClassLoaderProvider {
                 List<File> test = getClasspath(pluginInfo, "test");
                 File sourceDir = pluginInfo.getSourceDirectory();
 
-                DevelopmentClassloader classloader = new DevelopmentClassloader(pluginInfo, sourceDir,
+                DevelopmentClassloader classloader = new DevelopmentClassloader(pluginInfo, sourceDir, pluginInfo.getFile(),
                         compile,
                         runtime,
                         test,
@@ -89,7 +89,7 @@ public class DevelopmentClassLoaderProvider {
     private ClassLoader getParentClassLoader(PluginInfo pluginInfo, ClassLoader parentClassLoader) {
         Set<ClassLoader> delegates = new HashSet<>();
 
-        for (Artifact dep : pluginInfo.getClassPath("compile")) {
+        for (Artifact dep : pluginInfo.getDependsOn()) {
             ClassLoader dependencyLoader = byDepsId.get(dep.getGroupIdAndArtifactId());
             if (dependencyLoader != null) {
                 delegates.add(dependencyLoader);
