@@ -22,7 +22,7 @@
                 #set($children = $classloader.key.pluginInfo.getChildren($pluginInfos))
 
                 #if($parents.size() > 0)
-                    <p>Depends on:
+                    <p>Requires:
                         #foreach($parent in $parents)
                             <a href="#$parent.pluginId">$parent.artifactId</a>
 
@@ -31,7 +31,7 @@
                     </p>
                 #end
                 #if($children.size() > 0)
-                    <p>Provides to:
+                    <p>Required by:
                         #foreach($child in $children)
                             <a href="#$child.pluginId">$child.artifactId</a>
 
