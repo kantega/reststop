@@ -370,4 +370,9 @@ public class DevelopmentClassloader extends PluginClassLoader{
             throw new RuntimeException(e);
         }
     }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + " for " + getPluginInfo().getPluginId();
+    }
 }

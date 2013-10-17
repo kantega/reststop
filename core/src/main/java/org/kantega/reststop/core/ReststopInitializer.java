@@ -34,8 +34,10 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.logging.Logger;
 
 import static org.kantega.jexmec.manager.DefaultPluginManager.buildFor;
 
@@ -47,6 +49,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
     private boolean pluginManagerStarted;
     private ServletContext servletContext;
+    private static Logger log = Logger.getLogger(ReststopInitializer.class.getName());
 
     @Override
     public void onStartup(Set<Class<?>> classes, ServletContext servletContext) throws ServletException {
@@ -352,6 +355,17 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
             @Override
             public void commit() {
+                log.info("About to commit class loader change:");
+                log.info(" Removing : " + removes);
+                for (ClassLoader add : adds) {
+                    log.info("Adding " + add);
+                    if(add instanceof URLClassLoader) {
+                        URLClassLoader ucl = (URLClassLoader) add;
+                        for (URL url : ucl.getURLs()) {
+                            log.info("\t url: " + url.toString());
+                        }
+                    }
+                }
                 registry.replace(removes, adds);
             }
         }
