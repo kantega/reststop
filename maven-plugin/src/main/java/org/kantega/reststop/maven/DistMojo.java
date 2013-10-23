@@ -36,6 +36,7 @@ import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.resolution.*;
 import org.eclipse.aether.util.filter.ScopeDependencyFilter;
+import org.kantega.reststop.maven.dist.RpmBuilder;
 import org.w3c.dom.Document;
 
 import javax.xml.transform.*;
@@ -66,7 +67,6 @@ public class DistMojo extends AbstractReststopMojo {
     @Parameter(defaultValue = "${project.build.directory}/reststop/")
     private File workDirectory;
 
-
     @Parameter
     private final String jettyVersion = "9.0.5.v20130815";
 
@@ -82,6 +82,9 @@ public class DistMojo extends AbstractReststopMojo {
 
     @Parameter(defaultValue = "/")
     private String contextPath;
+
+    @Parameter(defaultValue = "rpm")
+    private String packaging;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -114,93 +117,14 @@ public class DistMojo extends AbstractReststopMojo {
 
         createTomcatContextXml(warArifact, manager, new File(tomcatDir, "conf/Catalina/localhost/ROOT.xml"));
 
-        createRpm(new File(workDirectory, "rpm"), rootDirctory);
+        if( packaging.compareTo("rpm") == 0)
+            new RpmBuilder(mavenProject, getLog(), name).build(new File(workDirectory, "rpm"), rootDirctory);
+        else if (packaging.compareTo("deb") == 0)
+            createDeb(new File(workDirectory, "deb"), rootDirctory);
 
     }
+    private void createDeb(File rpmDirectory, File rootDirectory)  throws MojoExecutionException {
 
-    private void createRpm(File rpmDirectory, File rootDirectory) throws MojoExecutionException {
-
-
-        File specs = new File(rpmDirectory, "SPECS");
-        specs.mkdirs();
-        File sources = new File(rpmDirectory, "SOURCES");
-        sources.mkdirs();
-        new File(rpmDirectory, "BUILD").mkdirs();
-        new File(rpmDirectory, "BUILDROOT").mkdirs();
-        new File(rpmDirectory, "RPMS").mkdirs();
-        new File(rpmDirectory, "SRPMS").mkdirs();
-        new File(rpmDirectory, "tmp-buildroot").mkdirs();
-        new File(rpmDirectory, "buildroot").mkdirs();
-
-
-        File spec = new File(specs, mavenProject.getArtifactId() + ".spec");
-
-        writeSpecFile(spec);
-
-
-        buildRpm(rpmDirectory, rootDirectory, spec);
-
-
-
-    }
-
-    private void buildRpm(File rpmDirectory, File rootDirectory, File spec) throws MojoExecutionException {
-
-        Commandline commandline = new Commandline();
-        commandline.setExecutable("rpmbuild");
-        commandline.createArg().setValue("--target");
-        commandline.createArg().setValue("noarch-redhat-linux");
-        commandline.createArg().setValue("--buildroot");
-        commandline.createArg().setFile(rootDirectory);
-        commandline.createArg().setValue("--define");
-        commandline.createArg().setValue("_tmppath " + rpmDirectory.getAbsolutePath());
-        commandline.createArg().setValue("--define");
-        commandline.createArg().setValue("_topdir " + rpmDirectory.getAbsolutePath());
-        commandline.createArg().setValue("--define");
-        commandline.createArg().setValue("_binaries_in_noarch_packages_terminate_build   0");
-        commandline.createArg().setValue("-bb");
-        commandline.createArg().setFile(spec);
-        final StreamConsumer stdout = new LogStreamConsumer( getLog());
-        final StreamConsumer stderr = new LogStreamConsumer( getLog());
-
-        try {
-            CommandLineUtils.executeCommandLine(commandline, stdout, stderr);
-        } catch (CommandLineException e) {
-            throw new MojoExecutionException(e.getMessage(), e);
-        }
-
-
-        getLog().info("cd " + rpmDirectory.getAbsolutePath());
-        getLog().info("rpmbuild --target noarch-redhat-linux  --quiet --buildroot " + rootDirectory.getAbsolutePath()
-                + " --define \"_tmppath " +rpmDirectory.getAbsolutePath() +"\" --define \"_topdir " +rpmDirectory.getAbsolutePath() +"\" -bb " + spec.getAbsolutePath());
-    }
-
-    private void writeSpecFile(File spec) throws MojoExecutionException {
-
-        try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(spec)))) {
-
-            pw.println("Name: " + name);
-            pw.println("Version: " + safeVersion());
-            pw.println("Release: 1");
-            pw.println("Summary: " + mavenProject.getDescription());
-            pw.println("License: Unknown");
-            pw.println("Group: Webapps/Java");
-            pw.println("BuildArchitectures: noarch");
-            pw.println("%description");
-            pw.println("%{summary}");
-            pw.println("%files");
-            pw.println("/opt/%{name}");
-            pw.println("%attr(0755, root, root) /opt/%{name}/tomcat/bin/*.sh");
-            pw.println("%attr(0755, root, root) /opt/%{name}/jetty/bin/*.sh");
-
-
-        } catch (FileNotFoundException e) {
-            throw new MojoExecutionException(e.getMessage(), e);
-        }
-    }
-
-    private String safeVersion() {
-        return mavenProject.getVersion().replace('-', '.');
     }
 
     private void writePluginsXml(File xmlFile) throws MojoFailureException, MojoExecutionException {
@@ -439,19 +363,6 @@ public class DistMojo extends AbstractReststopMojo {
         public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
             dir.toFile().delete();
             return FileVisitResult.CONTINUE;
-        }
-    }
-
-    private class LogStreamConsumer implements StreamConsumer {
-        private final Log log;
-
-        public LogStreamConsumer(Log log) {
-            this.log = log;
-        }
-
-        @Override
-        public void consumeLine(String line) {
-            log.info("rpmbuild: " +line);
         }
     }
 }

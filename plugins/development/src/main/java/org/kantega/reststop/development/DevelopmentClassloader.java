@@ -45,6 +45,7 @@ import static java.util.Arrays.asList;
 public class DevelopmentClassloader extends PluginClassLoader{
     private final long created;
     private final File basedir;
+    private final File jarFile;
     private final List<File> compileClasspath;
     private final List<File> runtimeClasspath;
     private final List<File> testClasspath;
@@ -64,21 +65,29 @@ public class DevelopmentClassloader extends PluginClassLoader{
     private final List<Class<?>> loadedClasses = new CopyOnWriteArrayList<>();
     private Set<String> usedUrls = new CopyOnWriteArraySet<>();
 
-    public DevelopmentClassloader(PluginInfo info, File baseDir, List<File> compileClasspath, List<File> runtimeClasspath, List<File> testClasspath, ClassLoader parent) {
+    public DevelopmentClassloader(PluginInfo info, File baseDir, File jarFile, List<File> compileClasspath, List<File> runtimeClasspath, List<File> testClasspath, ClassLoader parent) {
         super(info, new URL[0], parent);
         this.basedir = baseDir;
+        this.jarFile = jarFile;
         this.compileClasspath = compileClasspath;
         this.runtimeClasspath = runtimeClasspath;
         this.testClasspath = new ArrayList<>(testClasspath);
-        this.testClasspath.add(new File(baseDir, "target/classes"));
         try {
-            addURL(new File(baseDir, "target/classes").toURI().toURL());
+            if(baseDir != null && baseDir.exists()) {
+                this.testClasspath.add(new File(baseDir, "target/classes"));
+
+                addURL(new File(baseDir, "target/classes").toURI().toURL());
+            } else if(jarFile != null && jarFile.exists()) {
+                addURL(jarFile.toURI().toURL());
+                this.testClasspath.add(jarFile);
+            }
             for (File file : runtimeClasspath) {
                 addURL(file.toURI().toURL());
             }
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
+
         this.created = System.currentTimeMillis();
         this.lastTestCompile = this.created;
 
@@ -89,7 +98,7 @@ public class DevelopmentClassloader extends PluginClassLoader{
     }
 
     public DevelopmentClassloader(DevelopmentClassloader other, ClassLoader parentClassLoader) {
-        this(other.getPluginInfo(), other.getBasedir(), other.compileClasspath, other.runtimeClasspath, other.testClasspath, parentClassLoader);
+        this(other.getPluginInfo(), other.getBasedir(), other.jarFile, other.compileClasspath, other.runtimeClasspath, other.testClasspath, parentClassLoader);
     }
 
     @Override
@@ -156,6 +165,17 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
     public boolean isStaleSources() {
 
+        if(jarFile.lastModified() > created) {
+            return true;
+        }
+        for (File file : runtimeClasspath) {
+            if(file.lastModified() > created) {
+                return true;
+            }
+        }
+        if(basedir == null) {
+            return false;
+        }
         return newest(new File(basedir, "src/main/java")) > created;
     }
 
@@ -261,6 +281,9 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
     public void compileSources() {
 
+        if(basedir == null) {
+            return;
+        }
         File sourceDirectory = new File(basedir, "src/main/java");
         File outputDirectory = new File(basedir, "target/classes");
         List<File> classpath = compileClasspath;
@@ -270,6 +293,9 @@ public class DevelopmentClassloader extends PluginClassLoader{
     }
 
     public void compileJavaTests() {
+        if(basedir == null) {
+            return;
+        }
         File sourceDirectory = new File(basedir, "src/test/java");
         if(sourceDirectory.exists()) {
             File outputDirectory = new File(basedir, "target/test-classes");
@@ -369,5 +395,10 @@ public class DevelopmentClassloader extends PluginClassLoader{
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + " for " + getPluginInfo().getPluginId();
     }
 }

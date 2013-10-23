@@ -139,7 +139,7 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
         List<File> compile  = info.getClassPathFiles("compile");
         List<File> test  = info.getClassPathFiles("test");
 
-        return new DevelopmentClassloader(info, info.getSourceDirectory(), compile, runtime, test, pluginParentClassLoader);
+        return new DevelopmentClassloader(info, info.getSourceDirectory(), info.getFile(), compile, runtime, test, pluginParentClassLoader);
     }
 
     private boolean loadedByDevelopmentClassLoader() {

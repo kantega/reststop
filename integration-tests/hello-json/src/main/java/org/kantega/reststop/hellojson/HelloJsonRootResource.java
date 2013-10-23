@@ -40,7 +40,7 @@ public class HelloJsonRootResource {
     private ObjectMapper mapper;
 
     @GET
-    public List<MySeriesBean> getMeters() {
+    public List<MySeriesBean> getSeries() {
 
         Response resp = getRootResource("https://api.tempo-db.com/v1")
                 .path("series")
@@ -93,6 +93,7 @@ public class HelloJsonRootResource {
     private WebTarget getRootResource(String s) {
 
         Client client = ClientBuilder.newBuilder()
+                //.register()
                 .register(new HttpBasicAuthFilter("759172ba3c084326ab2f9483f1a609a0", "f79dc6abebeb4be88c0c24c4f789c8d7"))
                 .register(JacksonFeature.class)
                 .build();
