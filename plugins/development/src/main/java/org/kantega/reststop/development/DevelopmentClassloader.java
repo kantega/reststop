@@ -165,6 +165,17 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
     public boolean isStaleSources() {
 
+        if(jarFile.lastModified() > created) {
+            return true;
+        }
+        for (File file : runtimeClasspath) {
+            if(file.lastModified() > created) {
+                return true;
+            }
+        }
+        if(basedir == null) {
+            return false;
+        }
         return newest(new File(basedir, "src/main/java")) > created;
     }
 
@@ -270,6 +281,9 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
     public void compileSources() {
 
+        if(basedir == null) {
+            return;
+        }
         File sourceDirectory = new File(basedir, "src/main/java");
         File outputDirectory = new File(basedir, "target/classes");
         List<File> classpath = compileClasspath;
@@ -279,6 +293,9 @@ public class DevelopmentClassloader extends PluginClassLoader{
     }
 
     public void compileJavaTests() {
+        if(basedir == null) {
+            return;
+        }
         File sourceDirectory = new File(basedir, "src/test/java");
         if(sourceDirectory.exists()) {
             File outputDirectory = new File(basedir, "target/test-classes");
