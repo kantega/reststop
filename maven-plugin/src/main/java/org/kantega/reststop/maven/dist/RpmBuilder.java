@@ -84,7 +84,7 @@ public class RpmBuilder {
         final StreamConsumer stderr = new LogStreamConsumer( getLog(), true);
 
         try {
-            int status =  false ? 0 :CommandLineUtils.executeCommandLine(commandline, stdout, stderr);
+            int status =  CommandLineUtils.executeCommandLine(commandline, stdout, stderr);
             if (status != 0)
                 throw new MojoExecutionException("Failed to run rpmbuild (exitcode "+status+") See log for details");
         } catch (CommandLineException e) {
