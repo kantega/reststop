@@ -16,16 +16,27 @@ import java.io.*;
 public class RpmBuilder {
 
 
-    private MavenProject mavenProject;
-    private Log log;
-    private String name;
+    private final MavenProject mavenProject;
+    private final Log log;
+    private final String name;
+    private final String installDir;
+    private final String container;
 
-    public RpmBuilder(MavenProject mavenProject, Log log, String name) {
+    public RpmBuilder(MavenProject mavenProject, Log log, String name, String installDir, String container) {
         this.mavenProject = mavenProject;
         this.log = log;
         this.name = name;
+        this.installDir=trimBothEnds(installDir,"/");
+        this.container =trimBothEnds(container,"/");
     }
 
+    private String trimBothEnds(String str, String trim){
+        if( str.startsWith(trim)) str = str.substring(1);
+        if( str.endsWith(trim)) str = str.substring(0,str.length()-1);
+        return str;
+    }
+        
+    
     public void build(File rpmDir, File rootDir) throws MojoExecutionException{
         createRpm(rpmDir, rootDir);
     }
@@ -73,7 +84,7 @@ public class RpmBuilder {
         final StreamConsumer stderr = new LogStreamConsumer( getLog(), true);
 
         try {
-            int status =  CommandLineUtils.executeCommandLine(commandline, stdout, stderr);
+            int status =  false ? 0 :CommandLineUtils.executeCommandLine(commandline, stdout, stderr);
             if (status != 0)
                 throw new MojoExecutionException("Failed to run rpmbuild (exitcode "+status+") See log for details");
         } catch (CommandLineException e) {
@@ -100,9 +111,8 @@ public class RpmBuilder {
             pw.println("%description");
             pw.println("%{summary}");
             pw.println("%files");
-            pw.println("/opt/%{name}");
-            pw.println("%attr(0755, root, root) /opt/%{name}/tomcat/bin/*.sh");
-            pw.println("%attr(0755, root, root) /opt/%{name}/jetty/bin/*.sh");
+            pw.println("/"+installDir+"/%{name}");
+            pw.println("%attr(0755, root, root) /"+installDir+"/%{name}/"+container+"/bin/*.sh");
 
 
         } catch (FileNotFoundException e) {
