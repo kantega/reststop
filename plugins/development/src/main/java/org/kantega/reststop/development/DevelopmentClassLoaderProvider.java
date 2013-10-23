@@ -146,6 +146,9 @@ public class DevelopmentClassLoaderProvider {
             for (PluginInfo pluginInfo : sorted) {
                 ClassLoader parent = getParentClassLoader(pluginInfo, reststop.getPluginParentClassLoader());
                 DevelopmentClassloader newDepLoader = new DevelopmentClassloader(classloaders.get(pluginInfo.getPluginId()), parent);
+                newDepLoader.compileSources();
+                newDepLoader.copySourceResorces();
+
                 change.add(newDepLoader);
                 classloaders.put(pluginInfo.getPluginId(), newDepLoader);
                 byDepsId.put(pluginInfo.getGroupIdAndArtifactId(), newDepLoader);
