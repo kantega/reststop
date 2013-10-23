@@ -132,6 +132,16 @@
                             <goal>scan-plugins</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>dist</id>
+                        <goals>
+                            <goal>dist</goal>
+                        </goals>
+                        <configuration>
+                            <packaging>none</packaging>
+                            <container>jetty</container>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>
