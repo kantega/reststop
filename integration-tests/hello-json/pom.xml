@@ -132,12 +132,6 @@
                             <goal>scan-plugins</goal>
                         </goals>
                     </execution>
-                    <execution>
-                        <id>dist</id>
-                        <goals>
-                            <goal>dist</goal>
-                        </goals>
-                    </execution>
                 </executions>
             </plugin>
             <plugin>
