@@ -16,6 +16,7 @@ package org.kantega.reststop.hellojson;
  */
 
 import org.apache.commons.io.IOUtils;
+import org.junit.Assert;
 import org.junit.Test;
 
 import javax.xml.bind.DatatypeConverter;
@@ -28,6 +29,8 @@ import static org.junit.Assert.assertThat;
 
 public class HelloJSonIT {
 
+
+
     @Test
     public void testGetSeries() throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL("http://localhost:" + System.getProperty("reststopPort") + "/mySeries").openConnection();
@@ -36,7 +39,8 @@ public class HelloJSonIT {
         String message = IOUtils.toString(connection.getInputStream());
 
 
-        assertThat(message, is("[{\"key\":\"demo-series\",\"id\":\"e081b2455d5a4edcb528c3cdb90b2161\"}]"));
+        Assert.assertTrue(message.indexOf("\"key\":\"demo-series\"") > 0);
+        Assert.assertTrue(message.indexOf("\"id\":\"e081b2455d5a4edcb528c3cdb90b2161\"") >0 );
 
     }
 
