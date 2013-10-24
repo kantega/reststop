@@ -51,8 +51,9 @@ public class HelloJSonIT {
         connection.setRequestProperty("Accept", "application/json");
         String message = IOUtils.toString(connection.getInputStream());
 
+        Assert.assertTrue(message.indexOf("\"key\":\"demo-series\"") > 0);
+        Assert.assertTrue(message.indexOf("\"id\":\"e081b2455d5a4edcb528c3cdb90b2161\"") >0 );
 
-        assertThat(message, is("{\"key\":\"demo-series\",\"id\":\"e081b2455d5a4edcb528c3cdb90b2161\"}"));
 
     }
 
