@@ -49,7 +49,7 @@
 
     <scm>
         <url>https://github.com/kantega/reststop</url>
-        <connection>scm:git:https://github.com/kantega/reststop.git</connection>
+        <connection>scm:git:ssh://git@github.com:kantega/reststop.git</connection>
     </scm>
 
 
