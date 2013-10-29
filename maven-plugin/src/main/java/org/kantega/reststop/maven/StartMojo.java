@@ -22,7 +22,9 @@ public class StartMojo extends AbstractReststopMojo {
     protected List<Plugin> getPlugins() {
         ArrayList<Plugin> plugins = new ArrayList<>(super.getPlugins());
 
-        plugins.add(new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion()));
+        if(mavenProject.getPackaging().equals("jar")) {
+            plugins.add(new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion()));
+        }
 
         return plugins;
     }

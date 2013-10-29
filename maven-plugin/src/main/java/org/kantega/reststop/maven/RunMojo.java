@@ -62,9 +62,11 @@ public class RunMojo extends AbstractReststopMojo {
     protected List<Plugin> getPlugins() {
         List<Plugin> plugins = new ArrayList<>(super.getPlugins());
 
-        Plugin projectPlugin = new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion());
-        projectPlugin.setSourceDirectory(mavenProject.getBasedir());
-        plugins.add(projectPlugin);
+        if(mavenProject.getPackaging().equals("jar")) {
+            Plugin projectPlugin = new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion());
+            projectPlugin.setSourceDirectory(mavenProject.getBasedir());
+            plugins.add(projectPlugin);
+        }
 
         addDevelopmentPlugins(plugins);
 
