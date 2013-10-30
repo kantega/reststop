@@ -19,15 +19,11 @@ package org.kantega.reststop.maven;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.*;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Untar;
+import org.apache.tools.ant.taskdefs.Zip;
 import org.apache.tools.ant.types.EnumeratedAttribute;
-import org.codehaus.plexus.util.cli.CommandLineException;
-import org.codehaus.plexus.util.cli.CommandLineUtils;
-import org.codehaus.plexus.util.cli.Commandline;
-import org.codehaus.plexus.util.cli.StreamConsumer;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.collection.CollectRequest;
@@ -129,7 +125,17 @@ public class DistMojo extends AbstractReststopMojo {
             new RpmBuilder(mavenProject, getLog(), name, installDir, container).build(new File(workDirectory, "rpm"), rootDirctory);
         else if (packaging.compareTo("deb") == 0)
             createDeb(new File(workDirectory, "deb"), rootDirctory);
+        else if (packaging.compareTo("zip") == 0)
+            createZip(new File(rootDirctory, installDir), new File(workDirectory, distDirectory.getName() + ".zip"));
 
+    }
+
+    private void createZip(File distDirectory, File destFile) {
+        Zip zip = new Zip();
+        zip.setProject(new Project());
+        zip.setBasedir(distDirectory);
+        zip.setDestFile(destFile);
+        zip.execute();
     }
 
     private void createDeb(File rpmDirectory, File rootDirectory) throws MojoExecutionException {
