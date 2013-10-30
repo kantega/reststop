@@ -20,9 +20,7 @@ import org.kantega.reststop.api.ReststopPlugin;
 import org.kantega.reststop.jaxrsapi.JaxRsPlugin;
 
 import javax.ws.rs.core.Application;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 /**
  *
@@ -69,5 +67,21 @@ public class ReststopApplication extends Application {
             }
         }
         return classes;
+    }
+
+    @Override
+    public Map<String, Object> getProperties() {
+        Map<String, Object> props = new HashMap<String, Object>();
+        if(plugins != null) {
+            for(ReststopPlugin plugin : plugins) {
+                if(plugin instanceof JaxRsPlugin) {
+                    JaxRsPlugin jaxRsPlugin = JaxRsPlugin.class.cast(plugin);
+                    for (Application application : jaxRsPlugin.getJaxRsApplications()) {
+                        props.putAll(application.getProperties());
+                    }
+                }
+            }
+        }
+        return props;
     }
 }

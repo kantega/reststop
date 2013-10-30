@@ -24,9 +24,14 @@ public abstract class DefaultJaxRsPlugin extends DefaultReststopPlugin implement
         application.addJaxRsContainerClass(clazz);
     }
 
+    protected void setProperty(String name, Object value) {
+        application.setProperty(name, value);
+    }
+
     private class JaxRsApplication extends Application {
         private final List<Object> jaxRsSingletonResources = new ArrayList<>();
         private final List<Class<?>> jaxRsContainerClasses = new ArrayList<>();
+        private final Map<String, Object> properties = new HashMap<>();
 
         protected void addJaxRsSingletonResource(Object resource) {
             jaxRsSingletonResources.add(resource);
@@ -44,6 +49,15 @@ public abstract class DefaultJaxRsPlugin extends DefaultReststopPlugin implement
         @Override
         public Set<Object> getSingletons() {
             return new HashSet<>(jaxRsSingletonResources);
+        }
+
+        @Override
+        public Map<String, Object> getProperties() {
+            return new HashMap<>(properties);
+        }
+
+        public void setProperty(String name, Object value) {
+            properties.put(name, value);
         }
     }
 }

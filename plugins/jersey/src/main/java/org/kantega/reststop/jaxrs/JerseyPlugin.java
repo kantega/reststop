@@ -8,6 +8,8 @@ import org.kantega.reststop.api.*;
 import javax.servlet.ServletException;
 import javax.ws.rs.core.Application;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
 
 import static java.util.Collections.singletonMap;
@@ -64,7 +66,9 @@ public class JerseyPlugin extends DefaultReststopPlugin {
 
     private ResourceConfig getResourceConfig(Application application) {
         ResourceConfig resourceConfig = ResourceConfig.forApplication(application);
-        resourceConfig.setProperties(singletonMap(ServletProperties.FILTER_FORWARD_ON_404, "true"));
+        Map<String, Object> props = new HashMap<>(resourceConfig.getProperties());
+        props.put(ServletProperties.FILTER_FORWARD_ON_404, "true");
+        resourceConfig.setProperties(props);
 
         return resourceConfig;
     }
