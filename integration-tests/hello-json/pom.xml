@@ -71,13 +71,13 @@
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
             <artifactId>jersey-client</artifactId>
-            <version>2.3.1</version>
+            <version>${jersey.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-jackson</artifactId>
-            <version>2.3.1</version>
+            <version>${jersey.version}</version>
         </dependency>
     </dependencies>
 
@@ -145,11 +145,11 @@
                     <execution>
                         <id>dist</id>
                         <goals>
-                            <goal>dist</goal>
+                            <goal>dist-debian</goal>
                         </goals>
                         <configuration>
-                            <packaging>none</packaging>
                             <container>jetty</container>
+                            <maintainer>Helge Olav Aarstein &lt;helge.olav.aarstein@kantega.no&gt;</maintainer>
                         </configuration>
                     </execution>
                 </executions>

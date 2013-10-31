@@ -57,6 +57,17 @@
                 <version>${project.version}</version>
                 <executions>
                     <execution>
+                        <id>dist</id>
+                        <goals>
+                            <goal>dist</goal>
+                        </goals>
+                        <configuration>
+                            <packaging>none</packaging>
+                            <container>jetty</container>
+                        </configuration>
+
+                    </execution>
+                    <execution>
                         <goals>
                             <goal>resolve-plugins</goal>
                         </goals>

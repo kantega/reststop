@@ -198,9 +198,6 @@
                         <goals>
                             <goal>dist</goal>
                         </goals>
-                        <configuration>
-                            <packaging>none</packaging>
-                        </configuration>
                     </execution>
                 </executions>
             </plugin>
