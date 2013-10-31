@@ -1,5 +1,8 @@
 package org.kantega.reststop.hellojson;
 
+import org.glassfish.jersey.server.mvc.MvcProperties;
+import org.glassfish.jersey.server.mvc.jsp.JspMvcFeature;
+import org.glassfish.jersey.server.mvc.jsp.JspProperties;
 import org.kantega.reststop.jaxrsapi.DefaultJaxRsPlugin;
 
 import javax.ws.rs.Path;
@@ -25,5 +28,9 @@ public class HelloJSonJaxRsPlugin extends DefaultJaxRsPlugin {
 
     public HelloJSonJaxRsPlugin() {
         addJaxRsSingletonResource(new HelloJsonRootResource());
+        addJaxRsContainerClass(JspMvcFeature.class);
+        setProperty(JspProperties.TEMPLATES_BASE_PATH, "WEB-INF/jsp");
+
+        addJaxRsSingletonResource(new JspResource());
     }
 }
