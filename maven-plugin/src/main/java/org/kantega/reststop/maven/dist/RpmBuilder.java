@@ -1,8 +1,11 @@
 package org.kantega.reststop.maven.dist;
 
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
-import org.apache.maven.project.MavenProject;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
+import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
@@ -13,21 +16,16 @@ import java.io.*;
 /**
 
  */
-public class RpmBuilder {
+@Mojo(name = "dist-rpm",
+        defaultPhase = LifecyclePhase.PACKAGE,
+        requiresDependencyResolution = ResolutionScope.COMPILE)
+public class RpmBuilder extends AbstractDistMojo {
 
 
-    private final MavenProject mavenProject;
-    private final Log log;
-    private final String name;
-    private final String installDir;
-    private final String container;
-
-    public RpmBuilder(MavenProject mavenProject, Log log, String name, String installDir, String container) {
-        this.mavenProject = mavenProject;
-        this.log = log;
-        this.name = name;
-        this.installDir=trimBothEnds(installDir,"/");
-        this.container =trimBothEnds(container,"/");
+    @Override
+    public void execute() throws MojoExecutionException, MojoFailureException {
+        super.execute();
+        createRpm(new File(workDirectory, "rpm"), rootDirectory);
     }
 
     private String trimBothEnds(String str, String trim){
@@ -37,9 +35,6 @@ public class RpmBuilder {
     }
         
     
-    public void build(File rpmDir, File rootDir) throws MojoExecutionException{
-        createRpm(rpmDir, rootDir);
-    }
 
     private void createRpm(File rpmDirectory, File rootDirectory) throws MojoExecutionException {
 
@@ -101,6 +96,7 @@ public class RpmBuilder {
 
         try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(spec)))) {
 
+            String installDir = trimBothEnds(this.installDir,"/");
             pw.println("Name: " + name);
             pw.println("Version: " + safeVersion());
             pw.println("Release: 1");
@@ -112,7 +108,7 @@ public class RpmBuilder {
             pw.println("%{summary}");
             pw.println("%files");
             pw.println("/"+installDir+"/%{name}");
-            pw.println("%attr(0755, root, root) /"+installDir+"/%{name}/"+container+"/bin/*.sh");
+            pw.println("%attr(0755, root, root) /"+installDir+"/%{name}/"+trimBothEnds(container,"/")+"/bin/*.sh");
 
 
         } catch (FileNotFoundException e) {
@@ -141,7 +137,4 @@ public class RpmBuilder {
         return mavenProject.getVersion().replace('-', '.');
     }
 
-    public Log getLog() {
-        return log;
-    }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.maven;
+package org.kantega.reststop.maven.dist;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -32,7 +32,10 @@ import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.eclipse.aether.resolution.*;
 import org.eclipse.aether.util.filter.ScopeDependencyFilter;
+import org.kantega.reststop.maven.AbstractReststopMojo;
+import org.kantega.reststop.maven.Plugin;
 import org.kantega.reststop.maven.dist.RpmBuilder;
+import org.kantega.reststop.maven.dist.DebianBuilder;
 import org.w3c.dom.Document;
 
 import javax.xml.transform.*;
@@ -50,17 +53,13 @@ import static java.util.Collections.singleton;
 /**
  *
  */
-@Mojo(name = "dist",
-        defaultPhase = LifecyclePhase.PACKAGE,
-        requiresDependencyResolution = ResolutionScope.COMPILE)
-public class DistMojo extends AbstractReststopMojo {
-
+public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
     @Parameter(defaultValue = "${plugin}")
     private Object plugin;
 
     @Parameter(defaultValue = "${project.build.directory}/reststop/")
-    private File workDirectory;
+    protected File workDirectory;
 
     @Parameter
     private final String jettyVersion = "9.0.5.v20130815";
@@ -73,25 +72,28 @@ public class DistMojo extends AbstractReststopMojo {
     private final String tomcatdistCoords = "org.apache.tomcat:tomcat:tar.gz:" + tomcatVersion;
 
     @Parameter(defaultValue = "${project.artifactId}")
-    private String name;
+    protected String name;
 
     @Parameter(defaultValue = "/")
-    private String contextPath;
-
-    @Parameter(defaultValue = "rpm")
-    private String packaging;
+    protected String contextPath;
 
     @Parameter(defaultValue = "jetty")
-    private String container;
+    protected String container;
 
     @Parameter(defaultValue = "opt")
-    private String installDir;
+    protected String installDir;
+
+    @Parameter()
+    private String packaging;
+
+    protected File rootDirectory;
+    protected File distDirectory;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
-        File rootDirctory = new File(workDirectory, "distRoot/");
-        File distDirectory = new File(rootDirctory, installDir + "/" + name);
+        this.rootDirectory = new File(workDirectory, "distRoot/");
+        this.distDirectory = new File(rootDirectory, installDir + "/" + name);
         distDirectory.mkdirs();
 
         File repository = new File(distDirectory, "repository");
@@ -120,27 +122,11 @@ public class DistMojo extends AbstractReststopMojo {
             createTomcatContextXml(warArifact, manager, new File(tomcatDir, "conf/Catalina/localhost/ROOT.xml"));
         } else
             throw new MojoExecutionException("Unknown container " + this.container);
-
-        if (packaging.compareTo("rpm") == 0)
-            new RpmBuilder(mavenProject, getLog(), name, installDir, container).build(new File(workDirectory, "rpm"), rootDirctory);
-        else if (packaging.compareTo("deb") == 0)
-            createDeb(new File(workDirectory, "deb"), rootDirctory);
-        else if (packaging.compareTo("zip") == 0)
-            createZip(new File(rootDirctory, installDir), new File(workDirectory, distDirectory.getName() + ".zip"));
-
+        if( packaging != null && "none".compareTo(packaging) != 0)
+            getLog().warn("Packaging now resulting in zip package by default. Please use rpm or debian goals ");
     }
 
-    private void createZip(File distDirectory, File destFile) {
-        Zip zip = new Zip();
-        zip.setProject(new Project());
-        zip.setBasedir(distDirectory);
-        zip.setDestFile(destFile);
-        zip.execute();
-    }
 
-    private void createDeb(File rpmDirectory, File rootDirectory) throws MojoExecutionException {
-
-    }
 
     private void writePluginsXml(File xmlFile) throws MojoFailureException, MojoExecutionException {
         Document pluginXmlDocument = createPluginXmlDocument(true);
