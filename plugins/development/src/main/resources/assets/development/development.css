@@ -26,3 +26,7 @@ div.plugindetails {
 div.withDetails div.plugindetails {
     display: block;
 }
+
+.exports {
+    margin-left: 1em;
+}

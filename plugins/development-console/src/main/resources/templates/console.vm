@@ -5,9 +5,9 @@
 <h2>Current plugins:</h2>
 
 <p>
-    <a href="#" onclick="document.querySelector('#pluginList').setAttribute('class','withDetails');return false">Details</a>
+    <a href="#" onclick="document.querySelector('#pluginList').setAttribute('class','');return false">Hide details</a>
 </p>
-<div id="pluginList">
+<div id="pluginList" class="withDetails">
 #foreach($classloader in $pluginClassloaders.entrySet())
 
     <div class="plugin" style="margin-top: 1.5em">
@@ -51,22 +51,22 @@
                 #end
                 <p>Classes loaded: $classloader.key.loadedClasses.size()</p>
                 #if($classloader.value.size() > 0)
-                    <p>Plugin instances:</p>
-                    <ul>
-                        #foreach($plugin in $classloader.value)
-                            <li>
-                                <div>$plugin.class.simpleName
-                                    <span>($plugin.class.package.name)</span>
-                                </div>
-                                <ul>
-                                    #foreach($service in $consoleTool.getExports($plugin).entrySet())
-                                        <li>
-                                            $service.key.name: $service.value
-                                        </li>
-                                    #end
-                                </ul>
 
-                            </li>
+
+                        #foreach($plugin in $classloader.value)
+
+                                <p>Plugin: $plugin.class.simpleName
+                                    <span>($plugin.class.package.name)</span>
+                                </p>
+
+                                    #foreach($service in $consoleTool.getExports($plugin).entrySet())
+                                        <div class="exports">
+                                            $service.key.name: $service.value
+                                        </div>
+                                    #end
+
+
+
                         #end
 
                     </ul>
