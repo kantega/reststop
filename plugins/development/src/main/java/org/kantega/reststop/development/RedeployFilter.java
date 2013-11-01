@@ -115,13 +115,23 @@ public class RedeployFilter implements Filter {
                                 try {
                                     this.testing = true;
                                     List<Class> testClasses = classloader.getTestClasses();
-                                    Class[] objects = testClasses.toArray(new Class[testClasses.size()]);
-                                    Result result = new JUnitCore().run(objects);
-                                    if (result.getFailureCount() > 0) {
-                                        classloader.testsFailed();
-                                        throw new TestFailureException(result.getFailures());
-                                    } else {
-                                        classloader.testsPassed();
+                                    if(testClasses.size() > 0) {
+                                        Class[] objects = testClasses.toArray(new Class[testClasses.size()]);
+                                        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+                                        Thread.currentThread().setContextClassLoader(testClasses.get(0).getClassLoader());
+                                        try {
+
+
+                                            Result result = new JUnitCore().run(objects);
+                                            if (result.getFailureCount() > 0) {
+                                                classloader.testsFailed();
+                                                throw new TestFailureException(result.getFailures());
+                                            } else {
+                                                classloader.testsPassed();
+                                            }
+                                        }  finally {
+                                            Thread.currentThread().setContextClassLoader(loader);
+                                        }
                                     }
                                 } finally {
                                     this.testing = false;
