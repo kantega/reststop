@@ -37,6 +37,8 @@ import java.util.Properties;
  *
  */
 public class DevelopmentPlugin extends DefaultReststopPlugin {
+
+    @Export
     private VelocityEngine velocityEngine;
     private volatile boolean providerStarted = false;
 
@@ -124,10 +126,6 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
 
     }
 
-    @Export
-    public VelocityEngine getVelocityEngine() {
-        return velocityEngine;
-    }
 
     private VelocityEngine initVelocityEngine() {
         VelocityEngine engine = new VelocityEngine();

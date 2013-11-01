@@ -59,9 +59,9 @@
                                     <span>($plugin.class.package.name)</span>
                                 </div>
                                 <ul>
-                                    #foreach($service in $plugin.serviceTypes)
+                                    #foreach($service in $consoleTool.getExports($plugin).entrySet())
                                         <li>
-                                            $service.name : $plugin.getService($service)
+                                            $service.key.name: $service.value
                                         </li>
                                     #end
                                 </ul>

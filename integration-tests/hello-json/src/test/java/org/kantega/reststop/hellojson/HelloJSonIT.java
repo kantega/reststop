@@ -17,6 +17,7 @@ package org.kantega.reststop.hellojson;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import javax.xml.bind.DatatypeConverter;
@@ -27,11 +28,13 @@ import java.net.URL;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
+@Ignore
 public class HelloJSonIT {
 
 
 
     @Test
+
     public void testGetSeries() throws IOException {
         HttpURLConnection connection = (HttpURLConnection) new URL("http://localhost:" + System.getProperty("reststopPort") + "/mySeries").openConnection();
         connection.setRequestProperty("Authorization", "Basic " + DatatypeConverter.printBase64Binary("joe:joe".getBytes("utf-8")));

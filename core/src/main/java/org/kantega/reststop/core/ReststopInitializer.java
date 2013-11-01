@@ -32,6 +32,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
@@ -156,19 +157,20 @@ public class ReststopInitializer implements ServletContainerInitializer{
                     synchronized (servicesByClassLoader) {
                         for (ReststopPlugin plugin : plugins) {
 
-                            for(Method method : plugin.getClass().getDeclaredMethods()) {
-                                if(method.getReturnType() != Void.class && method.getAnnotation(Export.class) != null && method.getParameterTypes().length == 0) {
+                            for(Field field : plugin.getClass().getDeclaredFields()) {
+                                if(field.getAnnotation(Export.class) != null ) {
                                     try {
-                                        Object service = method.invoke(plugin);
+                                        field.setAccessible(true);
+                                        Object service = field.get(plugin);
                                         if(service != null) {
                                             if(!servicesByClassLoader.containsKey(classLoader)) {
                                                 servicesByClassLoader.put(classLoader, new HashMap<ServiceKey, Object>());
                                             }
                                             Map<ServiceKey, Object> forClassLoader = servicesByClassLoader.get(classLoader);
 
-                                            forClassLoader.put(ServiceKey.by(method.getReturnType()), service);
+                                            forClassLoader.put(ServiceKey.by(field.getType()), service);
                                         }
-                                    } catch (IllegalAccessException | InvocationTargetException e) {
+                                    } catch (IllegalAccessException e) {
                                         throw new RuntimeException(e);
                                     }
 

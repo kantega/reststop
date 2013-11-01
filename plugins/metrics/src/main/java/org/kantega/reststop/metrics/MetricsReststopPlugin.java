@@ -29,6 +29,8 @@ public class MetricsReststopPlugin extends DefaultReststopPlugin {
 
 
     private final HealthCheckRegistry healthCheckRegistry;
+
+    @Export
     private final MetricRegistry metricRegistry;
 
     public MetricsReststopPlugin(Reststop reststop, ServletContext servletContext) throws ServletException {
@@ -53,10 +55,6 @@ public class MetricsReststopPlugin extends DefaultReststopPlugin {
 
     }
 
-    @Export
-    public MetricRegistry getMetricRegistry() {
-        return metricRegistry;
-    }
 
     private ServletContext createProxy(final ServletContext servletContext) {
         return (ServletContext) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{ServletContext.class}, new InvocationHandler() {

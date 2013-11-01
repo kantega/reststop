@@ -23,8 +23,10 @@ import java.util.*;
 public class CxfReststopPlugin extends DefaultReststopPlugin {
 
 
-    private final ReststopPluginManager pluginManager;
+    @Export
     private final EndpointConfigurationBuilder endpointConfigurationBuilder;
+
+    private final ReststopPluginManager pluginManager;
     private List<Endpoint> endpoints = new ArrayList<>();
 
     public static ThreadLocal<ClassLoader> pluginClassLoader = new ThreadLocal<>();
@@ -57,10 +59,6 @@ public class CxfReststopPlugin extends DefaultReststopPlugin {
         endpointConfigurationBuilder = new DefaultEndpointConfigurationBuilder();
     }
 
-    @Export
-    public EndpointConfigurationBuilder getEndpointConfigurationBuilder() {
-        return endpointConfigurationBuilder;
-    }
 
     private void deployEndpoints() {
         for (Endpoint endpoint : endpoints) {

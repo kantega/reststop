@@ -49,6 +49,7 @@ public class DevelopmentConsolePlugin extends DefaultReststopPlugin {
             context.put("pluginClassloaders", getPluginClassLoaders(pluginManager));
             context.put("dateTool", new DateTool());
             context.put("obfTool", new ObfTool());
+            context.put("consoleTool", new ConsoleTool());
 
 
             context.put("pluginInfos", getPluginInfos(pluginManager));

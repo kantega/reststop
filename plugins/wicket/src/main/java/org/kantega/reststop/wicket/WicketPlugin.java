@@ -13,6 +13,7 @@ import java.util.Properties;
 public class WicketPlugin extends DefaultReststopPlugin {
 
 
+    @Export
     private final WebApplication wicketApplication;
 
     public WicketPlugin(Reststop reststop) throws ServletException {
@@ -31,8 +32,4 @@ public class WicketPlugin extends DefaultReststopPlugin {
 
     }
 
-    @Export
-    public WebApplication getWicketApplication() {
-        return wicketApplication;
-    }
 }

@@ -13,10 +13,7 @@ import org.apache.maven.project.MavenProject;
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -111,16 +108,13 @@ public class ScanForPluginsMojo extends AbstractMojo {
                             if (!clazz.isInterface() && !Modifier.isAbstract(clazz.getModifiers()) && apiClass.isAssignableFrom(clazz)) {
                                 pluginClassNames.add(clazz.getName());
 
-                                for(Method method : clazz.getDeclaredMethods()) {
-                                    if(method.getReturnType() != Void.class && method.getParameterTypes().length == 0) {
-                                        for (Annotation annotation : method.getDeclaredAnnotations()) {
-                                            if(annotation.annotationType() == exportClass) {
-                                                exports.add(method.getReturnType().getName());
-                                            }
+                                for(Field field : clazz.getDeclaredFields()) {
+                                    for (Annotation annotation : field.getDeclaredAnnotations()) {
+                                        if (annotation.annotationType() == exportClass) {
+                                            exports.add(field.getType().getName());
                                         }
-
-
                                     }
+
                                 }
 
                                 Constructor<?>[] constructors = clazz.getDeclaredConstructors();
