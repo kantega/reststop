@@ -32,11 +32,12 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
 import static org.kantega.jexmec.manager.DefaultPluginManager.buildFor;
@@ -126,7 +127,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         DefaultReststop reststop = new DefaultReststop();
 
-        final PluginDelegatingServiceLocator pluginDelegatingServiceLocator = new PluginDelegatingServiceLocator();
+        final PluginExportsServiceLocator exportsServiceLocator = new PluginExportsServiceLocator();
         DefaultPluginManager<ReststopPlugin> manager = buildFor(ReststopPlugin.class)
                 .withClassLoaderProvider(reststop)
                 .withClassLoaderProviders(findClassLoaderProviders(servletContext))
@@ -135,35 +136,54 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 .withService(ServiceKey.by(Reststop.class), reststop)
                 .withService(ServiceKey.by(ServletContext.class), servletContext)
                 .withService(ServiceKey.by(ReststopPluginManager.class), reststopPluginManager)
-                .withServiceLocator(pluginDelegatingServiceLocator)
+                .withServiceLocator(exportsServiceLocator)
                 .build();
 
-        pluginDelegatingServiceLocator.setPluginManager(manager);
+        exportsServiceLocator.setPluginManager(manager);
 
         reststop.setManager(manager);
         return manager;
     }
 
-    private class PluginDelegatingServiceLocator implements ServiceLocator {
-        private Map<ServiceKey, Object> services = new ConcurrentHashMap<>();
+    private class PluginExportsServiceLocator implements ServiceLocator {
+        private final Map<ClassLoader, Map<ServiceKey, Object>> servicesByClassLoader = new IdentityHashMap<>();
+
 
         private void setPluginManager(PluginManager<ReststopPlugin> pluginManager) {
             pluginManager.addPluginManagerListener(new PluginManagerListener<ReststopPlugin>() {
                 @Override
-                public void beforeActivation(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader, PluginLoader<ReststopPlugin> pluginLoader, Collection<ReststopPlugin> plugins) {
-                    for (ReststopPlugin plugin : plugins) {
-                        for (Class<?> clazz : plugin.getServiceTypes()) {
-                            services.put(ServiceKey.by(clazz), plugin.getService(clazz));
+                public  void beforeActivation(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader, PluginLoader<ReststopPlugin> pluginLoader, Collection<ReststopPlugin> plugins) {
+                    synchronized (servicesByClassLoader) {
+                        for (ReststopPlugin plugin : plugins) {
+
+                            for(Method method : plugin.getClass().getDeclaredMethods()) {
+                                if(method.getReturnType() != Void.class && method.getAnnotation(Export.class) != null && method.getParameterTypes().length == 0) {
+                                    try {
+                                        Object service = method.invoke(plugin);
+                                        if(service != null) {
+                                            if(!servicesByClassLoader.containsKey(classLoader)) {
+                                                servicesByClassLoader.put(classLoader, new HashMap<ServiceKey, Object>());
+                                            }
+                                            Map<ServiceKey, Object> forClassLoader = servicesByClassLoader.get(classLoader);
+
+                                            forClassLoader.put(ServiceKey.by(method.getReturnType()), service);
+                                        }
+                                    } catch (IllegalAccessException | InvocationTargetException e) {
+                                        throw new RuntimeException(e);
+                                    }
+
+                                }
+                            }
+
+
                         }
                     }
                 }
 
                 @Override
-                public void afterPassivation(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader, PluginLoader<ReststopPlugin> pluginLoader, Collection<ReststopPlugin> plugins) {
-                    for (ReststopPlugin plugin : plugins) {
-                        for (Class<?> clazz : plugin.getServiceTypes()) {
-                            services.remove(ServiceKey.by(clazz));
-                        }
+                public  void beforeClassLoaderRemoved(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
+                    synchronized (servicesByClassLoader) {
+                        servicesByClassLoader.remove(classLoader);
                     }
                 }
             });
@@ -172,12 +192,28 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         @Override
         public Set<ServiceKey> keySet() {
-            return services.keySet();
+            synchronized (servicesByClassLoader) {
+                Set<ServiceKey> keys = new HashSet<>();
+                for (Map<ServiceKey, Object> forClassloader : servicesByClassLoader.values()) {
+                    keys.addAll(forClassloader.keySet());
+                }
+                return keys;
+            }
+
         }
 
         @Override
         public <T> T get(ServiceKey<T> serviceKey) {
-            return serviceKey.getType().cast(services.get(serviceKey));
+            synchronized (servicesByClassLoader) {
+                for (Map<ServiceKey, Object> forClassLoader : servicesByClassLoader.values()) {
+                    Object impl = forClassLoader.get(serviceKey);
+                    if(impl != null) {
+                        return serviceKey.getType().cast(impl);
+                    }
+                }
+                return null;
+
+            }
         }
 
     }
@@ -593,7 +629,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
             Map<String, ClassLoader> byDep  = new HashMap<>();
 
 
-            List<PluginInfo> infos = PluginInfo.sortByRuntimeDependencies(pluginInfos);
+            List<PluginInfo> infos = PluginInfo.resolveStartupOrder(pluginInfos);
 
             for (PluginInfo info : infos) {
 

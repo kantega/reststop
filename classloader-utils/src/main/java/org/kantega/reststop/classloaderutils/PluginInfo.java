@@ -4,8 +4,13 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.*;
+import java.util.jar.JarFile;
+import java.util.zip.ZipEntry;
 
 import static java.util.Arrays.asList;
 
@@ -18,7 +23,9 @@ public class PluginInfo extends Artifact {
     private File sourceDirectory;
     private boolean directDeploy;
     private List<Artifact> dependsOn = new ArrayList<>();
+    private List<Artifact> importsFrom = new ArrayList<>();
     private Properties config = new Properties();
+    private Set<String> imports, exports;
 
     public List<Artifact> getClassPath(String scope) {
         if (!classpaths.containsKey(scope)) {
@@ -70,6 +77,14 @@ public class PluginInfo extends Artifact {
                 pluginInfo.addDependsOn(depArt);
             }
 
+            NodeList importsFromElems = pluginElement.getElementsByTagName("imports-from");
+            for(int d = 0; d < importsFromElems.getLength(); d++) {
+                Element importElem = (Element) importsFromElems.item(d);
+                Artifact depArt = new Artifact();
+                parseGav(depArt, importElem);
+                pluginInfo.addImportsFrom(depArt);
+            }
+
             NodeList configElems = pluginElement.getElementsByTagName("config");
 
             Properties props = new Properties();
@@ -118,6 +133,10 @@ public class PluginInfo extends Artifact {
         return infos;
     }
 
+    private void addImportsFrom(Artifact depArt) {
+        importsFrom.add(depArt);
+    }
+
     public void addDependsOn(Artifact depArt) {
         dependsOn.add(depArt);
     }
@@ -126,6 +145,60 @@ public class PluginInfo extends Artifact {
         pluginInfo.setGroupId(pluginElement.getAttribute("groupId"));
         pluginInfo.setArtifactId(pluginElement.getAttribute("artifactId"));
         pluginInfo.setVersion(pluginElement.getAttribute("version"));
+    }
+
+    public List<PluginInfo> getServiceProviders(List<PluginInfo> pluginInfos) {
+        Set<String> myImports = getImports();
+        List<PluginInfo> serviceProviders = new ArrayList<>();
+
+        for (PluginInfo pluginInfo : pluginInfos) {
+            if( !pluginInfo.getPluginId().equals(getPluginId())) {
+                for (String export : pluginInfo.getExports()) {
+                    if(myImports.contains(export)) {
+                        serviceProviders.add(pluginInfo);
+                        break;
+                    }
+                }
+            }
+
+        }
+
+        return serviceProviders;
+    }
+
+    private Set<String> getExports() {
+        if(exports == null) {
+            exports = readLines(getFile(), "META-INF/services/ReststopPlugin/exports.txt");
+        }
+        return exports;
+    }
+
+    private Set<String> getImports() {
+        if(imports == null) {
+            imports = readLines(getFile(), "META-INF/services/ReststopPlugin/imports.txt");
+        }
+        return imports;
+    }
+
+    private Set<String> readLines(File file, String path) {
+        Set<String> lines = new HashSet<>();
+
+        try (JarFile jar = new JarFile(this.getFile())) {
+            ZipEntry entry = jar.getEntry(path);
+            if(entry != null) {
+                try ( BufferedReader br = new BufferedReader(new InputStreamReader(jar.getInputStream(entry), "utf-8"))) {
+                    String line;
+                    while( (line = br.readLine()) != null) {
+                        lines.add(line);
+                    }
+                }
+            }
+
+        } catch (IOException e) {
+            throw new RuntimeException();
+        }
+
+        return lines;
     }
 
     public List<PluginInfo> getParents(Collection<PluginInfo> all) {
@@ -182,14 +255,14 @@ public class PluginInfo extends Artifact {
         this.directDeploy = directDeploy;
     }
 
+
     public boolean isDirectDeploy() {
         return directDeploy;
     }
 
-
-    public static List<PluginInfo> sortByRuntimeDependencies(List<PluginInfo> infos) {
-        Map<String, Boolean> colors = new HashMap<String, Boolean>();
-        List<PluginInfo> sorted = new LinkedList<PluginInfo>();
+    public static List<PluginInfo> resolveStartupOrder(List<PluginInfo> infos) {
+        Map<String, Boolean> colors = new HashMap<>();
+        List<PluginInfo> sorted = new LinkedList<>();
 
         Map<String, PluginInfo> plugins = new HashMap<>();
         for (PluginInfo info : infos) {
@@ -205,7 +278,7 @@ public class PluginInfo extends Artifact {
 
     private static void dfs(PluginInfo info, Map<String, PluginInfo> plugins, Map<String, Boolean> colors, List<PluginInfo> sorted) {
         colors.put(info.getGroupIdAndArtifactId(), Boolean.FALSE);
-        for (Artifact dep : info.getDependsOn()) {
+        for (Artifact dep : info.getStartupDeps()) {
             String key = dep.getGroupIdAndArtifactId();
             if (plugins.containsKey(key) && !colors.containsKey(key)) {
                 dfs(plugins.get(key), plugins, colors, sorted);
@@ -213,6 +286,17 @@ public class PluginInfo extends Artifact {
         }
         colors.put(info.getGroupIdAndArtifactId(), Boolean.TRUE);
         sorted.add(info);
+    }
+
+    private List<Artifact> getStartupDeps() {
+        Map<String, Artifact> deps = new LinkedHashMap<>();
+        for (Artifact artifact : getDependsOn()) {
+            deps.put(artifact.getPluginId(), artifact);
+        }
+        for (Artifact artifact : getImportsFrom()) {
+            deps.put(artifact.getPluginId(), artifact);
+        }
+        return new ArrayList<>(deps.values());
     }
 
     public String getGroupIdAndArtifactId() {
@@ -237,5 +321,9 @@ public class PluginInfo extends Artifact {
             properties.putAll(props);
         }
         return properties;
+    }
+
+    public List<Artifact> getImportsFrom() {
+        return importsFrom;
     }
 }

@@ -67,7 +67,7 @@ public class RedeployFilter implements Filter {
             infos.add(classloader.getPluginInfo());
         }
 
-        List<PluginInfo> sorted = PluginInfo.sortByRuntimeDependencies(infos);
+        List<PluginInfo> sorted = PluginInfo.resolveStartupOrder(infos);
 
         Collections.sort(sorted, new Comparator<PluginInfo>() {
             @Override

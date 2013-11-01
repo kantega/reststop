@@ -12,6 +12,10 @@ import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -40,6 +44,12 @@ public class ScanForPluginsMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.outputDirectory}/META-INF/services/ReststopPlugin/simple.txt")
     protected File descriptorTarget;
 
+    @Parameter(defaultValue = "${project.build.outputDirectory}/META-INF/services/ReststopPlugin/exports.txt")
+    protected File exportsTarget;
+
+    @Parameter(defaultValue = "${project.build.outputDirectory}/META-INF/services/ReststopPlugin/imports.txt")
+    protected File importsTarget;
+
     @Parameter(defaultValue = "${project}")
     protected MavenProject mavenProject;
 
@@ -60,6 +70,9 @@ public class ScanForPluginsMojo extends AbstractMojo {
             final Set<String> pluginClassNames = new LinkedHashSet<>(descriptorSource.exists() ? Files.readAllLines(descriptorSource.toPath(), Charset.forName("utf-8"))
                     : Collections.<String>emptySet());
 
+            final Set<String> exports = new LinkedHashSet<>();
+            final Set<String> imports = new LinkedHashSet<>();
+
             List<URL> files = new ArrayList<>();
 
             try {
@@ -73,8 +86,10 @@ public class ScanForPluginsMojo extends AbstractMojo {
             final URLClassLoader loader = new URLClassLoader(files.toArray(new URL[files.size()]));
 
             final Class<?> apiClass;
+            final Class<?> exportClass;
             try {
                 apiClass = loader.loadClass("org.kantega.reststop.api.ReststopPlugin");
+                exportClass = loader.loadClass("org.kantega.reststop.api.Export");
             } catch (ClassNotFoundException e) {
                 throw new MojoExecutionException(e.getMessage(), e);
             }
@@ -95,6 +110,29 @@ public class ScanForPluginsMojo extends AbstractMojo {
 
                             if (!clazz.isInterface() && !Modifier.isAbstract(clazz.getModifiers()) && apiClass.isAssignableFrom(clazz)) {
                                 pluginClassNames.add(clazz.getName());
+
+                                for(Method method : clazz.getDeclaredMethods()) {
+                                    if(method.getReturnType() != Void.class && method.getParameterTypes().length == 0) {
+                                        for (Annotation annotation : method.getDeclaredAnnotations()) {
+                                            if(annotation.annotationType() == exportClass) {
+                                                exports.add(method.getReturnType().getName());
+                                            }
+                                        }
+
+
+                                    }
+                                }
+
+                                Constructor<?>[] constructors = clazz.getDeclaredConstructors();
+                                if(constructors.length > 1) {
+                                    throw new IOException("Plugin class " + clazz.getName() + " cannot have more than one constructor");
+                                }
+
+                                if(constructors.length == 1) {
+                                    for(Class paramType : constructors[0].getParameterTypes()) {
+                                        imports.add(paramType.getName());
+                                    }
+                                }
                             }
                         } catch (ClassNotFoundException e) {
                             throw new RuntimeException(e);
@@ -108,6 +146,8 @@ public class ScanForPluginsMojo extends AbstractMojo {
 
             descriptorTarget.getParentFile().mkdirs();
             Files.write(descriptorTarget.toPath(), pluginClassNames, Charset.forName("utf-8"));
+            Files.write(exportsTarget.toPath(), exports, Charset.forName("utf-8"));
+            Files.write(importsTarget.toPath(), imports, Charset.forName("utf-8"));
 
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);

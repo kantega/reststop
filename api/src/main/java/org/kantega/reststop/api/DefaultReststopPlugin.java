@@ -32,7 +32,6 @@ public class DefaultReststopPlugin implements ReststopPlugin {
 
     private final List<Filter> servletFilters = new CopyOnWriteArrayList<>();
     private final List<PluginListener> pluginListeners = new CopyOnWriteArrayList<>();
-    private final Map<Class<?>, Object> services = new ConcurrentHashMap<>();
 
     public DefaultReststopPlugin() {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -82,29 +81,6 @@ public class DefaultReststopPlugin implements ReststopPlugin {
         return servletFilters;
     }
 
-    protected  <T> T addService(T service) {
-        Class<T> type = (Class<T>) service.getClass();
-        return addService(type, service);
-    }
-
-    protected <T> T addService(Class<T> type, T service) {
-        if(services.containsKey(type)) {
-            throw new IllegalArgumentException("Service already added with type " + type.getName());
-        }
-        services.put(type, service);
-        return service;
-    }
-
-
-    @Override
-    public <T> T getService(Class<T> type) {
-        return type.cast(services.get(type));
-    }
-
-    @Override
-    public Set<Class<?>> getServiceTypes() {
-        return services.keySet();
-    }
 
     @Override
     public Collection<PluginListener> getPluginListeners() {

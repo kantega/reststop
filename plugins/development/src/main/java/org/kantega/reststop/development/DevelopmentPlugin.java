@@ -37,6 +37,7 @@ import java.util.Properties;
  *
  */
 public class DevelopmentPlugin extends DefaultReststopPlugin {
+    private VelocityEngine velocityEngine;
     private volatile boolean providerStarted = false;
 
     public DevelopmentPlugin(final Reststop reststop, ServletContext servletContext) {
@@ -67,16 +68,19 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
 
                 }
             }
+
+            throw new IllegalStateException("Can't seem to find myself");
         }
 
-        VelocityEngine velocityEngine = addService(initVelocityEngine());
+
+        velocityEngine = initVelocityEngine();
 
         final DevelopmentClassLoaderProvider provider = new DevelopmentClassLoaderProvider();
 
 
         List<PluginInfo> infos = PluginInfo.parse(pluginsXml);
         configure(infos, servletContext);
-        List<PluginInfo> sortedInfos = PluginInfo.sortByRuntimeDependencies(infos);
+        List<PluginInfo> sortedInfos = PluginInfo.resolveStartupOrder(infos);
         for (PluginInfo info : sortedInfos) {
             if(info.isDevelopmentPlugin()) {
                 provider.addExistingClassLoader(info.getPluginId(), createClassLoader(info, reststop.getPluginParentClassLoader()));
@@ -118,6 +122,11 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
 
         addServletFilter(reststop.createFilter(new RedeployFilter(provider, reststop, velocityEngine), "/*", FilterPhase.UNMARSHAL));
 
+    }
+
+    @Export
+    public VelocityEngine getVelocityEngine() {
+        return velocityEngine;
     }
 
     private VelocityEngine initVelocityEngine() {

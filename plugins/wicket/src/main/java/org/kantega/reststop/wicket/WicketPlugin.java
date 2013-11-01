@@ -2,10 +2,7 @@ package org.kantega.reststop.wicket;
 
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.http.WicketFilter;
-import org.kantega.reststop.api.DefaultReststopPlugin;
-import org.kantega.reststop.api.FilterPhase;
-import org.kantega.reststop.api.Reststop;
-import org.kantega.reststop.api.ReststopPluginManager;
+import org.kantega.reststop.api.*;
 
 import javax.servlet.ServletException;
 import java.util.Properties;
@@ -16,10 +13,11 @@ import java.util.Properties;
 public class WicketPlugin extends DefaultReststopPlugin {
 
 
+    private final WebApplication wicketApplication;
+
     public WicketPlugin(Reststop reststop) throws ServletException {
 
-            WicketApplication wicketApplication = new WicketApplication();
-            addService(WebApplication.class, wicketApplication);
+            wicketApplication = new WicketApplication();
 
             WicketFilter filter = new WicketFilter(wicketApplication);
 
@@ -31,5 +29,10 @@ public class WicketPlugin extends DefaultReststopPlugin {
 
             addServletFilter(reststop.createFilter(filter, filterPath, FilterPhase.USER));
 
+    }
+
+    @Export
+    public WebApplication getWicketApplication() {
+        return wicketApplication;
     }
 }

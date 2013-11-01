@@ -30,9 +30,5 @@ public interface ReststopPlugin {
 
     Collection<PluginListener> getPluginListeners();
 
-    <T> T getService(Class<T> type);
-
-    Set<Class<?>> getServiceTypes();
-
     void destroy();
 }

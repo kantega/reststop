@@ -49,7 +49,7 @@ public class PluginInfoTest {
             Collections.shuffle(infos);
         }
 
-        List<PluginInfo> sorted = PluginInfo.sortByRuntimeDependencies(infos);
+        List<PluginInfo> sorted = PluginInfo.resolveStartupOrder(infos);
 
         assertThat(a, is(sorted.get(0)));
         assertThat(b, is(sorted.get(1)));

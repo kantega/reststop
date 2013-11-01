@@ -7,6 +7,7 @@ import com.codahale.metrics.jvm.*;
 import com.codahale.metrics.servlets.HealthCheckServlet;
 import com.codahale.metrics.servlets.MetricsServlet;
 import org.kantega.reststop.api.DefaultReststopPlugin;
+import org.kantega.reststop.api.Export;
 import org.kantega.reststop.api.FilterPhase;
 import org.kantega.reststop.api.Reststop;
 
@@ -28,10 +29,11 @@ public class MetricsReststopPlugin extends DefaultReststopPlugin {
 
 
     private final HealthCheckRegistry healthCheckRegistry;
+    private final MetricRegistry metricRegistry;
 
     public MetricsReststopPlugin(Reststop reststop, ServletContext servletContext) throws ServletException {
 
-        MetricRegistry metricRegistry = addService(initMetricsRegistry());
+        metricRegistry = initMetricsRegistry();
         MetricsServlet metricsServlet = new MetricsServlet(metricRegistry);
         metricsServlet.init(new EmptyServletConfig(createProxy(servletContext)));
 
@@ -49,6 +51,11 @@ public class MetricsReststopPlugin extends DefaultReststopPlugin {
                 "/healthchecks/*"
         ));
 
+    }
+
+    @Export
+    public MetricRegistry getMetricRegistry() {
+        return metricRegistry;
     }
 
     private ServletContext createProxy(final ServletContext servletContext) {

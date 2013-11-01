@@ -81,7 +81,7 @@ public class DevelopmentConsolePlugin extends DefaultReststopPlugin {
                 map.get(pluginManager.getClassLoader(plugin)).add(plugin);
             }
 
-            List<PluginInfo> sorted = PluginInfo.sortByRuntimeDependencies(new ArrayList<>(infos.keySet()));
+            List<PluginInfo> sorted = PluginInfo.resolveStartupOrder(new ArrayList<>(infos.keySet()));
 
             Map<ClassLoader, Collection<ReststopPlugin>> map2 = new LinkedHashMap<>();
 

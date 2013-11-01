@@ -133,7 +133,7 @@ public class DevelopmentClassLoaderProvider {
             Map<String, PluginInfo> deps = new HashMap<>();
             getChildPlugins(info, deps, new ArrayList<>(this.pluginsInfo.values()));
 
-            List<PluginInfo> sorted = PluginInfo.sortByRuntimeDependencies(new ArrayList<>(deps.values()));
+            List<PluginInfo> sorted = PluginInfo.resolveStartupOrder(new ArrayList<>(deps.values()));
             List<PluginInfo> reverse = new ArrayList<>(sorted);
             Collections.reverse(reverse);
 
