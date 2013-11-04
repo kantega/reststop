@@ -109,8 +109,6 @@ public class DevelopmentClassLoaderProvider {
 
     public synchronized DevelopmentClassloader redeploy(String pluginId, DevelopmentClassloader classloader) {
 
-        classloader.compileSources();
-        classloader.copySourceResorces();
         PluginInfo info = classloader.getPluginInfo();
         DevelopmentClassloader newClassLoader = new DevelopmentClassloader(classloader, getParentClassLoader(info, getParentClassLoader(info, reststop.getPluginParentClassLoader())));
 
@@ -130,48 +128,21 @@ public class DevelopmentClassLoaderProvider {
 
             change.add(newClassLoader);
         } else {
-            Map<String, PluginInfo> deps = new HashMap<>();
-            getChildPlugins(info, deps, new ArrayList<>(this.pluginsInfo.values()));
-
-            List<PluginInfo> sorted = PluginInfo.resolveStartupOrder(new ArrayList<>(deps.values()));
-            List<PluginInfo> reverse = new ArrayList<>(sorted);
-            Collections.reverse(reverse);
-
-            for (PluginInfo pluginInfo : reverse) {
-                change.remove(classloaders.get(pluginInfo.getPluginId()));
-            }
             change.remove(classloader);
             change.add(newClassLoader);
-
-            for (PluginInfo pluginInfo : sorted) {
-                ClassLoader parent = getParentClassLoader(pluginInfo, reststop.getPluginParentClassLoader());
-                DevelopmentClassloader newDepLoader = new DevelopmentClassloader(classloaders.get(pluginInfo.getPluginId()), parent);
-                newDepLoader.compileSources();
-                newDepLoader.copySourceResorces();
-
-                change.add(newDepLoader);
-                classloaders.put(pluginInfo.getPluginId(), newDepLoader);
-                byDepsId.put(pluginInfo.getGroupIdAndArtifactId(), newDepLoader);
-
-            }
-
         }
         change.commit();
         return newClassLoader;
 
     }
 
-    private void getChildPlugins(PluginInfo info, Map<String, PluginInfo> children, List<PluginInfo> all) {
 
-        for (PluginInfo child : info.getChildren(all)) {
-            if(!children.containsKey(child.getPluginId())) {
-                children.put(child.getPluginId(), child);
-                getChildPlugins(child, children, all);
-            }
-        }
-    }
 
     public void addByDepartmentId(PluginInfo info, PluginClassLoader classLoader) {
         byDepsId.put(info.getGroupIdAndArtifactId(), classLoader);
+    }
+
+    public List<PluginInfo> getPluginInfos() {
+        return new ArrayList<>(pluginsInfo.values());
     }
 }

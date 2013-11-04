@@ -58,16 +58,142 @@ public class RedeployFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) servletRequest;
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
+        if(testing || req.getServletPath().startsWith("/assets")) {
+            filterChain.doFilter(req, resp);
+            return;
+        }
+
+
+        List<DevelopmentClassloader> staleClassLoaders = new ArrayList<>();
+
+
+        synchronized (this) {
+            staleClassLoaders.addAll(findStaleClassLoaders());
+
+            for (DevelopmentClassloader classloader : staleClassLoaders) {
+                try {
+                    synchronized (compileSourcesMonitor) {
+                        classloader.compileSources();
+                        classloader.copySourceResorces();
+                        classloader.compileJavaTests();
+                        classloader.copyTestResources();
+                    }
+
+                } catch (JavaCompilationException e) {
+                    new ErrorReporter(velocityEngine, classloader.getBasedir()).addCompilationException(e).render(req, resp);
+                    return;
+                }
+
+            }
+
+            List<DevelopmentClassloader> newClassLoaders = new ArrayList<>();
+
+
+            for (DevelopmentClassloader classloader : staleClassLoaders) {
+                synchronized (compileSourcesMonitor) {
+                    newClassLoaders.add(provider.redeploy(classloader.getPluginInfo().getPluginId(), classloader));
+
+                }
+            }
+
+            Map<String, DevelopmentClassloader>  testLoaders = new LinkedHashMap<>();
+
+            for (DevelopmentClassloader classloader : newClassLoaders) {
+                testLoaders.put(classloader.getPluginInfo().getPluginId(), classloader);
+            }
+
+            for (DevelopmentClassloader classloader : provider.getClassloaders().values()) {
+
+                if(! testLoaders.containsKey(classloader.getPluginInfo().getPluginId())) {
+                    boolean stale = classloader.isStaleTests();
+                    if(stale) {
+                        classloader.compileJavaTests();
+                        classloader.copyTestResources();
+                    }
+                    if(stale || classloader.hasFailingTests()) {
+                        testLoaders.put(classloader.getPluginInfo().getPluginId(), classloader);
+                    }
+
+                }
+            }
+
+            for (DevelopmentClassloader classloader : testLoaders.values()) {
+                try {
+                    synchronized (runTestsMonitor) {
+                        if(!this.testing) {
+                            try {
+                                this.testing = true;
+                                List<Class> testClasses = classloader.getTestClasses();
+                                if(testClasses.size() > 0) {
+                                    Class[] objects = testClasses.toArray(new Class[testClasses.size()]);
+                                    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+                                    Thread.currentThread().setContextClassLoader(testClasses.get(0).getClassLoader());
+                                    try {
+
+
+                                        Result result = new JUnitCore().run(objects);
+                                        if (result.getFailureCount() > 0) {
+                                            classloader.testsFailed();
+                                            throw new TestFailureException(result.getFailures());
+                                        } else {
+                                            classloader.testsPassed();
+                                        }
+                                    }  finally {
+                                        Thread.currentThread().setContextClassLoader(loader);
+                                    }
+                                }
+                            } finally {
+                                this.testing = false;
+                            }
+                        }
+                    }
+
+
+                }  catch (TestFailureException e) {
+                    new ErrorReporter(velocityEngine, classloader.getBasedir()).addTestFailulreException(e).render(req, resp);
+                    return;
+                }
+            }
+
+        }
+        if(! staleClassLoaders.isEmpty() ) {
+            reststop.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
+        } else {
+            filterChain.doFilter(servletRequest, servletResponse);
+        }
+    }
+
+    private void getChildPlugins(PluginInfo info, Map<String, PluginInfo> children, List<PluginInfo> all) {
+
+        for (PluginInfo child : info.getChildren(all)) {
+            if(!children.containsKey(child.getPluginId())) {
+                children.put(child.getPluginId(), child);
+                getChildPlugins(child, children, all);
+            }
+        }
+    }
+    private List<DevelopmentClassloader> findStaleClassLoaders() {
         Map<String, DevelopmentClassloader> classloaders = provider.getClassloaders();
 
-        List<PluginInfo> infos = new ArrayList<>();
+        Map<String, PluginInfo> infos = new HashMap<>();
 
 
         for (DevelopmentClassloader classloader : classloaders.values()) {
-            infos.add(classloader.getPluginInfo());
+            if(classloader.isStaleSources()) {
+                infos.put(classloader.getPluginInfo().getPluginId(), classloader.getPluginInfo());
+            }
         }
 
-        List<PluginInfo> sorted = PluginInfo.resolveStartupOrder(infos);
+        
+        for (PluginInfo info : new ArrayList<>(infos.values())) {
+            Map<String, PluginInfo> deps = new HashMap<>();
+            getChildPlugins(info, deps, new ArrayList<>(provider.getPluginInfos()));
+            for (String id : deps.keySet()) {
+                infos.put(id, deps.get(id));
+            }
+        }
+
+        List<PluginInfo> sorted = PluginInfo.resolveStartupOrder(new ArrayList<>(infos.values()));
 
         Collections.sort(sorted, new Comparator<PluginInfo>() {
             @Override
@@ -79,78 +205,15 @@ public class RedeployFilter implements Filter {
                 return o1.getPluginId().contains(":reststop-development-plugin");
             }
         });
-        Map<String, ClassLoader> sortedLoaders = new LinkedHashMap<>();
+        Map<String, DevelopmentClassloader> sortedLoaders = new LinkedHashMap<>();
 
         for (PluginInfo pluginInfo : sorted) {
+
             sortedLoaders.put(pluginInfo.getPluginId(), classloaders.get(pluginInfo.getPluginId()));
         }
-        for (String pluginId : sortedLoaders.keySet()) {
-            DevelopmentClassloader classloader = classloaders.get(pluginId);
 
-            if (!testing &&  !req.getServletPath().startsWith("/assets")) {
-                try {
+        return new ArrayList<>(sortedLoaders.values());
 
-
-
-                    synchronized (compileSourcesMonitor) {
-                        if (classloader.isStaleSources()) {
-                            classloader = provider.redeploy(pluginId, classloader);
-                            req.setAttribute("wasStaleSources", Boolean.TRUE);
-                            reststop.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
-                            return;
-                        }
-                    }
-
-                    boolean staleTests = classloader.isStaleTests();
-                    boolean wasStaleSources = req.getAttribute("wasStaleSources") != null;
-                    if (wasStaleSources || staleTests || classloader.hasFailingTests()) {
-
-                        synchronized (compileTestsMonitor) {
-                            classloader.compileJavaTests();
-                            classloader.copyTestResources();
-                        }
-
-                        synchronized (runTestsMonitor) {
-                            if(!this.testing) {
-                                try {
-                                    this.testing = true;
-                                    List<Class> testClasses = classloader.getTestClasses();
-                                    if(testClasses.size() > 0) {
-                                        Class[] objects = testClasses.toArray(new Class[testClasses.size()]);
-                                        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-                                        Thread.currentThread().setContextClassLoader(testClasses.get(0).getClassLoader());
-                                        try {
-
-
-                                            Result result = new JUnitCore().run(objects);
-                                            if (result.getFailureCount() > 0) {
-                                                classloader.testsFailed();
-                                                throw new TestFailureException(result.getFailures());
-                                            } else {
-                                                classloader.testsPassed();
-                                            }
-                                        }  finally {
-                                            Thread.currentThread().setContextClassLoader(loader);
-                                        }
-                                    }
-                                } finally {
-                                    this.testing = false;
-                                }
-                            }
-                        }
-                    }
-                } catch (JavaCompilationException e) {
-                    new ErrorReporter(velocityEngine, classloader.getBasedir()).addCompilationException(e).render(req, resp);
-                    return;
-                } catch (TestFailureException e) {
-                    new ErrorReporter(velocityEngine, classloader.getBasedir()).addTestFailulreException(e).render(req, resp);
-                    return;
-                }
-            }
-
-        }
-
-        filterChain.doFilter(servletRequest, servletResponse);
     }
 
     @Override
