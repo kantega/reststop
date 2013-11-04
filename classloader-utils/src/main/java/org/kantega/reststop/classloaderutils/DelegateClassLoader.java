@@ -4,28 +4,39 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  *
  */
 public class DelegateClassLoader extends ClassLoader {
-    private final Set<ClassLoader> delegates;
+    private final ClassLoader[] delegates;
+
+    private ConcurrentMap<String, Class> loadedClasses = new ConcurrentHashMap<>();
 
     public DelegateClassLoader(ClassLoader parentClassLoader, Set<ClassLoader> delegates) {
         super(parentClassLoader);
-        this.delegates = delegates;
+        this.delegates = delegates.toArray(new PluginClassLoader[delegates.size()]);
     }
 
 
     @Override
     public Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
+
+        Class<?> loadedClass = loadedClasses.get(name);
+        if(loadedClass != null) {
+            return loadedClass;
+        }
         try {
             return getParent().loadClass(name);
         } catch (ClassNotFoundException e) {
 
             for (ClassLoader delegate : delegates) {
                 try {
-                    return delegate.loadClass(name);
+                    Class<?> aClass = delegate.loadClass(name);
+                    loadedClasses.putIfAbsent(aClass.getName(), aClass);
+                    return aClass;
                 } catch (ClassNotFoundException e1) {
 
                 }

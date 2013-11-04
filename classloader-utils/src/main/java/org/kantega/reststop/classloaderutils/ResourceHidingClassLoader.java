@@ -37,6 +37,11 @@ public class ResourceHidingClassLoader extends ClassLoader {
     }
 
     @Override
+    public Class<?> loadClass(String name) throws ClassNotFoundException {
+        return getParent().loadClass(name);
+    }
+
+    @Override
     public URL getResource(String name) {
         if (isLocalResource(name)) {
             return super.findResource(name);
