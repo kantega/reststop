@@ -43,7 +43,7 @@ public class JerseyPlugin extends DefaultReststopPlugin {
                             filter = addJerseyFilter( new ReststopApplication(plugins));
                             filter.init(reststop.createFilterConfig("jersey", new Properties()));
 
-                            addServletFilter(reststop.createFilter(filter, "/*", FilterPhase.USER));
+                            addServletFilter(reststop.createFilter(filter, "/*", FilterPhase.AFTER_USER));
                         } else {
                             filter.reload(getResourceConfig(new ReststopApplication(plugins)));
                         }
