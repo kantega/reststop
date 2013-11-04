@@ -7,6 +7,5 @@ public enum FilterPhase {
     UNMARSHAL,
     AUTHENTICATION,
     AUTHORIZATION,
-    USER,
-    AFTER_USER
+    USER
 }
