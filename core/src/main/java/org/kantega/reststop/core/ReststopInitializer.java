@@ -367,7 +367,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         public FilterChain newFilterChain(FilterChain filterChain) {
 
             PluginFilterChain orig = (PluginFilterChain) filterChain;
-            return buildFilterChain(orig.getFilterChain(), manager);
+            return buildFilterChain(orig.getRequest(), orig.getFilterChain(), manager);
         }
 
         private class DefaultClassLoaderChange implements PluginClassLoaderChange {
@@ -511,15 +511,14 @@ public class ReststopInitializer implements ServletContainerInitializer{
         public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
             HttpServletRequest req = (HttpServletRequest) servletRequest;
 
-            if(mappingMatchesRequest(req, mapping)) {
+            if(mappingMatchesRequest(req)) {
                 filter.doFilter(servletRequest, servletResponse, filterChain);
             } else {
                 filterChain.doFilter(servletRequest, servletResponse);
             }
         }
 
-        private boolean mappingMatchesRequest(HttpServletRequest req, String mapping) {
-
+        private boolean mappingMatchesRequest(HttpServletRequest req) {
             String contextRelative = req.getRequestURI().substring(req.getContextPath().length());
             return mapping.equals(contextRelative) || mapping.endsWith("*") && contextRelative.regionMatches(0, mapping, 0, mapping.length()-1);
         }
@@ -548,7 +547,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
 
             servletResponse.setCharacterEncoding("utf-8");
-            buildFilterChain(filterChain, manager).doFilter(servletRequest, servletResponse);
+            buildFilterChain((HttpServletRequest) servletRequest, filterChain, manager).doFilter(servletRequest, servletResponse);
         }
 
 
@@ -568,10 +567,16 @@ public class ReststopInitializer implements ServletContainerInitializer{
             this.filter = filter;
         }
     }
-    private FilterChain buildFilterChain(FilterChain filterChain, PluginManager<ReststopPlugin> pluginManager) {
+    private FilterChain buildFilterChain(HttpServletRequest request, FilterChain filterChain, PluginManager<ReststopPlugin> pluginManager) {
         List<ClassLoaderFilter> filters = new ArrayList<>();
         for(ReststopPlugin plugin : pluginManager.getPlugins()) {
             for (Filter filter : plugin.getServletFilters()) {
+                if(filter instanceof MappingWrappedFilter) {
+                    MappingWrappedFilter mwf = (MappingWrappedFilter) filter;
+                    if(! mwf.mappingMatchesRequest(request)) {
+                        continue;
+                    }
+                }
                 filters.add(new ClassLoaderFilter(pluginManager.getClassLoader(plugin), filter));
             }
         }
@@ -584,14 +589,16 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 return phase1.ordinal() - phase2.ordinal();
             }
         });
-        return new PluginFilterChain(filters, filterChain);
+        return new PluginFilterChain(request, filters, filterChain);
     }
     private static class PluginFilterChain implements FilterChain {
         private final List<ClassLoaderFilter> filters;
         private final FilterChain filterChain;
         private int filterIndex;
+        private final HttpServletRequest request;
 
-        public PluginFilterChain(List<ClassLoaderFilter> filters, FilterChain filterChain) {
+        public PluginFilterChain(HttpServletRequest request, List<ClassLoaderFilter> filters, FilterChain filterChain) {
+            this.request = request;
             this.filters = filters;
             this.filterChain = filterChain;
         }
@@ -613,6 +620,10 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         private FilterChain getFilterChain() {
             return filterChain;
+        }
+
+        public HttpServletRequest getRequest() {
+            return request;
         }
     }
 
