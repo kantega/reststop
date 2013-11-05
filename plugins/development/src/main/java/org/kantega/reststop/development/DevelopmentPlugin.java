@@ -52,22 +52,17 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
             for(PluginInfo info : PluginInfo.parse(pluginsXml)) {
 
                 if(info.isDevelopmentPlugin()) {
-                    File sourceDirectory  = info.getSourceDirectory();
-                    if(sourceDirectory != null) {
+                    ClassLoader pluginParentClassLoader = reststop.getPluginParentClassLoader();
+                    final DevelopmentClassloader devloader = createClassLoader(info, pluginParentClassLoader);
 
-                        ClassLoader pluginParentClassLoader = reststop.getPluginParentClassLoader();
-                        final DevelopmentClassloader devloader = createClassLoader(info, pluginParentClassLoader);
+                    addPluginListener(new PluginListener() {
+                        @Override
+                        public void pluginManagerStarted() {
+                            reststop.changePluginClassLoaders().remove(getClass().getClassLoader()).add(devloader).commit();
+                        }
+                    });
 
-                        addPluginListener(new PluginListener() {
-                            @Override
-                            public void pluginManagerStarted() {
-                                reststop.changePluginClassLoaders().remove(getClass().getClassLoader()).add(devloader).commit();
-                            }
-                        });
-
-                        return;
-                    }
-
+                    return;
                 }
             }
 
