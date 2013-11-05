@@ -89,6 +89,9 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     protected File rootDirectory;
     protected File distDirectory;
 
+    @Parameter()
+    private boolean resolveSources;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
@@ -273,6 +276,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
                 Artifact pluginArtifact = resolveArtifactFile(plugin.getCoords());
                 copyArtifactToRepository(pluginArtifact, manager);
+                resolveSources(pluginArtifact, manager);
                 CollectRequest collectRequest = new CollectRequest(new Dependency(pluginArtifact, "compile"), remoteRepos);
 
                 DependencyResult dependencyResult;
@@ -288,10 +292,23 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
                     Artifact artifact = result.getArtifact();
                     if (!artifact.equals(pluginArtifact)) {
                         copyArtifactToRepository(artifact, manager);
+                        resolveSources(artifact, manager);
                     }
                 }
             }
 
+        }
+    }
+
+    private void resolveSources(Artifact artifact, LocalRepositoryManager manager) throws MojoFailureException, MojoExecutionException {
+        if(resolveSources) {
+            String coords = artifact.getGroupId() + ":" + artifact.getArtifactId() + ":jar:sources:" + artifact.getVersion();
+            try {
+                Artifact sourceArtifact = resolveArtifactFile(coords);
+                copyArtifactToRepository(sourceArtifact, manager);
+            } catch (MojoFailureException | MojoExecutionException e) {
+
+            }
         }
     }
 
