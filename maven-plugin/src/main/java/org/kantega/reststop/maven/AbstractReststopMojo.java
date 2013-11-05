@@ -94,6 +94,9 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
     @Parameter (defaultValue = "/")
     private String contextPath;
 
+    @Parameter (defaultValue = "${plugin.version}")
+    private String pluginVersion;
+
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -488,7 +491,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
     protected void addDevelopmentPlugins(List<Plugin> plugins) {
         {
-            Plugin devConsolePlugin = new Plugin("org.kantega.reststop", "reststop-development-console", mavenProject.getVersion());
+            Plugin devConsolePlugin = new Plugin("org.kantega.reststop", "reststop-development-console", pluginVersion);
             plugins.add(devConsolePlugin);
             devConsolePlugin.setDirectDeploy(false);
         }
@@ -497,7 +500,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
             plugin.setDirectDeploy(false);
         }
         {
-            Plugin developmentPlugin = new Plugin("org.kantega.reststop", "reststop-development-plugin", mavenProject.getVersion());
+            Plugin developmentPlugin = new Plugin("org.kantega.reststop", "reststop-development-plugin", pluginVersion);
             plugins.add(developmentPlugin);
             developmentPlugin.setDirectDeploy(true);
         }
