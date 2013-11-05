@@ -35,6 +35,11 @@ public class PluginClassLoader extends URLClassLoader {
         creationTime = System.currentTimeMillis();
     }
 
+    @Override
+    public String toString() {
+        return "PluginClassLoader for " + pluginInfo.getPluginId();
+    }
+
     public PluginInfo getPluginInfo() {
         return pluginInfo;
     }
