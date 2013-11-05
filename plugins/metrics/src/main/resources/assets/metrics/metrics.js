@@ -36,6 +36,7 @@ window.addEventListener("load", function() {
             appendTdFloat(tr, timer.mean_rate);
 
 
+            tr.setAttribute("class", timers.getElementsByTagName("tr").length % 2 == 0 ? "even-row" : "odd-row");
             timers.appendChild(tr);
         }
 
@@ -50,6 +51,7 @@ window.addEventListener("load", function() {
             appendTdFloat(tr, timer.m5_rate);
             appendTdFloat(tr, timer.m15_rate);
             appendTdFloat(tr, timer.mean_rate);
+            tr.setAttribute("class", meters.getElementsByTagName("tr").length % 2 == 0 ? "even-row" : "odd-row");
             meters.appendChild(tr);
         }
 
@@ -69,6 +71,7 @@ window.addEventListener("load", function() {
             appendTd(tr, text).style.textAlign="right";
 
 
+            tr.setAttribute("class", gauges.getElementsByTagName("tr").length % 2 == 0 ? "even-row" : "odd-row");
             gauges.appendChild(tr);
         }
 
