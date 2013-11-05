@@ -25,7 +25,7 @@
                     <p>Requires:
                         #foreach($parent in $parents)
                             <a href="#$parent.pluginId">$parent.artifactId</a>
-
+                            ($consoleTool.isParentUsed($classloader.key, $parent))
                             #if($velocityHasNext), #end
                         #end
                     </p>

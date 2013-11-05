@@ -87,10 +87,10 @@ public class DevelopmentClassLoaderProvider {
     }
 
     private ClassLoader getParentClassLoader(PluginInfo pluginInfo, ClassLoader parentClassLoader) {
-        Set<ClassLoader> delegates = new HashSet<>();
+        Set<PluginClassLoader> delegates = new HashSet<>();
 
         for (Artifact dep : pluginInfo.getDependsOn()) {
-            ClassLoader dependencyLoader = byDepsId.get(dep.getGroupIdAndArtifactId());
+            PluginClassLoader dependencyLoader = byDepsId.get(dep.getGroupIdAndArtifactId());
             if (dependencyLoader != null) {
                 delegates.add(dependencyLoader);
             }

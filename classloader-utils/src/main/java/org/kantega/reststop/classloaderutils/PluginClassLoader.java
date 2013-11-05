@@ -52,4 +52,17 @@ public class PluginClassLoader extends URLClassLoader {
     public long getCreationTime() {
         return creationTime;
     }
+
+    public Class<?> loadClassWithoutParent(String name) throws ClassNotFoundException {
+        Class<?> c = findLoadedClass(name);
+        if(c == null) {
+            c = findClass(name);
+        }
+        if(c == null) {
+            throw  new ClassNotFoundException(name);
+        } else {
+            return c;
+        }
+
+    }
 }

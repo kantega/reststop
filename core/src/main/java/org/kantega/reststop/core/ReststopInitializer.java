@@ -639,7 +639,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         @Override
         public void start(Registry registry, ClassLoader parentClassLoader) {
             List<ClassLoader> loaders = new ArrayList<>();
-            Map<String, ClassLoader> byDep  = new HashMap<>();
+            Map<String, PluginClassLoader> byDep  = new HashMap<>();
 
 
             List<PluginInfo> infos = PluginInfo.resolveStartupOrder(pluginInfos);
@@ -684,11 +684,11 @@ public class ReststopInitializer implements ServletContainerInitializer{
             }
         }
 
-        private ClassLoader getParentClassLoader(PluginInfo pluginInfo, ClassLoader parentClassLoader, Map<String, ClassLoader> byDep) {
-            Set<ClassLoader> delegates = new HashSet<ClassLoader>();
+        private ClassLoader getParentClassLoader(PluginInfo pluginInfo, ClassLoader parentClassLoader, Map<String, PluginClassLoader> byDep) {
+            Set<PluginClassLoader> delegates = new HashSet<>();
 
             for (Artifact dep : pluginInfo.getDependsOn()) {
-                ClassLoader dependencyLoader = byDep.get(dep.getGroupIdAndArtifactId());
+                PluginClassLoader dependencyLoader = byDep.get(dep.getGroupIdAndArtifactId());
                 if (dependencyLoader != null) {
                     delegates.add(dependencyLoader);
                 }

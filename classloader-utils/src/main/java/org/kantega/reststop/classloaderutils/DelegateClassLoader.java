@@ -6,16 +6,19 @@ import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  *
  */
 public class DelegateClassLoader extends ClassLoader {
-    private final ClassLoader[] delegates;
+    private final PluginClassLoader[] delegates;
 
     private ConcurrentMap<String, Class> loadedClasses = new ConcurrentHashMap<>();
 
-    public DelegateClassLoader(ClassLoader parentClassLoader, Set<ClassLoader> delegates) {
+    private Set<String> usedDelegates = new CopyOnWriteArraySet<>();
+
+    public DelegateClassLoader(ClassLoader parentClassLoader, Set<PluginClassLoader> delegates) {
         super(parentClassLoader);
         this.delegates = delegates.toArray(new PluginClassLoader[delegates.size()]);
     }
@@ -32,10 +35,11 @@ public class DelegateClassLoader extends ClassLoader {
             return getParent().loadClass(name);
         } catch (ClassNotFoundException e) {
 
-            for (ClassLoader delegate : delegates) {
+            for (PluginClassLoader delegate : delegates) {
                 try {
-                    Class<?> aClass = delegate.loadClass(name);
+                    Class<?> aClass = delegate.loadClassWithoutParent(name);
                     loadedClasses.putIfAbsent(aClass.getName(), aClass);
+                    usedDelegates.add(delegate.getPluginInfo().getPluginId());
                     return aClass;
                 } catch (ClassNotFoundException e1) {
 
@@ -88,4 +92,7 @@ public class DelegateClassLoader extends ClassLoader {
     }
 
 
+    public boolean isParentUsed(PluginInfo parent) {
+        return usedDelegates.contains(parent.getPluginId());
+    }
 }
