@@ -16,13 +16,13 @@
 
 package org.kantega.reststop.maven.dist;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugins.annotations.*;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Untar;
-import org.apache.tools.ant.taskdefs.Zip;
 import org.apache.tools.ant.types.EnumeratedAttribute;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
@@ -34,14 +34,16 @@ import org.eclipse.aether.resolution.*;
 import org.eclipse.aether.util.filter.ScopeDependencyFilter;
 import org.kantega.reststop.maven.AbstractReststopMojo;
 import org.kantega.reststop.maven.Plugin;
-import org.kantega.reststop.maven.dist.RpmBuilder;
-import org.kantega.reststop.maven.dist.DebianBuilder;
 import org.w3c.dom.Document;
 
-import javax.xml.transform.*;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -60,6 +62,9 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
     @Parameter(defaultValue = "${project.build.directory}/reststop/")
     protected File workDirectory;
+
+    @Parameter(defaultValue = "${project.basedir}/src/dist")
+    protected File distSrc;
 
     @Parameter
     private final String jettyVersion = "9.0.5.v20130815";
@@ -95,6 +100,9 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
+        if ("tomcat".compareTo(container) != 0 && "jetty".compareTo(container) != 0)
+            throw new MojoFailureException(container + " not supported. Try 'jetty' or 'tomcat' ");
+
         this.rootDirectory = new File(workDirectory, "distRoot/");
         this.distDirectory = new File(rootDirectory, installDir + "/" + name);
         distDirectory.mkdirs();
@@ -112,25 +120,37 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         Artifact warArifact = resolveArtifactFile(warCoords);
         copyArtifactToRepository(warArifact, manager);
 
+        File containerDistrDir = new File(distDirectory, container);
         if ("jetty".compareTo(this.container) == 0) {
-            File jettyDir = new File(distDirectory, "jetty");
 
-            copyJetty(jettyDir);
+            copyJetty(containerDistrDir);
 
-            createJettyContextXml(warArifact, manager, new File(jettyDir, "webapps/reststop.xml"));
+            createJettyContextXml(warArifact, manager, new File(containerDistrDir, "webapps/reststop.xml"));
 
             createJettyServicesFile(rootDirectory);
         } else if ("tomcat".compareTo(this.container) == 0) {
-            File tomcatDir = new File(distDirectory, "tomcat");
-            copyTomcat(tomcatDir);
+            copyTomcat(containerDistrDir);
 
-            createTomcatContextXml(warArifact, manager, new File(tomcatDir, "conf/Catalina/localhost/ROOT.xml"));
+            createTomcatContextXml(warArifact, manager, new File(containerDistrDir, "conf/Catalina/localhost/ROOT.xml"));
         } else
             throw new MojoExecutionException("Unknown container " + this.container);
-        if( packaging != null && "none".compareTo(packaging) != 0)
+        if (packaging != null && "none".compareTo(packaging) != 0)
             getLog().warn("Packaging now resulting in zip package by default. Please use rpm or debian goals ");
+
+        copyOverridingConfig(containerDistrDir);
     }
 
+    private void copyOverridingConfig(File containerDir) throws MojoExecutionException {
+        try {
+            File source = new File(this.distSrc, container);
+            if (source.exists()) {
+                getLog().info("Copying local configuration for " + container);
+                FileUtils.copyDirectory(source, containerDir);
+            }
+        } catch (IOException e) {
+            throw new MojoExecutionException(e.getMessage(), e);
+        }
+    }
 
 
     private void writePluginsXml(File xmlFile) throws MojoFailureException, MojoExecutionException {
@@ -318,7 +338,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     }
 
     private void resolveSources(Artifact artifact, LocalRepositoryManager manager) throws MojoFailureException, MojoExecutionException {
-        if(resolveSources) {
+        if (resolveSources) {
             String coords = artifact.getGroupId() + ":" + artifact.getArtifactId() + ":jar:sources:" + artifact.getVersion();
             try {
                 Artifact sourceArtifact = resolveArtifactFile(coords);
