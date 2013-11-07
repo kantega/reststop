@@ -45,6 +45,7 @@ public class DebianBuilder extends AbstractDistMojo {
             pw.println("Section: Java");
             pw.println("Priority: " + priority);
             pw.println("Architecture: all");
+            pw.println("Depends: java-common");
             pw.println("Maintainer: " + maintainer);
             pw.println("Description: " + mavenProject.getDescription());
             pw.println("Distribution: development");  // todo
@@ -63,8 +64,21 @@ public class DebianBuilder extends AbstractDistMojo {
         File controlDir = new File(controldir);
         controlDir.mkdirs();
         writeConfFile(new File(controldir + "/control"));
-
+        writePostinstFile(new File(controldir + "/postinst"));
         executeJDeb();
+    }
+
+    private void writePostinstFile(File file) throws MojoExecutionException {
+        try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file)))) {
+
+            pw.println("#!/bin/sh");
+            pw.println("echo \"changing file permissions for executables\"");
+            pw.println("chmod 755 /etc/init.d/[[name]]");
+            pw.println("find " + installDir +"/[[name]]/ -type f -name '*.sh' -exec chmod 755 '{}' \\+");
+
+        } catch (FileNotFoundException e) {
+            throw new MojoExecutionException(e.getMessage(), e);
+        }
     }
 
     private void executeJDeb() throws MojoExecutionException {
@@ -78,17 +92,8 @@ public class DebianBuilder extends AbstractDistMojo {
                                 element(name("data"),
                                         element(name("src"), "${project.build.directory}/reststop/distRoot"),
                                         element(name("type"), "directory"),
-                                        element(name("includes"), ""),
-                                        element(name("excludes"), "**/*.sh,**/etc/init.d/*")
-                                ),
-                                element(name("data"),
-                                        element(name("src"), "${project.build.directory}/reststop/distRoot"),
-                                        element(name("type"), "directory"),
-                                        element(name("includes"), "**/*.sh,**/etc/init.d/*"),
-                                        element(name("mapper"),
-                                                element(name("filemode"), "755"))
+                                        element(name("includes"), "")
                                 )
-
                         )
 
                 ),
