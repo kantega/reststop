@@ -106,9 +106,18 @@ public class RpmBuilder extends AbstractDistMojo {
             pw.println("BuildArchitectures: noarch");
             pw.println("%description");
             pw.println("%{summary}");
+
+
+            pw.println("Requires(pre): /usr/sbin/useradd, /usr/bin/getent");
+            pw.println("%pre");
+            pw.println("/usr/bin/getent group %{name} > /dev/null || /usr/sbin/groupadd -r %{name}");
+            pw.println("/usr/bin/getent passwd %{name} > /dev/null || /usr/sbin/useradd -r -g %{name} -d /" + installDir +"/%{name}/jetty -s /bin/bash %{name}");
+
             pw.println("%files");
+            pw.println("%defattr(0664, %{name}, %{name}, 0775)");
             pw.println("/"+installDir+"/%{name}");
-            pw.println("%attr(0755, root, root) /"+installDir+"/%{name}/"+trimBothEnds(container,"/")+"/bin/*.sh");
+            pw.println("%attr(0755, %{name}, %{name}) /"+installDir+"/%{name}/"+trimBothEnds(container,"/")+"/bin/*.sh");
+            pw.println("%attr(0755, %{name}, %{name}) /etc/init.d/%{name}");
 
 
         } catch (FileNotFoundException e) {

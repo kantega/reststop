@@ -16,6 +16,7 @@
 
 package org.kantega.reststop.maven.dist;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -48,6 +49,7 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.String.format;
 import static java.util.Collections.singleton;
 
 /**
@@ -109,6 +111,8 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
         writePluginsXml(new File(distDirectory, "plugins.xml"));
 
+        writeUnixStartScript(new File(rootDirectory, "etc/init.d/" + name));
+
         Artifact warArifact = resolveArtifactFile(warCoords);
         copyArtifactToRepository(warArifact, manager);
 
@@ -129,6 +133,17 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
             getLog().warn("Packaging now resulting in zip package by default. Please use rpm or debian goals ");
     }
 
+    private void writeUnixStartScript(File file) {
+        try {
+            String script = IOUtils.toString(AbstractDistMojo.class.getResourceAsStream("startscript.sh"), "utf-8");
+
+            script = format(script, name);
+
+            FileUtils.writeStringToFile(file, script, "utf-8");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
 
     private void writePluginsXml(File xmlFile) throws MojoFailureException, MojoExecutionException {
