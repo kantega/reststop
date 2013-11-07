@@ -78,7 +78,18 @@ public class DebianBuilder extends AbstractDistMojo {
                                 element(name("data"),
                                         element(name("src"), "${project.build.directory}/reststop/distRoot"),
                                         element(name("type"), "directory"),
-                                        element(name("includes"), "")))
+                                        element(name("includes"), ""),
+                                        element(name("excludes"), "**/*.sh,**/etc/init.d/*")
+                                ),
+                                element(name("data"),
+                                        element(name("src"), "${project.build.directory}/reststop/distRoot"),
+                                        element(name("type"), "directory"),
+                                        element(name("includes"), "**/*.sh,**/etc/init.d/*"),
+                                        element(name("mapper"),
+                                                element(name("filemode"), "755"))
+                                )
+
+                        )
 
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager));
