@@ -14,7 +14,11 @@
 # Short-Description: Starts and stops %1$s
 ### END INIT INFO
 #
-jettycmd=INSTALLDIR/APPNAME/jetty/bin/jetty.sh
+if [ -r "/etc/default/APPNAME" ]; then
+    source "/etc/default/APPNAME"
+fi
+
+jettycmd=/INSTALLDIR/APPNAME/jetty/bin/jetty.sh
 case $1 in
     start|stop|restart)
     $jettycmd $*
