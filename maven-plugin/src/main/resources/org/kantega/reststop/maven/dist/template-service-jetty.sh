@@ -14,7 +14,7 @@
 # Short-Description: Starts and stops %1$s
 ### END INIT INFO
 
-NAME=%1$s
+NAME=$(basename $0)
 
 # Source the settings
 if [ -r "/etc/default/$NAME" ]; then
@@ -30,7 +30,7 @@ MAX_WAIT_KILL=60
 PIDFILE="/var/run/$NAME.pid"
 
 LOG=${LOGBASE:-/var/log}/$NAME.log
-DIR=${INSTDIR:-/opt]/$NAME
+DIR=${INSTDIR:-/opt}
 
 
 
@@ -54,9 +54,9 @@ isRunning()
 startConsole()
 {
     SAVEPWD=$PWD
-    cd $DIR
-    STARTCMD="/opt/$NAME/jetty/bin/jetty.sh start"
-    $STARTCMD >> $LOG 2>&1 & echo \$! > $PIDFILE
+    cd $DIR/$NAME/jetty/
+    STARTCMD="java -jar start.jar -Dreststop.name=$NAME start"
+    $STARTCMD >> $LOG 2>&1 & echo "$!" > $PIDFILE
 
     cd $SAVEPWD
 }
@@ -91,7 +91,7 @@ stopConsole()
 
 case "$1" in
     start)
-        if [[ -f "${PIDFILE}" ]] ; then
+        if [ -f "${PIDFILE}" ] ; then
             PID=`cat $PIDFILE`
             if ps -p $PID > /dev/null; then
                 echo "$NAME is already started."
@@ -129,7 +129,7 @@ case "$1" in
         less +G $LOG
     ;;
     dumpstack)
-        if [[ -f "${PIDFILE}" ]] ; then
+        if [ -f "${PIDFILE}" ] ; then
             PID=`cat $PIDFILE`
             if ps -p $PID > /dev/null; then
                kill -3 $PID
@@ -142,7 +142,7 @@ case "$1" in
         fi
     ;;
     lsof)
-        if [[ -f "${PIDFILE}" ]] ; then
+        if [ -f "${PIDFILE}" ] ; then
             PID=`cat $PIDFILE`
             if ps -p $PID > /dev/null; then
                lsof -p $PID |less
@@ -154,7 +154,7 @@ case "$1" in
         fi
     ;;
     status)
-        if [[ -f "${PIDFILE}" ]] ; then
+        if [ -f "${PIDFILE}" ] ; then
             PID=`cat $PIDFILE`
             if ps -p $PID > /dev/null; then
                echo "$NAME is running as PID $PID"
@@ -171,5 +171,5 @@ case "$1" in
     ;;
 esac
 
- +exit 0
+exit 0
 #
