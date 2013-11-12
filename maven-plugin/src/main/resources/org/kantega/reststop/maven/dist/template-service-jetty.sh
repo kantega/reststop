@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #
 # %1$s      Shell script for starting and stopping %1$s
 #
@@ -109,67 +109,10 @@ case "$1" in
         echo "."
     fi
     ;;
-    stop)
-    if [ -f $PIDFILE ]; then
-        echo -n "Stopping $NAME"
-        stopConsole
-        echo "$NAME is stopped"
-    else
-        echo "$NAME is already stopped."
-    fi
-    ;;
-    restart|force-reload)
-    echo -n "Restarting $NAME"
-    stopConsole
-    sleep 3
-    startConsole
-    echo "."
-    ;;
-    log)
-    less +G $LOG
-    ;;
-    dumpstack)
-    if [[ -f "${PIDFILE}" ]] ; then
-        PID=`cat $PIDFILE`
-        if ps -p $PID > /dev/null; then
-           kill -3 $PID
-           less +G $LOG
-        else
-            echo Process $PID is not running.
-        fi
-    else
-      echo $NAME is not running.
-    fi
-    ;;
-    lsof)
-    if [[ -f "${PIDFILE}" ]] ; then
-        PID=`cat $PIDFILE`
-        if ps -p $PID > /dev/null; then
-           lsof -p $PID |less
-        else
-            echo Process $PID is not running.
-        fi
-    else
-      echo $NAME is not running.
-    fi
-    ;;
-    status)
-    if [[ -f "${PIDFILE}" ]] ; then
-        PID=`cat $PIDFILE`
-        if ps -p $PID > /dev/null; then
-           echo "$NAME is running as PID $PID"
-        else
-            echo "$NAME is not running (stale PID is $PID)"
-        fi
-    else
-      echo "$NAME is stopped"
-    fi
-    ;;
     *)
-    echo "Usage: $NAME {start|stop|restart|status|force-reload|redeploy|log|dumpstack|lsof|update-service}" >&2
-    exit 1
+    exit -1
     ;;
 esac
 
 exit 0
-# -- eof --
+#

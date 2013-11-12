@@ -118,8 +118,6 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
         writePluginsXml(new File(distDirectory, "plugins.xml"));
 
-        writeUnixStartScript(new File(rootDirectory, "etc/init.d/" + name));
-
         Artifact warArifact = resolveArtifactFile(warCoords);
         copyArtifactToRepository(warArifact, manager);
 
@@ -143,17 +141,6 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         copyOverridingConfig(containerDistrDir);
     }
 
-    private void writeUnixStartScript(File file) {
-        try {
-            String script = IOUtils.toString(AbstractDistMojo.class.getResourceAsStream("startscript.sh"), "utf-8");
-
-            script = format(script, name);
-
-            FileUtils.writeStringToFile(file, script, "utf-8");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
     private void copyOverridingConfig(File containerDir) throws MojoExecutionException {
         try {
             File source = new File(this.distSrc, container);
