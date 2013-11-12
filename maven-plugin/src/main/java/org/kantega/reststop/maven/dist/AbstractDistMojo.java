@@ -308,8 +308,8 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     protected void createJettyServicesFile(File distDirectory) throws MojoFailureException, MojoExecutionException {
         try {
             String serviceFile = IOUtils.toString(getClass().getResourceAsStream("template-service-jetty.sh"), "utf-8");
-            serviceFile = serviceFile.replaceAll("INSTALLDIR", installDir);
-            serviceFile = serviceFile.replaceAll("APPNAME", name);
+            serviceFile = serviceFile.replaceAll("RESTSTOPINSTDIR", installDir);
+            serviceFile = serviceFile.replaceAll("RESTSTOPLOGBASE", ""); // use default
 
             File initDDir = new File(distDirectory, "etc/init.d");
             initDDir.mkdirs();
