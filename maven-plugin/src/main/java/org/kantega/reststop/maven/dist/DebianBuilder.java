@@ -92,7 +92,16 @@ public class DebianBuilder extends AbstractDistMojo {
                                 element(name("data"),
                                         element(name("src"), "${project.build.directory}/reststop/distRoot"),
                                         element(name("type"), "directory"),
-                                        element(name("includes"), "")
+                                        element(name("includes"), ""),
+                                        element(name("excludes"), "**/*.sh,etc/init.d/"+name)
+                                ),
+                                element(name("data"),
+                                        element(name("src"), "${project.build.directory}/reststop/distRoot"),
+                                        element(name("type"), "directory"),
+                                        element(name("includes"), "**/*.sh,etc/init.d/"+name ),
+                                        element(name("mapper"),
+                                                element(name("type"), "perm"),
+                                                element(name("filemode"), "755"))
                                 )
                         )
 
