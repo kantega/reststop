@@ -91,28 +91,85 @@ stopConsole()
 
 case "$1" in
     start)
-    if [[ -f "${PIDFILE}" ]] ; then
-        PID=`cat $PIDFILE`
-        if ps -p $PID > /dev/null; then
-            echo "$NAME is already started."
+        if [[ -f "${PIDFILE}" ]] ; then
+            PID=`cat $PIDFILE`
+            if ps -p $PID > /dev/null; then
+                echo "$NAME is already started."
+            else
+                # The process does not exist, we need to remove the pid file:
+                echo "PID file is still present but the process is not running, removing $PIDFILE."
+                rm -f "${PIDFILE}"
+                echo -n "Starting $NAME"
+                startConsole
+                echo "."
+            fi
         else
-            # The process does not exist, we need to remove the pid file:
-            echo "PID file is still present but the process is not running, removing $PIDFILE."
-            rm -f "${PIDFILE}"
             echo -n "Starting $NAME"
             startConsole
             echo "."
         fi
-    else
-        echo -n "Starting $NAME"
+    ;;
+    stop)
+        if [ -f $PIDFILE ]; then
+            echo -n "Stopping $NAME"
+            stopConsole
+            echo "$NAME is stopped"
+        else
+            echo "$NAME is already stopped."
+        fi
+    ;;
+    restart|force-reload)
+        echo -n "Restarting $NAME"
+        stopConsole
+        sleep 3
         startConsole
         echo "."
-    fi
+    ;;
+    log)
+        less +G $LOG
+    ;;
+    dumpstack)
+        if [[ -f "${PIDFILE}" ]] ; then
+            PID=`cat $PIDFILE`
+            if ps -p $PID > /dev/null; then
+               kill -3 $PID
+               less +G $LOG
+            else
+                echo Process $PID is not running.
+            fi
+        else
+          echo $NAME is not running.
+        fi
+    ;;
+    lsof)
+        if [[ -f "${PIDFILE}" ]] ; then
+            PID=`cat $PIDFILE`
+            if ps -p $PID > /dev/null; then
+               lsof -p $PID |less
+            else
+                echo Process $PID is not running.
+            fi
+        else
+          echo $NAME is not running.
+        fi
+    ;;
+    status)
+        if [[ -f "${PIDFILE}" ]] ; then
+            PID=`cat $PIDFILE`
+            if ps -p $PID > /dev/null; then
+               echo "$NAME is running as PID $PID"
+            else
+                echo "$NAME is not running (stale PID is $PID)"
+            fi
+        else
+          echo "$NAME is stopped"
+        fi
     ;;
     *)
-    exit -1
+        echo "Usage: $NAME {start|stop|restart|status|force-reload|redeploy|log|dumpstack|lsof|update-service}" >&2
+        exit 1
     ;;
 esac
 
-exit 0
+ +exit 0
 #
