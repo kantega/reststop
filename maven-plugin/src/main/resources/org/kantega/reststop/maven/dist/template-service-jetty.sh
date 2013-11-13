@@ -55,7 +55,7 @@ startConsole()
 {
     SAVEPWD=$PWD
     cd $DIR/$NAME/jetty/
-    STARTCMD="java -jar start.jar -Dreststop.name=$NAME start"
+    STARTCMD="java -jar start.jar -Dreststop.name=$NAME"
     $STARTCMD >> $LOG 2>&1 & echo "$!" > $PIDFILE
 
     cd $SAVEPWD
