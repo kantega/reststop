@@ -26,6 +26,9 @@ public class DebianBuilder extends AbstractDistMojo {
     @Parameter(defaultValue = "Jon Doe <jon.doe@neverland.org>")
     private String maintainer;
 
+    @Parameter(defaultValue ="java-common")
+    private String depends;
+
     @Component()
     private BuildPluginManager pluginManager;
 
@@ -45,7 +48,7 @@ public class DebianBuilder extends AbstractDistMojo {
             pw.println("Section: Java");
             pw.println("Priority: " + priority);
             pw.println("Architecture: all");
-            pw.println("Depends: java-common");
+            pw.println("Depends: " + depends);
             pw.println("Maintainer: " + maintainer);
             pw.println("Description: " + mavenProject.getDescription());
             pw.println("Distribution: development");  // todo
@@ -65,6 +68,7 @@ public class DebianBuilder extends AbstractDistMojo {
         controlDir.mkdirs();
         writeConfFile(new File(controldir + "/control"));
         writePostinstFile(new File(controldir + "/postinst"));
+        writePrermFile(new File(controldir + "/prerm"));
         executeJDeb();
     }
 
@@ -72,14 +76,23 @@ public class DebianBuilder extends AbstractDistMojo {
         try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file)))) {
 
             pw.println("#!/bin/sh");
-            pw.println("echo \"changing file permissions for executables\"");
-            pw.println("chmod 755 /etc/init.d/[[name]]");
-            pw.println("find " + installDir +"/[[name]]/ -type f -name '*.sh' -exec chmod 755 '{}' \\+");
 
         } catch (FileNotFoundException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
     }
+
+    private void writePrermFile(File file) throws MojoExecutionException {
+        try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file)))) {
+
+            pw.println("#!/bin/sh");
+            pw.println("/usr/sbin/service " + name + " stop");
+
+        } catch (FileNotFoundException e) {
+            throw new MojoExecutionException(e.getMessage(), e);
+        }
+    }
+
 
     private void executeJDeb() throws MojoExecutionException {
 
