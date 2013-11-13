@@ -29,7 +29,7 @@ INSTDIR=RESTSTOPINSTDIR
 MAX_WAIT_KILL=60
 PIDFILE="/var/run/$NAME.pid"
 
-LOG=${LOGBASE:-/var/log}/$NAME.log
+STDOUTLOG=${LOGBASE:=/var/log/$NAME}/$NAME-stdout.log
 DIR=${INSTDIR:-/opt}
 
 if [ -r "$DIR/$NAME/conf.d/vmoptions" ]; then
@@ -39,8 +39,6 @@ if [ -r "$DIR/$NAME/conf.d/vmoptions" ]; then
 fi
 
 VM_OPTIONS="$opts $VM_OPTIONS"
-
-
 
 isRunning()
 {
@@ -61,10 +59,14 @@ isRunning()
 # Function for starting the service
 startConsole()
 {
+    if [ ! -f "$STDOUTLOG" ]; then
+        mkdir -p $LOGBASE/
+    fi
+
     SAVEPWD=$PWD
     cd $DIR/$NAME/jetty/
     STARTCMD="java -jar start.jar -Dreststop.name=$NAME $VM_OPTIONS"
-    $STARTCMD >> $LOG 2>&1 & echo "$!" > $PIDFILE
+    $STARTCMD >> $STDOUTLOG 2>&1 & echo "$!" > $PIDFILE
 
     cd $SAVEPWD
 }
@@ -134,14 +136,14 @@ case "$1" in
         echo "."
     ;;
     log)
-        less +G $LOG
+        less +G $STDOUTLOG
     ;;
     dumpstack)
         if [ -f "${PIDFILE}" ] ; then
             PID=`cat $PIDFILE`
             if ps -p $PID > /dev/null; then
                kill -3 $PID
-               less +G $LOG
+               less +G $STDOUTLOG
             else
                 echo Process $PID is not running.
             fi
