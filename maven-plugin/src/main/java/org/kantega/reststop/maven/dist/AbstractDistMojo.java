@@ -138,15 +138,14 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         if (packaging != null && "none".compareTo(packaging) != 0)
             getLog().warn("Packaging now resulting in zip package by default. Please use rpm or debian goals ");
 
-        copyOverridingConfig(containerDistrDir);
+        copyOverridingConfig();
     }
 
-    private void copyOverridingConfig(File containerDir) throws MojoExecutionException {
+    private void copyOverridingConfig() throws MojoExecutionException {
         try {
-            File source = new File(this.distSrc, container);
-            if (source.exists()) {
-                getLog().info("Copying local configuration for " + container);
-                FileUtils.copyDirectory(source, containerDir);
+            if (this.distSrc.exists()) {
+                getLog().info("Copying local configuration from "  + distSrc.getCanonicalPath());
+                FileUtils.copyDirectory(this.distSrc, distDirectory);
             }
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
