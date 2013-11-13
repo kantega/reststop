@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # %1$s      Shell script for starting and stopping %1$s
 #
