@@ -32,6 +32,12 @@ PIDFILE="/var/run/$NAME.pid"
 LOG=${LOGBASE:-/var/log}/$NAME.log
 DIR=${INSTDIR:-/opt}
 
+if [ -r "$DIR/$NAME/conf.d/vmoptions" ]; then
+    RESTSTOP_VM_VMOPTIONS = `cat $DIR/$NAME/conf.d/vmoptions | sed ':a;N;$!ba;s/\n/ /g'`
+fi
+
+VM_OPTIONS="$RESTSTOP_VM_OPTIONS $VM_OPTIONS"
+
 
 
 isRunning()
@@ -55,7 +61,7 @@ startConsole()
 {
     SAVEPWD=$PWD
     cd $DIR/$NAME/jetty/
-    STARTCMD="java -jar start.jar -Dreststop.name=$NAME"
+    STARTCMD="java -jar start.jar -Dreststop.name=$NAME $VM_OPTIONS"
     $STARTCMD >> $LOG 2>&1 & echo "$!" > $PIDFILE
 
     cd $SAVEPWD
