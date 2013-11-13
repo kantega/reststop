@@ -33,10 +33,12 @@ LOG=${LOGBASE:-/var/log}/$NAME.log
 DIR=${INSTDIR:-/opt}
 
 if [ -r "$DIR/$NAME/conf.d/vmoptions" ]; then
-    RESTSTOP_VM_VMOPTIONS = `cat $DIR/$NAME/conf.d/vmoptions | sed ':a;N;$!ba;s/\n/ /g'`
+    optsCmd="`cat $DIR/$NAME/conf.d/vmoptions | sed ':a;N;$!ba;s/\n/ /g'`"
+    eval opts=\"$optsCmd\"
+
 fi
 
-VM_OPTIONS="$RESTSTOP_VM_OPTIONS $VM_OPTIONS"
+VM_OPTIONS="$opts $VM_OPTIONS"
 
 
 
