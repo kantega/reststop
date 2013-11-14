@@ -31,9 +31,11 @@ PIDFILE="/var/run/$NAME.pid"
 
 STDOUTLOG=${LOGBASE:=/var/log/$NAME}/$NAME-stdout.log
 DIR=${INSTDIR:-/opt}
+APPDIR="$DIR/$NAME"
+APP_CONFDIR="$APPDIR/conf.d"
 
-if [ -r "$DIR/$NAME/conf.d/vmoptions" ]; then
-    optsCmd="`cat $DIR/$NAME/conf.d/vmoptions | sed ':a;N;$!ba;s/\n/ /g'`"
+if [ -r "$APP_CONFDIR/vmoptions" ]; then
+    optsCmd="`cat $APP_CONFDIR/vmoptions | sed ':a;N;$!ba;s/\n/ /g'`"
     eval opts=\"$optsCmd\"
 
 fi
