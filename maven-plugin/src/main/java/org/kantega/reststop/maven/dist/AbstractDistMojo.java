@@ -67,13 +67,13 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     @Parameter(defaultValue = "${project.basedir}/src/dist")
     protected File distSrc;
 
-    @Parameter
-    private final String jettyVersion = "9.0.5.v20130815";
+    @Parameter(defaultValue ="9.0.5.v20130815")
+    protected String jettyVersion;
 
     private final String jettydistCoords = "org.eclipse.jetty:jetty-distribution:tar.gz:" + jettyVersion;
 
-    @Parameter
-    private final String tomcatVersion = "7.0.42";
+    @Parameter(defaultValue="7.0.42")
+    protected String tomcatVersion;
 
     private final String tomcatdistCoords = "org.apache.tomcat:tomcat:tar.gz:" + tomcatVersion;
 
