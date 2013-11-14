@@ -70,12 +70,12 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     @Parameter(defaultValue ="9.0.5.v20130815")
     protected String jettyVersion;
 
-    private final String jettydistCoords = "org.eclipse.jetty:jetty-distribution:tar.gz:" + jettyVersion;
+    private final String jettydistPrefix = "org.eclipse.jetty:jetty-distribution:tar.gz:";
 
     @Parameter(defaultValue="7.0.42")
     protected String tomcatVersion;
 
-    private final String tomcatdistCoords = "org.apache.tomcat:tomcat:tar.gz:" + tomcatVersion;
+    private final String tomcatdistPrefix = "org.apache.tomcat:tomcat:tar.gz:";
 
     @Parameter(defaultValue = "${project.artifactId}")
     protected String name;
@@ -202,7 +202,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     }
 
     private void copyTomcat(File tomcatDir) throws MojoFailureException, MojoExecutionException {
-        Artifact tomcatArtifact = resolveArtifactFile(tomcatdistCoords);
+        Artifact tomcatArtifact = resolveArtifactFile(tomcatdistPrefix+tomcatVersion);
 
         if (tomcatDir.exists()) {
             try {
@@ -248,7 +248,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     }
 
     private void copyJetty(File jettyDir) throws MojoFailureException, MojoExecutionException {
-        Artifact jettyDistroArtifact = resolveArtifactFile(jettydistCoords);
+        Artifact jettyDistroArtifact = resolveArtifactFile(jettydistPrefix+jettyVersion);
 
         if (jettyDir.exists()) {
             try {
