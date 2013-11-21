@@ -33,8 +33,6 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -49,69 +47,21 @@ import static org.kantega.jexmec.manager.DefaultPluginManager.buildFor;
 public class ReststopInitializer implements ServletContainerInitializer{
 
 
-    private boolean pluginManagerStarted;
-    private ServletContext servletContext;
     private static Logger log = Logger.getLogger(ReststopInitializer.class.getName());
 
     @Override
     public void onStartup(Set<Class<?>> classes, ServletContext servletContext) throws ServletException {
 
-
-        this.servletContext = servletContext;
-
         DefaultReststopPluginManager reststopPluginManager = new DefaultReststopPluginManager();
+
         final DefaultPluginManager<ReststopPlugin> manager = buildPluginManager(servletContext, reststopPluginManager);
+
         reststopPluginManager.setManager(manager);
 
         servletContext.setAttribute("reststopPluginManager", manager);
 
-        manager.addPluginManagerListener(new PluginManagerListener<ReststopPlugin>() {
-            @Override
-            public void pluginsUpdated(Collection<ReststopPlugin> plugins) {
-                if (pluginManagerStarted) {
-                    for (ReststopPlugin plugin : manager.getPlugins()) {
-                        for (PluginListener listener : plugin.getPluginListeners()) {
-                            ClassLoader loader = Thread.currentThread().getContextClassLoader();
-                            Thread.currentThread().setContextClassLoader(manager.getClassLoader(plugin));
-                            try {
-                                listener.pluginsUpdated(plugins);
-                            } finally {
-                                Thread.currentThread().setContextClassLoader(loader);
-                            }
-                        }
-                    }
-                }
-            }
-        });
-        manager.addPluginManagerListener(new PluginManagerListener<ReststopPlugin>() {
-            @Override
-            public void beforePassivation(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader, PluginLoader<ReststopPlugin> pluginLoader, Collection<ReststopPlugin> plugins) {
-                for (ReststopPlugin plugin : plugins) {
-                    plugin.destroy();
-                }
-            }
-        });
-        manager.addPluginManagerListener(new PluginManagerListener<ReststopPlugin>() {
-            @Override
-            public void afterPluginManagerStarted(PluginManager pluginManager) {
-                pluginManagerStarted = true;
-                PluginManager<ReststopPlugin> pm = pluginManager;
+        manager.addPluginManagerListener(new PluginLifecyleListener(manager));
 
-                Collection<ReststopPlugin> plugins = pm.getPlugins();
-                for(ReststopPlugin plugin : plugins) {
-                    ClassLoader loader = Thread.currentThread().getContextClassLoader();
-                    Thread.currentThread().setContextClassLoader(manager.getClassLoader(plugin));
-                    try {
-
-                        for(PluginListener listener : plugin.getPluginListeners()) {
-                            listener.pluginManagerStarted();
-                        }
-                    } finally {
-                        Thread.currentThread().setContextClassLoader(loader);
-                    }
-                }
-            }
-        });
         manager.start();
 
         servletContext.addFilter(PluginDelegatingFilter.class.getName(), new PluginDelegatingFilter(manager))
@@ -126,7 +76,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
     private DefaultPluginManager<ReststopPlugin> buildPluginManager(ServletContext servletContext, DefaultReststopPluginManager reststopPluginManager) throws ServletException {
 
-        DefaultReststop reststop = new DefaultReststop();
+        DefaultReststop reststop = new DefaultReststop(servletContext);
 
         final PluginExportsServiceLocator exportsServiceLocator = new PluginExportsServiceLocator();
         DefaultPluginManager<ReststopPlugin> manager = buildFor(ReststopPlugin.class)
@@ -301,9 +251,15 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
 
     private class DefaultReststop implements Reststop, ClassLoaderProvider {
+        private final ServletContext servletContext;
         private Registry registry;
         private ClassLoader parentClassLoader;
         private DefaultPluginManager<ReststopPlugin> manager;
+
+        public DefaultReststop(ServletContext servletContext) {
+
+            this.servletContext = servletContext;
+        }
 
         @Override
         public void start(Registry registry, ClassLoader parentClassLoader) {
@@ -847,6 +803,58 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 copy = new ArrayList<>(classLoaders.keySet());
             }
             return copy;
+        }
+    }
+
+    private static class PluginLifecyleListener extends PluginManagerListener<ReststopPlugin> {
+
+        private boolean pluginManagerStarted;
+        private final PluginManager<ReststopPlugin> manager;
+
+        private PluginLifecyleListener(PluginManager<ReststopPlugin> manager) {
+            this.manager = manager;
+        }
+
+        @Override
+        public void afterPluginManagerStarted(PluginManager pluginManager) {
+            pluginManagerStarted = true;
+
+            Collection<ReststopPlugin> plugins = manager.getPlugins();
+            for(ReststopPlugin plugin : plugins) {
+                ClassLoader loader = Thread.currentThread().getContextClassLoader();
+                Thread.currentThread().setContextClassLoader(manager.getClassLoader(plugin));
+                try {
+
+                    for(PluginListener listener : plugin.getPluginListeners()) {
+                        listener.pluginManagerStarted();
+                    }
+                } finally {
+                    Thread.currentThread().setContextClassLoader(loader);
+                }
+            }
+        }
+        @Override
+        public void pluginsUpdated(Collection<ReststopPlugin> plugins) {
+            if (pluginManagerStarted) {
+                for (ReststopPlugin plugin : manager.getPlugins()) {
+                    for (PluginListener listener : plugin.getPluginListeners()) {
+                        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+                        Thread.currentThread().setContextClassLoader(manager.getClassLoader(plugin));
+                        try {
+                            listener.pluginsUpdated(plugins);
+                        } finally {
+                            Thread.currentThread().setContextClassLoader(loader);
+                        }
+                    }
+                }
+            }
+        }
+
+        @Override
+        public void beforePassivation(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader, PluginLoader<ReststopPlugin> pluginLoader, Collection<ReststopPlugin> plugins) {
+            for (ReststopPlugin plugin : plugins) {
+                plugin.destroy();
+            }
         }
     }
 }
