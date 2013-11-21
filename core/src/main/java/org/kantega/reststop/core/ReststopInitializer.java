@@ -96,7 +96,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         return manager;
     }
 
-    private class PluginExportsServiceLocator implements ServiceLocator {
+    private static class PluginExportsServiceLocator implements ServiceLocator {
         private final Map<ClassLoader, Map<ServiceKey, Object>> servicesByClassLoader = new IdentityHashMap<>();
 
 
@@ -202,7 +202,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
             if(pluginsXml != null) {
                 List<PluginInfo> parsed = PluginInfo.parse(pluginsXml);
                 configure(parsed, servletContext);
-                providers.add(new PluginLinesClassLoaderProvider(parsed, repoDir));
+                providers.add(new PluginInfosClassLoaderProvider(parsed, repoDir));
             }
         }
         return providers.toArray(new ClassLoaderProvider[providers.size()]);
@@ -237,8 +237,6 @@ public class ReststopInitializer implements ServletContainerInitializer{
                     Properties prop = new Properties();
                     try(FileInputStream in = new FileInputStream(file)) {
                         prop.load(in);
-                    } catch (FileNotFoundException e) {
-                        throw new RuntimeException(e);
                     } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
@@ -250,7 +248,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
     }
 
 
-    private class DefaultReststop implements Reststop, ClassLoaderProvider {
+    private static class DefaultReststop implements Reststop, ClassLoaderProvider {
         private final ServletContext servletContext;
         private Registry registry;
         private ClassLoader parentClassLoader;
@@ -311,12 +309,12 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         @Override
         public ServletConfig createServletConfig(String name, Properties properties) {
-            return new PropertiesWebConfig(name, properties);
+            return new PropertiesWebConfig(name, properties, servletContext);
         }
 
         @Override
         public FilterConfig createFilterConfig(String name, Properties properties) {
-            return new PropertiesWebConfig(name, properties);
+            return new PropertiesWebConfig(name, properties, servletContext);
         }
 
         @Override
@@ -326,7 +324,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
             return buildFilterChain(orig.getRequest(), orig.getFilterChain(), manager);
         }
 
-        private class DefaultClassLoaderChange implements PluginClassLoaderChange {
+        private static class DefaultClassLoaderChange implements PluginClassLoaderChange {
             private final Registry registry;
             private final List<ClassLoader> adds = new ArrayList<>();
             private final List<ClassLoader> removes = new ArrayList<>();
@@ -364,13 +362,15 @@ public class ReststopInitializer implements ServletContainerInitializer{
             }
         }
 
-        private class PropertiesWebConfig implements ServletConfig, FilterConfig  {
+        private static class PropertiesWebConfig implements ServletConfig, FilterConfig  {
             private final String name;
             private final Properties properties;
+            private final ServletContext servletContext;
 
-            public PropertiesWebConfig(String name, Properties properties) {
+            public PropertiesWebConfig(String name, Properties properties, ServletContext servletContext) {
                 this.name = name;
                 this.properties = properties;
+                this.servletContext = servletContext;
             }
 
             @Override
@@ -399,7 +399,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
             }
         }
 
-        private class ServletWrapperFilter implements Filter {
+        private static class ServletWrapperFilter implements Filter {
             private final HttpServlet servlet;
             private final String servletPath;
 
@@ -447,7 +447,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
     }
 
-    private class MappingWrappedFilter implements Filter {
+    private static class MappingWrappedFilter implements Filter {
         private final Filter filter;
         private final String mapping;
         private final FilterPhase phase;
@@ -487,7 +487,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
     }
 
-    private class PluginDelegatingFilter implements Filter {
+    private static class PluginDelegatingFilter implements Filter {
         private final PluginManager<ReststopPlugin> manager;
 
         public PluginDelegatingFilter(PluginManager<ReststopPlugin> manager) {
@@ -514,7 +514,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
     }
 
-    private class ClassLoaderFilter {
+    private static class ClassLoaderFilter {
         final ClassLoader classLoader;
         final Filter filter;
 
@@ -523,7 +523,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
             this.filter = filter;
         }
     }
-    private FilterChain buildFilterChain(HttpServletRequest request, FilterChain filterChain, PluginManager<ReststopPlugin> pluginManager) {
+    private static FilterChain buildFilterChain(HttpServletRequest request, FilterChain filterChain, PluginManager<ReststopPlugin> pluginManager) {
         List<ClassLoaderFilter> filters = new ArrayList<>();
         for(ReststopPlugin plugin : pluginManager.getPlugins()) {
             for (Filter filter : plugin.getServletFilters()) {
@@ -583,11 +583,11 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
     }
 
-    private class PluginLinesClassLoaderProvider implements ClassLoaderProvider {
+    private static class PluginInfosClassLoaderProvider implements ClassLoaderProvider {
         private final List<PluginInfo> pluginInfos;
         private final File repoDir;
 
-        public PluginLinesClassLoaderProvider(List<PluginInfo> pluginInfos, File repoDir) {
+        public PluginInfosClassLoaderProvider(List<PluginInfo> pluginInfos, File repoDir) {
             this.pluginInfos = pluginInfos;
             this.repoDir = repoDir;
         }
@@ -662,7 +662,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
     }
 
-    private class AssetFilter implements Filter {
+    private static class AssetFilter implements Filter {
         private final DefaultReststopPluginManager manager;
 
         public AssetFilter(DefaultReststopPluginManager manager) {
@@ -731,7 +731,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
     }
 
-    private class DefaultReststopPluginManager implements ReststopPluginManager{
+    private static class DefaultReststopPluginManager implements ReststopPluginManager{
         private volatile DefaultPluginManager<ReststopPlugin> manager;
 
         private final IdentityHashMap<ClassLoader, ClassLoader> classLoaders = new IdentityHashMap<>();
@@ -764,7 +764,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
             this.manager = manager;
             manager.addPluginManagerListener(new PluginManagerListener<ReststopPlugin>() {
 
-                private ThreadLocal<ClassLoader> classLoader = new ThreadLocal<ClassLoader>();
+                private ThreadLocal<ClassLoader> classLoader = new ThreadLocal<>();
 
                 @Override
                 public void afterClassLoaderAdded(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
