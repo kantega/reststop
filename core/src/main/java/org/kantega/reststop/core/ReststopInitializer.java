@@ -64,12 +64,8 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         manager.start();
 
-        servletContext.addFilter(PluginDelegatingFilter.class.getName(), new PluginDelegatingFilter(manager))
+        servletContext.addFilter(PluginDelegatingFilter.class.getName(), new PluginDelegatingFilter(reststopPluginManager))
                 .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
-
-        servletContext.addFilter(AssetFilter.class.getName(), new AssetFilter(reststopPluginManager)).addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/assets/*");
-
-
 
 
     }
@@ -92,7 +88,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         exportsServiceLocator.setPluginManager(manager);
 
-        reststop.setManager(manager);
+        reststop.setManager(reststopPluginManager);
         return manager;
     }
 
@@ -252,7 +248,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         private final ServletContext servletContext;
         private Registry registry;
         private ClassLoader parentClassLoader;
-        private DefaultPluginManager<ReststopPlugin> manager;
+        private ReststopPluginManager manager;
 
         public DefaultReststop(ServletContext servletContext) {
 
@@ -303,7 +299,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
             return createFilter(new ServletWrapperFilter(servlet, path), path, FilterPhase.USER);
         }
 
-        public void setManager(DefaultPluginManager<ReststopPlugin> manager) {
+        public void setManager(ReststopPluginManager manager) {
             this.manager = manager;
         }
 
@@ -488,9 +484,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
     }
 
     private static class PluginDelegatingFilter implements Filter {
-        private final PluginManager<ReststopPlugin> manager;
+        private final ReststopPluginManager manager;
 
-        public PluginDelegatingFilter(PluginManager<ReststopPlugin> manager) {
+        public PluginDelegatingFilter(ReststopPluginManager manager) {
             this.manager = manager;
         }
 
@@ -523,7 +519,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
             this.filter = filter;
         }
     }
-    private static FilterChain buildFilterChain(HttpServletRequest request, FilterChain filterChain, PluginManager<ReststopPlugin> pluginManager) {
+    private static FilterChain buildFilterChain(HttpServletRequest request, FilterChain filterChain, ReststopPluginManager pluginManager) {
         List<ClassLoaderFilter> filters = new ArrayList<>();
         for(ReststopPlugin plugin : pluginManager.getPlugins()) {
             for (Filter filter : plugin.getServletFilters()) {
@@ -536,6 +532,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 filters.add(new ClassLoaderFilter(pluginManager.getClassLoader(plugin), filter));
             }
         }
+        filters.add(new ClassLoaderFilter(AssetFilter.class.getClassLoader(), new MappingWrappedFilter(new AssetFilter(pluginManager), "/assets/*", FilterPhase.USER)));
 
         Collections.sort(filters, new Comparator<ClassLoaderFilter>() {
             @Override
@@ -663,9 +660,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
     }
 
     private static class AssetFilter implements Filter {
-        private final DefaultReststopPluginManager manager;
+        private final ReststopPluginManager manager;
 
-        public AssetFilter(DefaultReststopPluginManager manager) {
+        public AssetFilter(ReststopPluginManager manager) {
             this.manager = manager;
         }
 
