@@ -86,7 +86,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     @Parameter(defaultValue = "jetty")
     protected String container;
 
-    @Parameter(defaultValue = "opt")
+    @Parameter(defaultValue = "/opt")
     protected String installDir;
 
     @Parameter()
