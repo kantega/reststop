@@ -76,7 +76,7 @@ public class DebianBuilder extends AbstractDistMojo {
         try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(file)))) {
 
             pw.println("#!/bin/sh");
-            pw.println("/usr/sbin/update-rc.d " + name + " defaults");
+            pw.println("/usr/sbin/update-rc.d " + name + " defaults 90 10");
 
         } catch (FileNotFoundException e) {
             throw new MojoExecutionException(e.getMessage(), e);

@@ -8,13 +8,13 @@
 # Provides: %1$s
 # Required-Start: $network $syslog
 # Required-Stop: $network $syslog
-# Default-Start:
-# Default-Stop:
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
 # Description: Starts and stops %1$s
 # Short-Description: Starts and stops %1$s
 ### END INIT INFO
 
-NAME=$(basename $0)
+NAME=RESTSTOPNAME
 
 # Source the settings
 if [ -r "/etc/default/$NAME" ]; then
