@@ -26,6 +26,7 @@ public class PluginInfo extends Artifact {
     private List<Artifact> importsFrom = new ArrayList<>();
     private Properties config = new Properties();
     private Set<String> imports, exports;
+    private Integer priority = null;
 
     public List<Artifact> getClassPath(String scope) {
         if (!classpaths.containsKey(scope)) {
@@ -168,21 +169,24 @@ public class PluginInfo extends Artifact {
 
     private Set<String> getExports() {
         if(exports == null) {
-            exports = readLines(getFile(), "META-INF/services/ReststopPlugin/exports.txt");
+            exports = readLines("META-INF/services/ReststopPlugin/exports.txt");
         }
         return exports;
     }
 
     private Set<String> getImports() {
         if(imports == null) {
-            imports = readLines(getFile(), "META-INF/services/ReststopPlugin/imports.txt");
+            imports = readLines("META-INF/services/ReststopPlugin/imports.txt");
         }
         return imports;
     }
 
-    private Set<String> readLines(File file, String path) {
+    private Set<String> readLines(String path) {
         Set<String> lines = new HashSet<>();
 
+        if(this.getFile() == null) {
+            return Collections.emptySet();
+        }
         try (JarFile jar = new JarFile(this.getFile())) {
             ZipEntry entry = jar.getEntry(path);
             if(entry != null) {
@@ -230,6 +234,21 @@ public class PluginInfo extends Artifact {
         return deps;
     }
 
+    public List<PluginInfo> getServiceConsumers(List<PluginInfo> all) {
+        List<PluginInfo> consumers = new ArrayList<>();
+
+        for (PluginInfo info : all) {
+            for (PluginInfo provider : info.getServiceProviders(all)) {
+                if(provider.getGroupIdAndArtifactId().equals(getGroupIdAndArtifactId())) {
+                    consumers.add(info);
+                }
+            }
+        }
+
+
+        return consumers;
+    }
+
     @Override
     public String toString() {
         return "Plugin " + getGroupId() +":" + getArtifactId() +":" + getVersion();
@@ -261,6 +280,9 @@ public class PluginInfo extends Artifact {
     }
 
     public static List<PluginInfo> resolveStartupOrder(List<PluginInfo> infos) {
+
+        infos = sortByPriority(new ArrayList<>(infos));
+
         Map<String, Boolean> colors = new HashMap<>();
         List<PluginInfo> sorted = new LinkedList<>();
 
@@ -274,6 +296,16 @@ public class PluginInfo extends Artifact {
                 dfs(info, plugins, colors, sorted);
         }
         return sorted;
+    }
+
+    private static List<PluginInfo> sortByPriority(ArrayList<PluginInfo> pluginInfos) {
+        Collections.sort(pluginInfos, new Comparator<PluginInfo>() {
+            @Override
+            public int compare(PluginInfo o1, PluginInfo o2) {
+                return o1.getPriority() - o2.getPriority();
+            }
+        });
+        return pluginInfos;
     }
 
     private static void dfs(PluginInfo info, Map<String, PluginInfo> plugins, Map<String, Boolean> colors, List<PluginInfo> sorted) {
@@ -326,4 +358,19 @@ public class PluginInfo extends Artifact {
     public List<Artifact> getImportsFrom() {
         return importsFrom;
     }
+
+    public synchronized int getPriority() {
+        if(priority == null) {
+            Set<String> lines = readLines("META-INF/services/ReststopPlugin/priority.txt");
+            if(! lines.isEmpty()) {
+                priority = Integer.parseInt(lines.iterator().next());
+            }
+        }
+
+        if(priority == null) {
+            priority = 0;
+        }
+        return priority;
+    }
+
 }

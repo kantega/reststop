@@ -172,6 +172,17 @@ public class RedeployFilter implements Filter {
             }
         }
     }
+
+    private void getServiceConsumingPlugins(PluginInfo info, Map<String, PluginInfo> children, List<PluginInfo> all) {
+
+
+         for (PluginInfo consumer : info.getServiceConsumers(all)) {
+            if(!children.containsKey(consumer.getPluginId())) {
+                children.put(consumer.getPluginId(), consumer);
+                getServiceConsumingPlugins(consumer, children, all);
+            }
+        }
+    }
     private List<DevelopmentClassloader> findStaleClassLoaders() {
         Map<String, DevelopmentClassloader> classloaders = provider.getClassloaders();
 
@@ -184,10 +195,19 @@ public class RedeployFilter implements Filter {
             }
         }
 
-        
+
         for (PluginInfo info : new ArrayList<>(infos.values())) {
             Map<String, PluginInfo> deps = new HashMap<>();
             getChildPlugins(info, deps, new ArrayList<>(provider.getPluginInfos()));
+            for (String id : deps.keySet()) {
+                infos.put(id, deps.get(id));
+            }
+        }
+
+        // Add plugins we provide services to
+        for (PluginInfo info : new ArrayList<>(infos.values())) {
+            Map<String, PluginInfo> deps = new HashMap<>();
+            getServiceConsumingPlugins(info, deps, new ArrayList<>(provider.getPluginInfos()));
             for (String id : deps.keySet()) {
                 infos.put(id, deps.get(id));
             }
