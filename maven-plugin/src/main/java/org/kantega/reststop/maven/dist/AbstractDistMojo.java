@@ -111,6 +111,11 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         File repository = new File(distDirectory, "repository");
         repository.mkdirs();
 
+        File confDir = new File(distDirectory, "conf");
+        confDir.mkdirs();
+        new File(confDir, ".keep_empty_dir");
+
+
         LocalRepository repo = new LocalRepository(repository);
         LocalRepositoryManager manager = repoSystem.newLocalRepositoryManager(repoSession, repo);
 
