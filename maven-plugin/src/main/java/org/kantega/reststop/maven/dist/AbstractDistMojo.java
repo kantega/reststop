@@ -295,7 +295,6 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         try {
             String serviceFile = IOUtils.toString(getClass().getResourceAsStream("template-service-jetty.sh"), "utf-8");
             serviceFile = serviceFile.replaceAll("RESTSTOPINSTDIR", installDir);
-            serviceFile = serviceFile.replaceAll("RESTSTOPLOGBASE", ""); // use default
             serviceFile = serviceFile.replaceAll("RESTSTOPNAME", name); // use default
 
             File initDDir = new File(distDirectory, "etc/init.d");
