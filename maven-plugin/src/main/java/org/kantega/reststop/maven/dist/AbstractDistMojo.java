@@ -20,7 +20,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.MavenProjectHelper;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Untar;
 import org.apache.tools.ant.types.EnumeratedAttribute;
@@ -98,8 +101,14 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     @Parameter()
     private boolean resolveSources;
 
+    @Parameter(defaultValue = "true")
+    private boolean attach;
+
+    @Component
+    private MavenProjectHelper mavenProjectHelper;
+
     @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
+    public final void execute() throws MojoExecutionException, MojoFailureException {
 
         if ("tomcat".compareTo(container) != 0 && "jetty".compareTo(container) != 0)
             throw new MojoFailureException(container + " not supported. Try 'jetty' or 'tomcat' ");
@@ -144,7 +153,17 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
             getLog().warn("Packaging now resulting in zip package by default. Please use rpm or debian goals ");
 
         copyOverridingConfig();
+
+        performPackaging();
+
+        if(attach) {
+            attachPackage(mavenProjectHelper, mavenProject);
+        }
     }
+
+    protected abstract void attachPackage(MavenProjectHelper mavenProjectHelper, MavenProject mavenProject) throws MojoFailureException;
+
+    protected abstract void performPackaging() throws MojoExecutionException;
 
     private void copyOverridingConfig() throws MojoExecutionException {
         try {

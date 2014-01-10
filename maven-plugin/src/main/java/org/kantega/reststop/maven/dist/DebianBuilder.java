@@ -5,6 +5,8 @@ import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.*;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.MavenProjectHelper;
 
 import java.io.*;
 import static org.twdata.maven.mojoexecutor.MojoExecutor.*;
@@ -33,9 +35,7 @@ public class DebianBuilder extends AbstractDistMojo {
     private BuildPluginManager pluginManager;
 
     @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
-        super.execute();
-
+    protected void performPackaging() throws MojoExecutionException {
         build();
         executeJDeb();
     }
@@ -125,4 +125,8 @@ public class DebianBuilder extends AbstractDistMojo {
                 executionEnvironment(mavenProject, mavenSession, pluginManager));
     }
 
+    @Override
+    protected void attachPackage(MavenProjectHelper mavenProjectHelper, MavenProject mavenProject) throws MojoFailureException {
+
+    }
 }

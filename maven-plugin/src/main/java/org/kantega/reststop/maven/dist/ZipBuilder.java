@@ -5,6 +5,8 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.MavenProjectHelper;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Zip;
 
@@ -17,11 +19,14 @@ import java.io.File;
         defaultPhase = LifecyclePhase.PACKAGE,
         requiresDependencyResolution = ResolutionScope.COMPILE)
 public class ZipBuilder extends AbstractDistMojo {
-    @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
-        super.execute();
 
-        createZip(new File(rootDirectory, installDir), new File(workDirectory, distDirectory.getName() + ".zip"));
+    @Override
+    protected void performPackaging() throws MojoExecutionException {
+        createZip(new File(rootDirectory, installDir), getDestFile());
+    }
+
+    private File getDestFile() {
+        return new File(workDirectory, distDirectory.getName() + ".zip");
     }
 
     private void createZip(File distDirectory, File destFile) {
@@ -32,4 +37,8 @@ public class ZipBuilder extends AbstractDistMojo {
         zip.execute();
     }
 
+    @Override
+    protected void attachPackage(MavenProjectHelper mavenProjectHelper, MavenProject mavenProject) throws MojoFailureException {
+        mavenProjectHelper.attachArtifact(mavenProject, "zip", getDestFile());
+    }
 }

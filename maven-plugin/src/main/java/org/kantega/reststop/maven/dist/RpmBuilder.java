@@ -5,7 +5,10 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.apache.maven.project.MavenProject;
+import org.apache.maven.project.MavenProjectHelper;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
@@ -23,9 +26,12 @@ public class RpmBuilder extends AbstractDistMojo {
 
 
     @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
-        super.execute();
-        createRpm(new File(workDirectory, "rpm"), rootDirectory);
+    protected void performPackaging() throws MojoExecutionException {
+        createRpm(rpmDirectory(), rootDirectory);
+    }
+
+    private File rpmDirectory() {
+        return new File(workDirectory, "rpm");
     }
 
     private String trimBothEnds(String str, String trim){
@@ -123,6 +129,23 @@ public class RpmBuilder extends AbstractDistMojo {
         } catch (FileNotFoundException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
+    }
+
+    @Override
+    protected void attachPackage(MavenProjectHelper mavenProjectHelper, MavenProject mavenProject) throws MojoFailureException {
+        File rpms = new File(rpmDirectory(), "RPMS/noarch");
+        File[] rpmFiles = rpms.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                return pathname.getName().endsWith(".rpm");
+            }
+        });
+
+        if(rpmFiles.length != 1) {
+            throw new MojoFailureException("Expected exactly one .rpm file in " + rpms +", found " + rpms.length());
+        }
+
+        mavenProjectHelper.attachArtifact(mavenProject, "rpm", rpmFiles[0]);
     }
 
     private class LogStreamConsumer implements StreamConsumer {
