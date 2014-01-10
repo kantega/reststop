@@ -102,5 +102,26 @@ window.addEventListener("load", function () {
 
         }
     }
+    for (var i = 0; window.pluginLoadingExceptions && i < pluginLoadingExceptions.length; i++) {
+        var ex = pluginLoadingExceptions[i];
+
+        var h2 = document.createElement("h2");
+        h2.innerHTML = "Plugin failed loading: " + ex.plugin;
+
+        container.appendChild(h2);
+
+        var p = document.createElement("p");
+        p.innerText = "Stacktrace:";
+        container.appendChild(p);
+
+        var pre = document.createElement("pre");
+        pre.innerText = ex.stacktrace;
+        pre.setAttribute("class", "stackTrace");
+        container.appendChild(pre);
+
+
+
+    }
+
 
 });

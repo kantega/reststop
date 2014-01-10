@@ -3,6 +3,7 @@ package org.kantega.reststop.development;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
 import org.junit.runner.notification.Failure;
+import org.kantega.reststop.classloaderutils.PluginClassLoader;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -21,6 +22,8 @@ public class ErrorReporter {
     private final File basedir;
     private List<JavaCompilationException> compilationExceptions = new ArrayList<>();
     private List<TestFailureException> testFailureExceptions = new ArrayList<>();
+    private Exception pluginLoadingException;
+    private PluginClassLoader pluginClassLoader;
 
     public ErrorReporter(VelocityEngine velocityEngine, File basedir) {
         this.velocityEngine = velocityEngine;
@@ -43,9 +46,26 @@ public class ErrorReporter {
         map.put("contextPath", req.getContextPath());
         map.put("compilationExceptions", formatCompilationExceptions());
         map.put("testFailureExceptions", formatTestFailureExceptions());
+        map.put("pluginLoadingExceptions", formatPluginLoadingExceptions());
         velocityEngine.getTemplate("templates/template.vm").merge(map, resp.getWriter());
         resp.getWriter().flush();
 
+    }
+
+    private String formatPluginLoadingExceptions() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("[");
+        if(pluginLoadingException != null) {
+            sb.append("{");
+            StringWriter sw = new StringWriter();
+            pluginLoadingException.printStackTrace(new PrintWriter(sw));
+            sb.append("stacktrace:\"").append(escapeJavascript(sw.toString())).append("\",");
+            sb.append("plugin:\"").append(escapeJavascript(pluginClassLoader.getPluginInfo().getPluginId())).append("\"");
+            sb.append("}");
+        }
+
+        sb.append("]");
+        return sb.toString();
     }
 
     private String formatTestFailureExceptions() {
@@ -176,6 +196,12 @@ public class ErrorReporter {
 
     public ErrorReporter addTestFailulreException(TestFailureException e) {
         this.testFailureExceptions.add(e);
+        return this;
+    }
+
+    public ErrorReporter pluginLoadFailed(Exception pluginLoadingException, PluginClassLoader pluginClassLoader) {
+        this.pluginLoadingException = pluginLoadingException;
+        this.pluginClassLoader = pluginClassLoader;
         return this;
     }
 }

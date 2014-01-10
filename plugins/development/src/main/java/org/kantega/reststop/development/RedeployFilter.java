@@ -95,7 +95,8 @@ public class RedeployFilter implements Filter {
                         newClassLoaders.add(provider.redeploy(classloader.getPluginInfo().getPluginId(), classloader));
                     } catch (Exception e) {
                         classloader.setFailed(true);
-                        throw  new PluginStartupException(e);
+                        new ErrorReporter(velocityEngine, classloader.getBasedir()).pluginLoadFailed(e, classloader).render(req, resp);
+                        return;
                     }
 
                 }
