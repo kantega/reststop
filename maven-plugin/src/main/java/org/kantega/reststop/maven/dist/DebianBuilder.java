@@ -127,6 +127,6 @@ public class DebianBuilder extends AbstractDistMojo {
 
     @Override
     protected void attachPackage(MavenProjectHelper mavenProjectHelper, MavenProject mavenProject) throws MojoFailureException {
-
+        // jdeb already attaches for us
     }
 }
