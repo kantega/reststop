@@ -112,8 +112,6 @@ public class DevelopmentClassLoaderProvider {
         PluginInfo info = classloader.getPluginInfo();
         DevelopmentClassloader newClassLoader = new DevelopmentClassloader(classloader, getParentClassLoader(info, getParentClassLoader(info, reststop.getPluginParentClassLoader())));
 
-        byDepsId.put(info.getGroupIdAndArtifactId(), newClassLoader);
-        classloaders.put(pluginId, newClassLoader);
 
 
         Reststop.PluginClassLoaderChange change = reststop.changePluginClassLoaders();
@@ -128,10 +126,16 @@ public class DevelopmentClassLoaderProvider {
 
             change.add(newClassLoader);
         } else {
-            change.remove(classloader);
+            if(!classloader.isFailed()) {
+                change.remove(classloader);
+            }
             change.add(newClassLoader);
         }
         change.commit();
+
+        byDepsId.put(info.getGroupIdAndArtifactId(), newClassLoader);
+        classloaders.put(pluginId, newClassLoader);
+
         return newClassLoader;
 
     }

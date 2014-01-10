@@ -91,7 +91,12 @@ public class RedeployFilter implements Filter {
 
             for (DevelopmentClassloader classloader : staleClassLoaders) {
                 synchronized (compileSourcesMonitor) {
-                    newClassLoaders.add(provider.redeploy(classloader.getPluginInfo().getPluginId(), classloader));
+                    try {
+                        newClassLoaders.add(provider.redeploy(classloader.getPluginInfo().getPluginId(), classloader));
+                    } catch (Exception e) {
+                        classloader.setFailed(true);
+                        throw  new PluginStartupException(e);
+                    }
 
                 }
             }
@@ -190,7 +195,7 @@ public class RedeployFilter implements Filter {
 
 
         for (DevelopmentClassloader classloader : classloaders.values()) {
-            if(classloader.isStaleSources()) {
+            if(classloader.isStaleSources() || classloader.isFailed()) {
                 infos.put(classloader.getPluginInfo().getPluginId(), classloader.getPluginInfo());
             }
         }

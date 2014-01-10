@@ -64,6 +64,7 @@ public class DevelopmentClassloader extends PluginClassLoader{
     private volatile boolean testsFailed = false;
     private final List<Class<?>> loadedClasses = new CopyOnWriteArrayList<>();
     private Set<String> usedUrls = new CopyOnWriteArraySet<>();
+    private volatile boolean failed;
 
     public DevelopmentClassloader(PluginInfo info, File baseDir, File jarFile, List<File> compileClasspath, List<File> runtimeClasspath, List<File> testClasspath, ClassLoader parent) {
         super(info, new URL[0], parent);
@@ -267,6 +268,14 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
     public boolean hasFailingTests() {
         return testsFailed;
+    }
+
+    public void setFailed(boolean failed) {
+        this.failed = failed;
+    }
+
+    public boolean isFailed() {
+        return failed;
     }
 
     private class NewestFileVisitor extends SimpleFileVisitor<Path> {
