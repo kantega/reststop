@@ -24,6 +24,7 @@ import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
+import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Untar;
 import org.apache.tools.ant.types.EnumeratedAttribute;
@@ -107,13 +108,16 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     @Component
     private MavenProjectHelper mavenProjectHelper;
 
+    @Parameter
+    protected List<Resource> resources;
+
     @Override
     public final void execute() throws MojoExecutionException, MojoFailureException {
 
         if ("tomcat".compareTo(container) != 0 && "jetty".compareTo(container) != 0)
             throw new MojoFailureException(container + " not supported. Try 'jetty' or 'tomcat' ");
 
-        this.rootDirectory = new File(workDirectory, "distRoot/");
+        this.rootDirectory = new File(workDirectory, "distRoot/" + name + "-" + mavenProject.getVersion());
         this.distDirectory = new File(rootDirectory, installDir + "/" + name);
         distDirectory.mkdirs();
 
@@ -124,6 +128,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         confDir.mkdirs();
         new File(confDir, ".keep_empty_dir");
 
+        copyResources();
 
         LocalRepository repo = new LocalRepository(repository);
         LocalRepositoryManager manager = repoSystem.newLocalRepositoryManager(repoSession, repo);
@@ -149,8 +154,6 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
             createTomcatContextXml(warArifact, manager, new File(containerDistrDir, "conf/Catalina/localhost/ROOT.xml"));
         } else
             throw new MojoExecutionException("Unknown container " + this.container);
-        if (packaging != null && "none".compareTo(packaging) != 0)
-            getLog().warn("Packaging now resulting in zip package by default. Please use rpm or debian goals ");
 
         copyOverridingConfig();
 
@@ -158,6 +161,30 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
         if(attach) {
             attachPackage(mavenProjectHelper, mavenProject);
+        }
+    }
+
+    private void copyResources() {
+        if(resources != null) {
+            for (Resource resource : resources) {
+
+                String[] includedFiles = getIncludedFiles(resource);
+
+                if(includedFiles != null) {
+                    for (String includedFile : includedFiles) {
+
+                        String target = resource.getTargetDirectory() == null ? includedFile : resource.getTargetDirectory() +"/" + includedFile;
+                        File source = new File(resource.getDirectory(), includedFile);
+                        File dest = new File(rootDirectory, target);
+                        dest.getParentFile().mkdirs();
+                        try {
+                            FileUtils.copyFile(source, dest);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -437,5 +464,17 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
             dir.toFile().delete();
             return FileVisitResult.CONTINUE;
         }
+    }
+
+    protected String[] getIncludedFiles(Resource resource) {
+        DirectoryScanner scanner = new DirectoryScanner();
+        scanner.addDefaultExcludes();
+        scanner.setBasedir(resource.getDirectory());
+        scanner.addExcludes(resource.getExcludes());
+        scanner.setIncludes(resource.getIncludes());
+
+        scanner.scan();
+
+        return scanner.getIncludedFiles();
     }
 }

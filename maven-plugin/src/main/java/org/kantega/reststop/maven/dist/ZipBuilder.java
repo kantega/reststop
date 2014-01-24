@@ -22,7 +22,7 @@ public class ZipBuilder extends AbstractDistMojo {
 
     @Override
     protected void performPackaging() throws MojoExecutionException {
-        createZip(new File(rootDirectory, installDir), getDestFile());
+        createZip(rootDirectory, getDestFile());
     }
 
     private File getDestFile() {
@@ -32,7 +32,7 @@ public class ZipBuilder extends AbstractDistMojo {
     private void createZip(File distDirectory, File destFile) {
         Zip zip = new Zip();
         zip.setProject(new Project());
-        zip.setBasedir(distDirectory);
+        zip.setBasedir(distDirectory.getParentFile());
         zip.setDestFile(destFile);
         zip.execute();
     }

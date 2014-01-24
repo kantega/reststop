@@ -1,5 +1,6 @@
 package org.kantega.reststop.maven.dist;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
@@ -9,6 +10,7 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
+import org.apache.tools.ant.DirectoryScanner;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
@@ -122,6 +124,21 @@ public class RpmBuilder extends AbstractDistMojo {
             pw.println("%files");
             pw.println("%defattr(0664, %{name}, %{name}, 0775)");
             pw.println("/"+installDir+"/%{name}");
+            if(resources != null) {
+                for (Resource resource : resources) {
+                    String[] includedFiles = getIncludedFiles(resource);
+
+
+                    if(includedFiles != null) {
+                        for (String includedFile : includedFiles) {
+
+                            String target = resource.getTargetDirectory() == null ? includedFile : resource.getTargetDirectory() +"/" + includedFile;
+                            pw.println("/" +target);
+                        }
+                    }
+                }
+            }
+
             pw.println("%attr(0755, %{name}, %{name}) /"+installDir+"/%{name}/"+trimBothEnds(container,"/")+"/bin/*.sh");
             pw.println("%attr(0755, %{name}, %{name}) /etc/init.d/%{name}");
 
@@ -130,6 +147,8 @@ public class RpmBuilder extends AbstractDistMojo {
             throw new MojoExecutionException(e.getMessage(), e);
         }
     }
+
+
 
     @Override
     protected void attachPackage(MavenProjectHelper mavenProjectHelper, MavenProject mavenProject) throws MojoFailureException {

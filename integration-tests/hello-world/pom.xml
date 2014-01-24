@@ -196,11 +196,15 @@
                     <execution>
                         <id>dist</id>
                         <goals>
-                            <goal>dist</goal>
+                            <goal>dist-rpm</goal>
                         </goals>
                         <configuration>
-                            <packaging>none</packaging>
                             <container>jetty</container>
+                            <resources>
+                                <resource>
+                                    <directory>${basedir}/src/install/</directory>
+                                </resource>
+                            </resources>
                         </configuration>
                     </execution>
                 </executions>
