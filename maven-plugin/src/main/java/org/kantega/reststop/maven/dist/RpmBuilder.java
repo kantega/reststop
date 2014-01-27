@@ -121,6 +121,16 @@ public class RpmBuilder extends AbstractDistMojo {
             pw.println("/usr/bin/getent group %{name} > /dev/null || /usr/sbin/groupadd -r %{name}");
             pw.println("/usr/bin/getent passwd %{name} > /dev/null || /usr/sbin/useradd -r -g %{name} -d /" + installDir +"/%{name}/jetty -s /bin/bash %{name}");
 
+            pw.println("%preun");
+
+            pw.println("if [ $1 == 0 ]; then");
+            pw.println("  if [ -f /etc/init.d/%{name} ]; then");
+            pw.println("    /sbin/service %{name} stop > /dev/null 2>&1 || :");
+            pw.println("  fi");
+            pw.println("  # Unregister service");
+            pw.println("  /sbin/chkconfig --del %{name} 2> /dev/null || :");
+            pw.println("fi");
+
             pw.println("%files");
             pw.println("%defattr(0664, %{name}, %{name}, 0775)");
             pw.println("/"+installDir+"/%{name}");
