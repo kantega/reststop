@@ -128,7 +128,6 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         confDir.mkdirs();
         new File(confDir, ".keep_empty_dir");
 
-        copyResources();
 
         LocalRepository repo = new LocalRepository(repository);
         LocalRepositoryManager manager = repoSystem.newLocalRepositoryManager(repoSession, repo);
@@ -156,6 +155,9 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
             throw new MojoExecutionException("Unknown container " + this.container);
 
         copyOverridingConfig();
+
+        copyResources();
+
 
         performPackaging();
 
