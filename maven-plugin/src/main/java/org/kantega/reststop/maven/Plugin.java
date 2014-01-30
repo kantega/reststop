@@ -20,6 +20,7 @@ import org.eclipse.aether.artifact.Artifact;
 import org.kantega.reststop.classloaderutils.PluginInfo;
 
 import java.io.File;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -32,6 +33,8 @@ public class Plugin {
     private boolean directDeploy = true;
     private File sourceDirectory;
     private Properties config;
+
+    private List<Dependency> dependencies;
 
     public Plugin(String groupId, String artifactId, String version) {
         this.groupId = groupId;
@@ -107,5 +110,13 @@ public class Plugin {
 
         return info;
 
+    }
+
+    public List<Dependency> getDependencies() {
+        return dependencies;
+    }
+
+    public void setDependencies(List<Dependency> dependencies) {
+        this.dependencies = dependencies;
     }
 }

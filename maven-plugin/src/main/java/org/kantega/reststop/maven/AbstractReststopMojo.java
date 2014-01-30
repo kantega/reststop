@@ -281,6 +281,16 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
                     for (Dependency dependency : descriptorResult.getDependencies()) {
                         collectRequest.addDependency(dependency);
                     }
+                    if(plugin.getDependencies() != null) {
+                        for (org.kantega.reststop.maven.Dependency dependency : plugin.getDependencies()) {
+                            Dependency dep = new Dependency(new DefaultArtifact(dependency.getGroupId(),
+                                    dependency.getArtifactId(), dependency.getClassifier(), dependency.getType(), dependency.getVersion()), dependency.getScope(), dependency.isOptional());
+
+                            collectRequest.addDependency(dep);
+
+                        }
+                    }
+
 
                     DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, DependencyFilterUtils.classpathFilter(scope));
 
