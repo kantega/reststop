@@ -16,8 +16,6 @@
 
 package org.kantega.reststop.helloworld.jaxrs;
 
-import org.apache.wicket.protocol.http.WebApplication;
-import org.kantega.reststop.helloworld.wicket.HelloPage;
 import org.kantega.reststop.jaxrsapi.DefaultJaxRsPlugin;
 
 /**
@@ -28,6 +26,8 @@ public class HelloworldJaxRsPlugin extends DefaultJaxRsPlugin {
     public HelloworldJaxRsPlugin() {
         addJaxRsSingletonResource(new HelloWorldRootResource());
         addJaxRsSingletonResource(new HelloworldResource());
+
+        addJaxRsContainerClass(ValidationMessageFeature.class);
     }
 
 }

@@ -85,7 +85,12 @@
             <version>1.4</version>
             <scope>test</scope>
         </dependency>
-
+        <dependency>
+            <groupId>javax.validation</groupId>
+            <artifactId>validation-api</artifactId>
+            <version>1.1.0.Final</version>
+            <scope>provided</scope>
+        </dependency>
 
     </dependencies>
 
@@ -139,8 +144,25 @@
                             <version>${project.version}</version>
                         </plugin>
                         <plugin>
+                            <groupId>javax.validation</groupId>
+                            <artifactId>validation-api</artifactId>
+                            <version>1.1.0.Final</version>
+                        </plugin>
+                        <plugin>
                             <groupId>${project.groupId}</groupId>
                             <artifactId>reststop-jersey-plugin</artifactId>
+                            <version>${project.version}</version>
+                            <dependencies>
+                                <dependency>
+                                    <groupId>org.glassfish.jersey.ext</groupId>
+                                    <artifactId>jersey-bean-validation</artifactId>
+                                    <version>${jersey.version}</version>
+                                </dependency>
+                            </dependencies>
+                        </plugin>
+                        <plugin>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>reststop-jersey-bean-validation-plugin</artifactId>
                             <version>${project.version}</version>
                         </plugin>
 
