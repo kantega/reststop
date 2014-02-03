@@ -160,11 +160,6 @@
                                 </dependency>
                             </dependencies>
                         </plugin>
-                        <plugin>
-                            <groupId>${project.groupId}</groupId>
-                            <artifactId>reststop-jersey-bean-validation-plugin</artifactId>
-                            <version>${project.version}</version>
-                        </plugin>
 
                         <plugin>
                             <groupId>${project.groupId}</groupId>
