@@ -53,6 +53,7 @@ import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 import static java.lang.String.format;
 import static java.util.Collections.singleton;
@@ -71,7 +72,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     @Parameter(defaultValue = "${project.basedir}/src/dist")
     protected File distSrc;
 
-    @Parameter(defaultValue ="9.0.5.v20130815")
+    @Parameter
     protected String jettyVersion;
 
     private final String jettydistPrefix = "org.eclipse.jetty:jetty-distribution:tar.gz:";
@@ -92,9 +93,6 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
     @Parameter(defaultValue = "/opt")
     protected String installDir;
-
-    @Parameter()
-    private String packaging;
 
     protected File rootDirectory;
     protected File distDirectory;
@@ -301,7 +299,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     }
 
     private void copyJetty(File jettyDir) throws MojoFailureException, MojoExecutionException {
-        Artifact jettyDistroArtifact = resolveArtifactFile(jettydistPrefix+jettyVersion);
+        Artifact jettyDistroArtifact = resolveArtifactFile(jettydistPrefix+getJettyVersion());
 
         if (jettyDir.exists()) {
             try {
@@ -321,7 +319,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         untar.setDest(jettyDir);
         untar.execute();
 
-        File distDir = new File(jettyDir, "jetty-distribution-" + jettyVersion);
+        File distDir = new File(jettyDir, "jetty-distribution-" + getJettyVersion());
         File[] files = distDir.listFiles();
         if (files != null) {
             for (File file : files) {
@@ -331,17 +329,21 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
         distDir.delete();
 
-        new File(jettyDir, "start.d/900-demo.ini").delete();
+    }
 
-        try {
-
-            Files.write(new File(jettyDir, "start.d/099-plus.ini").toPath(), "OPTIONS=plus\netc/jetty-plus.xml".getBytes("utf-8"));
-            Files.write(new File(jettyDir, "start.d/100-annotations.ini").toPath(), "OPTIONS=annotations\netc/jetty-annotations.xml".getBytes("utf-8"));
-        } catch (Exception e) {
-            throw new MojoExecutionException(e.getMessage(), e);
+    private String getJettyVersion() throws MojoExecutionException {
+        if(jettyVersion != null) {
+            return jettyVersion;
+        } else {
+            Properties props = new Properties();
+            try {
+                props.load(getClass().getClassLoader().getResourceAsStream("META-INF/maven/org.eclipse.jetty/jetty-webapp/pom.properties"));
+                String version = props.getProperty("version");
+                return version;
+            } catch (IOException e) {
+                throw new MojoExecutionException("Can't load pom.properties", e);
+            }
         }
-
-
     }
 
     protected void createJettyServicesFile(File distDirectory) throws MojoFailureException, MojoExecutionException {
