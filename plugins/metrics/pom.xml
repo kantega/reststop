@@ -28,7 +28,7 @@
     <artifactId>reststop-metrics-plugin</artifactId>
 
     <properties>
-        <metrics.version>3.0.1</metrics.version>
+        <metrics.version>3.0.2</metrics.version>
     </properties>
     <dependencies>
 

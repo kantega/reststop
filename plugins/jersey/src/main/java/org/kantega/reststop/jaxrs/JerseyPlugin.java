@@ -1,5 +1,6 @@
 package org.kantega.reststop.jaxrs;
 
+import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.servlet.ServletProperties;
@@ -7,7 +8,6 @@ import org.kantega.reststop.api.*;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
@@ -78,6 +78,7 @@ public class JerseyPlugin extends DefaultReststopPlugin {
 
     private ResourceConfig getResourceConfig(Application application) {
         ResourceConfig resourceConfig = ResourceConfig.forApplication(application);
+        resourceConfig.register(JacksonFeature.class);
         Map<String, Object> props = new HashMap<>(resourceConfig.getProperties());
         props.put(ServletProperties.FILTER_FORWARD_ON_404, "true");
         resourceConfig.setProperties(props);

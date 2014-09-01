@@ -28,7 +28,7 @@
     <artifactId>reststop-cxf-plugin</artifactId>
 
     <properties>
-        <cxf.version>2.7.7</cxf.version>
+        <cxf.version>3.0.1</cxf.version>
     </properties>
     <dependencies>
 

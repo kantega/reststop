@@ -1,5 +1,6 @@
 package org.kantega.reststop.helloworld.jaxrs;
 
+import javax.xml.bind.annotation.XmlRootElement;
 import java.net.URI;
 import java.util.Map;
 import java.util.TreeMap;
@@ -7,6 +8,7 @@ import java.util.TreeMap;
 /**
  *
  */
+@XmlRootElement
 public class Helloworld {
 
     private Map<String, URI> languages = new TreeMap<>();

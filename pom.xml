@@ -55,13 +55,12 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <jersey.version>2.5.1</jersey.version>
+        <jersey.version>2.12</jersey.version>
         <jetty.version>9.0.5.v20130815</jetty.version>
         <maven.version>3.1.0</maven.version>
         <maven-deploy-plugin.version>2.8.1</maven-deploy-plugin.version>
         <aether.version>0.9.0.M3</aether.version>
         <jexmec.version>2.0.0rc8</jexmec.version>
-        <jackson.version>2.2.3</jackson.version>
         <logback.version>1.0.13</logback.version>
         <slf4j.version>1.7.5</slf4j.version>
 
@@ -76,7 +75,6 @@
         <module>maven-plugin</module>
         <module>plugins</module>
         <module>integration-tests/hello-world</module>
-        <module>integration-tests/hello-json</module>
         <module>integration-tests/custom-app</module>
     </modules>
 
