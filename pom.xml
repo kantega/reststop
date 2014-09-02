@@ -19,7 +19,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.kantega.reststop</groupId>
     <artifactId>reststop-parent</artifactId>
-    <version>1.7-SNAPSHOT</version>
+    <version>1.7</version>
     <packaging>pom</packaging>
 
     <name>Reststop</name>
@@ -49,6 +49,7 @@
     <scm>
         <url>https://github.com/kantega/reststop</url>
         <connection>scm:git:git@github.com:kantega/reststop.git</connection>
+    <tag>reststop-parent-1.7</tag>
   </scm>
 
 
