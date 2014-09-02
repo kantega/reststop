@@ -81,11 +81,6 @@
                                 </plugin>
                                 <plugin>
                                     <groupId>${project.groupId}</groupId>
-                                    <artifactId>reststop-hello-json</artifactId>
-                                    <version>${project.version}</version>
-                                </plugin>
-                                <plugin>
-                                    <groupId>${project.groupId}</groupId>
                                     <artifactId>reststop-security-plugin</artifactId>
                                     <version>${project.version}</version>
                                 </plugin>
