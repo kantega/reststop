@@ -110,14 +110,12 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     protected List<Resource> resources;
 
     @Override
-    public final void execute() throws MojoExecutionException, MojoFailureException {
+    public void execute() throws MojoExecutionException, MojoFailureException {
 
         if ("tomcat".compareTo(container) != 0 && "jetty".compareTo(container) != 0)
             throw new MojoFailureException(container + " not supported. Try 'jetty' or 'tomcat' ");
 
-        this.rootDirectory = new File(workDirectory, "distRoot/" + name + "-" + mavenProject.getVersion());
-        this.distDirectory = new File(rootDirectory, installDir + "/" + name);
-        distDirectory.mkdirs();
+        initDirectories();
 
         File repository = new File(distDirectory, "repository");
         repository.mkdirs();
@@ -164,6 +162,12 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         }
     }
 
+    protected void initDirectories() {
+        this.rootDirectory = new File(workDirectory, "distRoot/" + name + "-" + mavenProject.getVersion());
+        this.distDirectory = new File(rootDirectory, installDir + "/" + name);
+        distDirectory.mkdirs();
+    }
+
     private void copyResources() {
         if(resources != null) {
             for (Resource resource : resources) {
@@ -205,7 +209,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     
 
 
-    private void writePluginsXml(File xmlFile) throws MojoFailureException, MojoExecutionException {
+    protected void writePluginsXml(File xmlFile) throws MojoFailureException, MojoExecutionException {
         Document pluginXmlDocument = createPluginXmlDocument(true);
 
 
@@ -362,7 +366,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     }
 
 
-    private void copyPlugins(List<Plugin> plugins, LocalRepositoryManager manager) throws MojoFailureException, MojoExecutionException {
+    protected void copyPlugins(List<Plugin> plugins, LocalRepositoryManager manager) throws MojoFailureException, MojoExecutionException {
         if (plugins != null) {
 
             for (Plugin plugin : plugins) {

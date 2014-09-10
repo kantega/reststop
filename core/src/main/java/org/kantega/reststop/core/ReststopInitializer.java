@@ -169,40 +169,65 @@ public class ReststopInitializer implements ServletContainerInitializer{
     private ClassLoaderProvider[] findClassLoaderProviders(ServletContext servletContext) throws ServletException {
         List<ClassLoaderProvider> providers = new ArrayList<>();
 
-        {
-            Document pluginsXml = (Document) servletContext.getAttribute("pluginsXml");
-            String repoPath = servletContext.getInitParameter("repositoryPath");
-            File repoDir = null;
-
-            if(repoPath != null) {
-                repoDir = new File(repoPath);
-                if(!repoDir.exists()) {
-                    throw new ServletException("repositoryPath does not exist: " + repoDir);
-                }
-                if(!repoDir.isDirectory()) {
-                    throw new ServletException("repositoryPath is not a directory: " + repoDir);
-                }
-            }
-            if(pluginsXml == null) {
-
-                String path = servletContext.getInitParameter("plugins.xml");
-                if(path != null) {
-                    try {
-                        pluginsXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(path));
-                        servletContext.setAttribute("pluginsXml", pluginsXml);
-                    } catch (SAXException | IOException | ParserConfigurationException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-            }
-            if(pluginsXml != null) {
-                List<PluginInfo> parsed = PluginInfo.parse(pluginsXml);
-                configure(parsed, servletContext);
-                providers.add(new PluginInfosClassLoaderProvider(parsed, repoDir));
-            }
-        }
+        addExternalProvider(servletContext, providers);
+        addWarBundledProvider(servletContext, providers);
         return providers.toArray(new ClassLoaderProvider[providers.size()]);
 
+    }
+
+    private void addWarBundledProvider(ServletContext servletContext, List<ClassLoaderProvider> providers) {
+        String pluginsPath = servletContext.getRealPath("/WEB-INF/reststop/plugins.xml");
+        String repositoryPath = servletContext.getRealPath("/WEB-INF/reststop/repository/");
+        if(pluginsPath != null && repositoryPath != null) {
+            File pluginsFile = new File(pluginsPath);
+            File repoDir = new File(repositoryPath);
+            if(pluginsFile.exists() && repoDir.exists()) {
+                try {
+                    Document pluginsXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(pluginsFile);
+
+                    if(pluginsXml != null) {
+                        List<PluginInfo> parsed = PluginInfo.parse(pluginsXml);
+                        configure(parsed, servletContext);
+                        providers.add(new PluginInfosClassLoaderProvider(parsed, repoDir));
+                    }
+                }  catch (SAXException | IOException | ParserConfigurationException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
+
+    private void addExternalProvider(ServletContext servletContext, List<ClassLoaderProvider> providers) throws ServletException {
+        Document pluginsXml = (Document) servletContext.getAttribute("pluginsXml");
+        String repoPath = servletContext.getInitParameter("repositoryPath");
+        File repoDir = null;
+
+        if(repoPath != null) {
+            repoDir = new File(repoPath);
+            if(!repoDir.exists()) {
+                throw new ServletException("repositoryPath does not exist: " + repoDir);
+            }
+            if(!repoDir.isDirectory()) {
+                throw new ServletException("repositoryPath is not a directory: " + repoDir);
+            }
+        }
+        if(pluginsXml == null) {
+
+            String path = servletContext.getInitParameter("plugins.xml");
+            if(path != null) {
+                try {
+                    pluginsXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(path));
+                    servletContext.setAttribute("pluginsXml", pluginsXml);
+                } catch (SAXException | IOException | ParserConfigurationException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        if(pluginsXml != null) {
+            List<PluginInfo> parsed = PluginInfo.parse(pluginsXml);
+            configure(parsed, servletContext);
+            providers.add(new PluginInfosClassLoaderProvider(parsed, repoDir));
+        }
     }
 
     private void configure(List<PluginInfo> pluginInfos, ServletContext servletContext) {
