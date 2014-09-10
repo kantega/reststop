@@ -234,6 +234,8 @@ public class ReststopInitializer implements ServletContainerInitializer{
         String configDirPath = servletContext.getInitParameter("pluginConfigurationDirectory");
         if(configDirPath != null) {
             File configDir = new File(configDirPath);
+            String applicationName = servletContext.getInitParameter("applicationName");
+            File globalConfigFile = applicationName != null ? new File(configDir, applicationName +".conf") : null;
             if(configDir.exists()) {
                 for (PluginInfo info : pluginInfos) {
 
@@ -243,7 +245,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
                     Properties properties = new Properties();
                     properties.putAll(info.getConfig());
 
-                    addProperties(properties, artifact, artifactVersion);
+                    addProperties(properties, globalConfigFile, artifact, artifactVersion);
 
                     info.setConfig(properties);
                 }
@@ -254,7 +256,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
     private void addProperties(Properties properties, File... files) {
         if(files != null) {
             for (File file : files) {
-                if(file.exists()) {
+                if(file != null && file.exists()) {
                     Properties prop = new Properties();
                     try(FileInputStream in = new FileInputStream(file)) {
                         prop.load(in);
