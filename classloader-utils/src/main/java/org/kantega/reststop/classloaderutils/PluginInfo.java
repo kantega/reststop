@@ -4,10 +4,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.*;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
@@ -373,4 +370,43 @@ public class PluginInfo extends Artifact {
         return priority;
     }
 
+    public static void configure(List<PluginInfo> pluginInfos, String pluginConfigurationDirectory, String applicationName1) {
+        String configDirPath = pluginConfigurationDirectory;
+        if(configDirPath != null) {
+            File configDir = new File(configDirPath);
+            String applicationName = applicationName1;
+            File globalConfigFile = applicationName != null ? new File(configDir, applicationName +".conf") : null;
+            if(configDir.exists()) {
+                for (PluginInfo info : pluginInfos) {
+
+                    File artifact = new File(configDir, info.getArtifactId() +".conf");
+                    File artifactVersion = new File(configDir, info.getArtifactId() +"-" + info.getVersion() +".properties");
+
+                    Properties properties = new Properties();
+                    properties.putAll(info.getConfig());
+
+                    addProperties(properties, globalConfigFile, artifact, artifactVersion);
+
+                    info.setConfig(properties);
+                }
+            }
+        }
+    }
+
+    private static void addProperties(Properties properties, File... files) {
+        if(files != null) {
+            for (File file : files) {
+                if(file != null && file.exists()) {
+                    Properties prop = new Properties();
+                    try(FileInputStream in = new FileInputStream(file)) {
+                        prop.load(in);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    properties.putAll(prop);
+                }
+            }
+        }
+    }
 }

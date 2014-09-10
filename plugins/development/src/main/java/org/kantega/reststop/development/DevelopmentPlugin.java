@@ -33,6 +33,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 
+import static org.kantega.reststop.classloaderutils.PluginInfo.configure;
+
 /**
  *
  */
@@ -76,7 +78,9 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
 
 
         List<PluginInfo> infos = PluginInfo.parse(pluginsXml);
-        configure(infos, servletContext);
+        String pluginConfigurationDirectory = servletContext.getInitParameter("pluginConfigurationDirectory");
+        String applicationName = servletContext.getInitParameter("applicationName");
+        configure(infos, pluginConfigurationDirectory, applicationName);
         List<PluginInfo> sortedInfos = PluginInfo.resolveStartupOrder(infos);
         for (PluginInfo info : sortedInfos) {
             if(info.isDevelopmentPlugin()) {
@@ -148,44 +152,5 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
         return getClass().getClassLoader().getClass().getName().equals(DevelopmentClassloader.class.getName());
     }
 
-    private void configure(List<PluginInfo> pluginInfos, ServletContext servletContext) {
-        String configDirPath = servletContext.getInitParameter("pluginConfigurationDirectory");
-        if(configDirPath != null) {
-            File configDir = new File(configDirPath);
-            if(configDir.exists()) {
-                for (PluginInfo info : pluginInfos) {
-
-                    File artifact = new File(configDir, info.getArtifactId() +".conf");
-                    File artifactVersion = new File(configDir, info.getArtifactId() +"-" + info.getVersion() +".properties");
-
-                    Properties properties = new Properties();
-                    properties.putAll(info.getConfig());
-
-                    addProperties(properties, artifact, artifactVersion);
-
-                    info.setConfig(properties);
-                }
-            }
-        }
-    }
-
-    private void addProperties(Properties properties, File... files) {
-        if(files != null) {
-            for (File file : files) {
-                if(file.exists()) {
-                    Properties prop = new Properties();
-                    try(FileInputStream in = new FileInputStream(file)) {
-                        prop.load(in);
-                    } catch (FileNotFoundException e) {
-                        throw new RuntimeException(e);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    properties.putAll(prop);
-                }
-            }
-        }
-    }
 
 }

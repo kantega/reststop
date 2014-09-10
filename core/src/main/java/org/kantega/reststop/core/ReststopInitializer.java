@@ -40,6 +40,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import static org.kantega.jexmec.manager.DefaultPluginManager.buildFor;
+import static org.kantega.reststop.classloaderutils.PluginInfo.configure;
 
 /**
  *
@@ -186,15 +187,21 @@ public class ReststopInitializer implements ServletContainerInitializer{
                     Document pluginsXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(pluginsFile);
 
                     if(pluginsXml != null) {
-                        List<PluginInfo> parsed = PluginInfo.parse(pluginsXml);
-                        configure(parsed, servletContext);
-                        providers.add(new PluginInfosClassLoaderProvider(parsed, repoDir));
+                        addPluginClassLoaderProvider(pluginsXml, repoDir, servletContext, providers);
                     }
                 }  catch (SAXException | IOException | ParserConfigurationException e) {
                     throw new RuntimeException(e);
                 }
             }
         }
+    }
+
+    private void addPluginClassLoaderProvider(Document pluginsXml, File repoDir, ServletContext servletContext, List<ClassLoaderProvider> providers) {
+        List<PluginInfo> parsed = PluginInfo.parse(pluginsXml);
+        String pluginConfigurationDirectory = servletContext.getInitParameter("pluginConfigurationDirectory");
+        String applicationName = servletContext.getInitParameter("applicationName");
+        configure(parsed, pluginConfigurationDirectory, applicationName);
+        providers.add(new PluginInfosClassLoaderProvider(parsed, repoDir));
     }
 
     private void addExternalProvider(ServletContext servletContext, List<ClassLoaderProvider> providers) throws ServletException {
@@ -224,51 +231,13 @@ public class ReststopInitializer implements ServletContainerInitializer{
             }
         }
         if(pluginsXml != null) {
-            List<PluginInfo> parsed = PluginInfo.parse(pluginsXml);
-            configure(parsed, servletContext);
-            providers.add(new PluginInfosClassLoaderProvider(parsed, repoDir));
+            addPluginClassLoaderProvider(pluginsXml, repoDir, servletContext, providers);
         }
     }
 
-    private void configure(List<PluginInfo> pluginInfos, ServletContext servletContext) {
-        String configDirPath = servletContext.getInitParameter("pluginConfigurationDirectory");
-        if(configDirPath != null) {
-            File configDir = new File(configDirPath);
-            String applicationName = servletContext.getInitParameter("applicationName");
-            File globalConfigFile = applicationName != null ? new File(configDir, applicationName +".conf") : null;
-            if(configDir.exists()) {
-                for (PluginInfo info : pluginInfos) {
 
-                    File artifact = new File(configDir, info.getArtifactId() +".conf");
-                    File artifactVersion = new File(configDir, info.getArtifactId() +"-" + info.getVersion() +".properties");
 
-                    Properties properties = new Properties();
-                    properties.putAll(info.getConfig());
 
-                    addProperties(properties, globalConfigFile, artifact, artifactVersion);
-
-                    info.setConfig(properties);
-                }
-            }
-        }
-    }
-
-    private void addProperties(Properties properties, File... files) {
-        if(files != null) {
-            for (File file : files) {
-                if(file != null && file.exists()) {
-                    Properties prop = new Properties();
-                    try(FileInputStream in = new FileInputStream(file)) {
-                        prop.load(in);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    properties.putAll(prop);
-                }
-            }
-        }
-    }
 
 
     private static class DefaultReststop implements Reststop, ClassLoaderProvider {
