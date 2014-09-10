@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.kantega.reststop</groupId>
         <artifactId>reststop-parent</artifactId>
-        <version>1.8-SNAPSHOT</version>
+        <version>1.8</version>
     </parent>
     <artifactId>reststop-webapp</artifactId>
     <packaging>war</packaging>
