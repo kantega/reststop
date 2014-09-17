@@ -68,7 +68,26 @@ public class ReststopInitializer implements ServletContainerInitializer{
         servletContext.addFilter(PluginDelegatingFilter.class.getName(), new PluginDelegatingFilter(reststopPluginManager))
                 .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
 
+        servletContext.addListener(new ShutdownListener(manager));
 
+    }
+
+    private static class ShutdownListener implements ServletContextListener {
+        private final DefaultPluginManager<ReststopPlugin> manager;
+
+        public ShutdownListener(DefaultPluginManager<ReststopPlugin> manager) {
+            this.manager = manager;
+        }
+
+        @Override
+        public void contextInitialized(ServletContextEvent sce) {
+
+        }
+
+        @Override
+        public void contextDestroyed(ServletContextEvent sce) {
+            manager.stop();
+        }
     }
 
     private DefaultPluginManager<ReststopPlugin> buildPluginManager(ServletContext servletContext, DefaultReststopPluginManager reststopPluginManager) throws ServletException {
@@ -845,6 +864,15 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         @Override
         public void beforePassivation(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader, PluginLoader<ReststopPlugin> pluginLoader, Collection<ReststopPlugin> plugins) {
+            for (ReststopPlugin plugin : plugins) {
+                plugin.destroy();
+            }
+        }
+
+        @Override
+        public void beforePluginManagerStopped(PluginManager<ReststopPlugin> pluginManager) {
+            List<ReststopPlugin> plugins = new ArrayList<>(pluginManager.getPlugins());
+            Collections.reverse(plugins);
             for (ReststopPlugin plugin : plugins) {
                 plugin.destroy();
             }
