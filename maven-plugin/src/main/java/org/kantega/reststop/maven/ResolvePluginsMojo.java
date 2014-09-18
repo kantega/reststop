@@ -36,6 +36,9 @@ public class ResolvePluginsMojo extends AbstractReststopMojo {
     @Parameter(defaultValue = "false")
     private boolean addDevelopmentPlugins;
 
+    @Parameter
+    private List<Plugin> developmentPlugins;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         try {
@@ -54,7 +57,16 @@ public class ResolvePluginsMojo extends AbstractReststopMojo {
 
     @Override
     protected List<Plugin> getPlugins() {
-        List<Plugin> plugins = new ArrayList<>(super.getPlugins());
+        List<Plugin> plugins = new ArrayList<>();
+
+        if(developmentPlugins != null) {
+            for (Plugin plugin : developmentPlugins) {
+                plugin.setDirectDeploy(false);
+                plugins.add(plugin);
+            }
+        }
+
+        plugins.addAll(super.getPlugins());
 
         if(addDevelopmentPlugins) {
             addDevelopmentPlugins(plugins);
