@@ -109,6 +109,9 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     @Parameter
     protected List<Resource> resources;
 
+    @Parameter
+    private List<Plugin> distributionPlugins;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
@@ -450,12 +453,12 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     }
 
     public List<Plugin> getPlugins() {
-        List<Plugin> plugins = new ArrayList<>();
-        if (this.plugins != null) {
-            plugins.addAll(this.plugins);
-        }
+        List<Plugin> plugins = new ArrayList<>(super.getPlugins());
         if (new File(mavenProject.getBasedir(), "target/classes/META-INF/services/ReststopPlugin").exists()) {
             plugins.add(new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion()));
+        }
+        if (distributionPlugins != null) {
+            plugins.addAll(distributionPlugins);
         }
         return plugins;
     }
