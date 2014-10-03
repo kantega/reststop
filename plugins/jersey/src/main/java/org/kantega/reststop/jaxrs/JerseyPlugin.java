@@ -67,7 +67,7 @@ public class JerseyPlugin extends DefaultReststopPlugin {
             @Override
             public void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
                 // Force read of request parameters if specified, otherwise Jersey will eat them
-                if(request.getMethod().equals("POST") && request.getContentType().equals(MediaType.APPLICATION_FORM_URLENCODED)) {
+                if(request.getMethod().equals("POST") && MediaType.APPLICATION_FORM_URLENCODED.equals(request.getContentType())) {
                     request.getParameterMap();
                 }
                 super.doFilter(request, response, chain);
