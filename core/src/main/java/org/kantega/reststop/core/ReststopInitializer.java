@@ -445,7 +445,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
                     @Override
                     public String getPathInfo() {
                         String requestURI = getRequestURI();
-                        return requestURI.substring(servletPath.length());
+                        return requestURI.substring(super.getContextPath().length() + servletPath.length());
                     }
                 }, resp);
 
