@@ -20,6 +20,8 @@ import org.kantega.reststop.api.Reststop;
 import org.kantega.reststop.api.ReststopPlugin;
 import org.kantega.reststop.classloaderutils.*;
 
+import javax.tools.Diagnostic;
+import javax.tools.JavaFileObject;
 import java.io.File;
 import java.util.*;
 
@@ -68,6 +70,23 @@ public class DevelopmentClassLoaderProvider {
                 byDepsId.put(pluginInfo.getGroupIdAndArtifactId(), classloader);
                 change.add(classloader);
             }
+        }
+        for(DevelopmentClassloader stale : findStaleClassLoaders()) {
+            try {
+                stale.compileSources();
+            } catch (JavaCompilationException e) {
+                StringBuilder message = new StringBuilder("Compilation failed in " + stale.getPluginInfo().getArtifactId() +": ");
+                for (Diagnostic<? extends JavaFileObject> diagnostic : e.getDiagnostics()) {
+                    String sourceFile = diagnostic.getSource().getName();
+                    long lineNumber = diagnostic.getLineNumber();
+                    long columnNumber = diagnostic.getColumnNumber();
+                    String msg = diagnostic.getMessage(Locale.getDefault());
+
+                    message.append(sourceFile).append(":").append(lineNumber).append(":").append(columnNumber).append("\n").append(msg);
+                }
+                throw new RuntimeException(message.toString(), e);
+            }
+            stale.copySourceResorces();
         }
         change.commit();
 
@@ -148,5 +167,77 @@ public class DevelopmentClassLoaderProvider {
 
     public List<PluginInfo> getPluginInfos() {
         return new ArrayList<>(pluginsInfo.values());
+    }
+
+    private void getServiceConsumingPlugins(PluginInfo info, Map<String, PluginInfo> children, List<PluginInfo> all) {
+
+
+        for (PluginInfo consumer : info.getServiceConsumers(all)) {
+            if(!children.containsKey(consumer.getPluginId())) {
+                children.put(consumer.getPluginId(), consumer);
+                getServiceConsumingPlugins(consumer, children, all);
+            }
+        }
+    }
+    public List<DevelopmentClassloader> findStaleClassLoaders() {
+
+        Map<String, PluginInfo> infos = new HashMap<>();
+
+
+        for (DevelopmentClassloader classloader : classloaders.values()) {
+            if(classloader.isStaleSources() || classloader.isFailed()) {
+                infos.put(classloader.getPluginInfo().getPluginId(), classloader.getPluginInfo());
+            }
+        }
+
+
+        for (PluginInfo info : new ArrayList<>(infos.values())) {
+            Map<String, PluginInfo> deps = new HashMap<>();
+            getChildPlugins(info, deps, new ArrayList<>(getPluginInfos()));
+            for (String id : deps.keySet()) {
+                infos.put(id, deps.get(id));
+            }
+        }
+
+        // Add plugins we provide services to
+        for (PluginInfo info : new ArrayList<>(infos.values())) {
+            Map<String, PluginInfo> deps = new HashMap<>();
+            getServiceConsumingPlugins(info, deps, new ArrayList<>(getPluginInfos()));
+            for (String id : deps.keySet()) {
+                infos.put(id, deps.get(id));
+            }
+        }
+
+        List<PluginInfo> sorted = PluginInfo.resolveStartupOrder(new ArrayList<>(infos.values()));
+
+        Collections.sort(sorted, new Comparator<PluginInfo>() {
+            @Override
+            public int compare(PluginInfo o1, PluginInfo o2) {
+                return isDevPlugin(o1) ? -1 : isDevPlugin(o2) ? -1 : 1;
+            }
+
+            private boolean isDevPlugin(PluginInfo o1) {
+                return o1.getPluginId().contains(":reststop-development-plugin");
+            }
+        });
+        Map<String, DevelopmentClassloader> sortedLoaders = new LinkedHashMap<>();
+
+        for (PluginInfo pluginInfo : sorted) {
+
+            sortedLoaders.put(pluginInfo.getPluginId(), classloaders.get(pluginInfo.getPluginId()));
+        }
+
+        return new ArrayList<>(sortedLoaders.values());
+
+    }
+
+    private void getChildPlugins(PluginInfo info, Map<String, PluginInfo> children, List<PluginInfo> all) {
+
+        for (PluginInfo child : info.getChildren(all)) {
+            if(!children.containsKey(child.getPluginId())) {
+                children.put(child.getPluginId(), child);
+                getChildPlugins(child, children, all);
+            }
+        }
     }
 }

@@ -68,7 +68,7 @@ public class RedeployFilter implements Filter {
 
 
         synchronized (this) {
-            staleClassLoaders.addAll(findStaleClassLoaders());
+            staleClassLoaders.addAll(provider.findStaleClassLoaders());
 
             for (DevelopmentClassloader classloader : staleClassLoaders) {
                 try {
@@ -167,79 +167,6 @@ public class RedeployFilter implements Filter {
         } else {
             filterChain.doFilter(servletRequest, servletResponse);
         }
-    }
-
-    private void getChildPlugins(PluginInfo info, Map<String, PluginInfo> children, List<PluginInfo> all) {
-
-        for (PluginInfo child : info.getChildren(all)) {
-            if(!children.containsKey(child.getPluginId())) {
-                children.put(child.getPluginId(), child);
-                getChildPlugins(child, children, all);
-            }
-        }
-    }
-
-    private void getServiceConsumingPlugins(PluginInfo info, Map<String, PluginInfo> children, List<PluginInfo> all) {
-
-
-         for (PluginInfo consumer : info.getServiceConsumers(all)) {
-            if(!children.containsKey(consumer.getPluginId())) {
-                children.put(consumer.getPluginId(), consumer);
-                getServiceConsumingPlugins(consumer, children, all);
-            }
-        }
-    }
-    private List<DevelopmentClassloader> findStaleClassLoaders() {
-        Map<String, DevelopmentClassloader> classloaders = provider.getClassloaders();
-
-        Map<String, PluginInfo> infos = new HashMap<>();
-
-
-        for (DevelopmentClassloader classloader : classloaders.values()) {
-            if(classloader.isStaleSources() || classloader.isFailed()) {
-                infos.put(classloader.getPluginInfo().getPluginId(), classloader.getPluginInfo());
-            }
-        }
-
-
-        for (PluginInfo info : new ArrayList<>(infos.values())) {
-            Map<String, PluginInfo> deps = new HashMap<>();
-            getChildPlugins(info, deps, new ArrayList<>(provider.getPluginInfos()));
-            for (String id : deps.keySet()) {
-                infos.put(id, deps.get(id));
-            }
-        }
-
-        // Add plugins we provide services to
-        for (PluginInfo info : new ArrayList<>(infos.values())) {
-            Map<String, PluginInfo> deps = new HashMap<>();
-            getServiceConsumingPlugins(info, deps, new ArrayList<>(provider.getPluginInfos()));
-            for (String id : deps.keySet()) {
-                infos.put(id, deps.get(id));
-            }
-        }
-
-        List<PluginInfo> sorted = PluginInfo.resolveStartupOrder(new ArrayList<>(infos.values()));
-
-        Collections.sort(sorted, new Comparator<PluginInfo>() {
-            @Override
-            public int compare(PluginInfo o1, PluginInfo o2) {
-                return isDevPlugin(o1) ? -1 : isDevPlugin(o2) ? -1 : 1;
-            }
-
-            private boolean isDevPlugin(PluginInfo o1) {
-                return o1.getPluginId().contains(":reststop-development-plugin");
-            }
-        });
-        Map<String, DevelopmentClassloader> sortedLoaders = new LinkedHashMap<>();
-
-        for (PluginInfo pluginInfo : sorted) {
-
-            sortedLoaders.put(pluginInfo.getPluginId(), classloaders.get(pluginInfo.getPluginId()));
-        }
-
-        return new ArrayList<>(sortedLoaders.values());
-
     }
 
     @Override

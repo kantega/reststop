@@ -182,7 +182,10 @@ public class DevelopmentClassloader extends PluginClassLoader{
         if(basedir == null) {
             return false;
         }
-        return newest(new File(basedir, "src/main/java")) > created;
+
+        File sourceDir = new File(basedir, "src/main/java");
+        File target = new File(basedir, "target/classes");
+        return !target.exists() || newest(sourceDir) > newest(target);
     }
 
     public boolean isStaleTests() {
