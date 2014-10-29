@@ -82,7 +82,7 @@ public class DevelopmentClassLoaderProvider {
                     long columnNumber = diagnostic.getColumnNumber();
                     String msg = diagnostic.getMessage(Locale.getDefault());
 
-                    message.append(sourceFile).append(":").append(lineNumber).append(":").append(columnNumber).append("\n").append(msg);
+                    message.append(sourceFile).append("[").append(lineNumber).append(":").append(columnNumber).append("]\n").append(msg);
                 }
                 throw new RuntimeException(message.toString(), e);
             }
