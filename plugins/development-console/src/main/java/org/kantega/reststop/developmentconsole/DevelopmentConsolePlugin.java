@@ -24,7 +24,7 @@ public class DevelopmentConsolePlugin extends DefaultReststopPlugin {
     public DevelopmentConsolePlugin(Reststop reststop, ReststopPluginManager pluginManager, VelocityEngine velocityEngine) {
         this.pluginManager = pluginManager;
         this.velocityEngine = velocityEngine;
-        addServletFilter(reststop.createFilter(new DevelopentConsole(), "/dev*", FilterPhase.USER));
+        addServletFilter(reststop.createFilter(new DevelopentConsole(), "/dev*", FilterPhase.PRE_UNMARSHAL));
     }
 
     public class DevelopentConsole implements Filter {
