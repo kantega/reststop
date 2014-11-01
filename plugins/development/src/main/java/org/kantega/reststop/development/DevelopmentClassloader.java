@@ -16,6 +16,8 @@
 
 package org.kantega.reststop.development;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.kantega.reststop.classloaderutils.Artifact;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
@@ -24,6 +26,7 @@ import javax.tools.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -249,12 +252,27 @@ public class DevelopmentClassloader extends PluginClassLoader{
         List<Class> classes = new ArrayList<>();
         for (String className : classNames) {
             try {
-                classes.add(loader.loadClass(className));
+                Class<?> clazz = loader.loadClass(className);
+                if(isJunit4Class(clazz)) {
+                    classes.add(clazz);
+                }
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
         }
         return classes;
+    }
+
+    private boolean isJunit4Class(Class<?> clazz) {
+        if(clazz.getAnnotation(RunWith.class) != null) {
+            return true;
+        }
+        for (Method method : clazz.getMethods()) {
+            if(method.getAnnotation(Test.class) != null) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public File getBasedir() {
