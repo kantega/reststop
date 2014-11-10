@@ -187,6 +187,9 @@ public class DevelopmentClassloader extends PluginClassLoader{
         }
 
         File sourceDir = new File(basedir, "src/main/java");
+        if(!sourceDir.exists()) {
+            return false;
+        }
         File target = new File(basedir, "target/classes");
         return !target.exists() || newest(sourceDir) > newest(target);
     }
