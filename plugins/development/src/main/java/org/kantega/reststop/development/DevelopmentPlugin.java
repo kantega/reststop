@@ -26,12 +26,8 @@ import org.w3c.dom.Document;
 
 import javax.servlet.ServletContext;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import java.util.Properties;
 
 import static org.kantega.reststop.classloaderutils.PluginInfo.configure;
 
@@ -39,6 +35,9 @@ import static org.kantega.reststop.classloaderutils.PluginInfo.configure;
  *
  */
 public class DevelopmentPlugin extends DefaultReststopPlugin {
+
+    @Config(defaultValue = "true")
+    private String runTestsOnRedeploy;
 
     @Export
     private VelocityEngine velocityEngine;
@@ -55,7 +54,8 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
 
                 if(info.isDevelopmentPlugin()) {
                     ClassLoader pluginParentClassLoader = reststop.getPluginParentClassLoader();
-                    final DevelopmentClassloader devloader = createClassLoader(info, pluginParentClassLoader);
+                    PluginInfo origInfo = ((PluginClassLoader)getClass().getClassLoader()).getPluginInfo();
+                    final DevelopmentClassloader devloader = createClassLoader(origInfo, pluginParentClassLoader);
 
                     addPluginListener(new PluginListener() {
                         @Override
@@ -122,7 +122,7 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
 
 
         addServletFilter(reststop.createFilter(new DevelopmentAssetsFilter(), "/dev/assets/*", FilterPhase.PRE_UNMARSHAL));
-        addServletFilter(reststop.createFilter(new RedeployFilter(provider, reststop, velocityEngine), "/*", FilterPhase.PRE_UNMARSHAL));
+        addServletFilter(reststop.createFilter(new RedeployFilter(provider, reststop, velocityEngine, "true".equals(runTestsOnRedeploy)), "/*", FilterPhase.PRE_UNMARSHAL));
 
     }
 
