@@ -160,13 +160,15 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
     @Override
     public URL getResource(String name) {
-        File resources = new File(basedir, "src/main/resources");
-        File resource = new File(resources, name);
-        if(resource.exists()) {
-            try {
-                return resource.toURI().toURL();
-            } catch (MalformedURLException e) {
-                throw new RuntimeException(e);
+        if(basedir != null) {
+            File resources = new File(basedir, "src/main/resources");
+            File resource = new File(resources, name);
+            if (resource.exists()) {
+                try {
+                    return resource.toURI().toURL();
+                } catch (MalformedURLException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
         return super.getResource(name);
