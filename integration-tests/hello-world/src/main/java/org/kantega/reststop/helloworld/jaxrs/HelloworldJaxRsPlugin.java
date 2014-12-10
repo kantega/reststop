@@ -16,12 +16,40 @@
 
 package org.kantega.reststop.helloworld.jaxrs;
 
+import org.kantega.reststop.api.Config;
 import org.kantega.reststop.jaxrsapi.DefaultJaxRsPlugin;
 
 /**
  *
  */
 public class HelloworldJaxRsPlugin extends DefaultJaxRsPlugin {
+
+
+    @Config(defaultValue = "-1")
+    private byte minusOneByte;
+
+    @Config(defaultValue = "4")
+    private short fourShort;
+
+    @Config(defaultValue = "5")
+    private short fiveInt;
+
+    @Config(defaultValue = "6")
+    private long sixLong;
+
+    @Config(defaultValue = "1.0")
+    private float oneFloat;
+
+    @Config(defaultValue = "1.1")
+    private double onePointOneDouble;
+
+    @Config(defaultValue = "true")
+    private boolean booleanTrue;
+
+
+    @Config(defaultValue = "a")
+    private char aChar;
+
 
     public HelloworldJaxRsPlugin() {
         addJaxRsSingletonResource(new HelloWorldRootResource());

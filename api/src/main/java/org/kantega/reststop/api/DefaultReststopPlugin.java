@@ -44,9 +44,6 @@ public class DefaultReststopPlugin implements ReststopPlugin {
             for (Field field : fields) {
                 Config config = field.getAnnotation(Config.class);
                 if(config != null) {
-                    if(! String.class.equals(field.getType())) {
-                        throw new IllegalArgumentException("Don't know how to inject value for @Config annotated field of type " + field.getType());
-                    }
 
                     String name = config.property();
 
@@ -60,10 +57,11 @@ public class DefaultReststopPlugin implements ReststopPlugin {
                     if( (value == null || value.trim().isEmpty()) && config.required()) {
                         throw new IllegalArgumentException("Configuration missing for required @Config field '" +field.getName() +"' in class " + field.getDeclaringClass().getName());
                     }
+                    Object convertedValue = convertValue(field, value, field.getType());
 
                     field.setAccessible(true);
                     try {
-                        field.set(this, value);
+                        field.set(this, convertedValue);
                     } catch (IllegalAccessException e) {
                         throw new IllegalStateException(e);
                     }
@@ -71,6 +69,29 @@ public class DefaultReststopPlugin implements ReststopPlugin {
                 }
             }
         }
+    }
+
+    private Object convertValue(Field field, String value, Class<?> type) {
+        if(type == String.class) {
+            return value;
+        } else if(type == byte.class || type == Byte.class) {
+            return Byte.parseByte(value);
+        } else if(type == short.class || type == Short.class) {
+            return Short.parseShort(value);
+        } else if(type == int.class || type == Integer.class) {
+            return Integer.parseInt(value);
+        } else if(type == long.class || type == Long.class) {
+            return Long.parseLong(value);
+        } else if(type == float.class || type == Float.class) {
+            return Float.parseFloat(value);
+        } else if(type == double.class || type == Double.class) {
+            return Double.parseDouble(value);
+        } else if(type == boolean.class || type == Boolean.class) {
+            return Boolean.parseBoolean(value);
+        } else if(type == char.class || type == Character.class) {
+            return value.charAt(0);
+        }
+        throw new IllegalArgumentException("Could not convert @Config for unknown field type " + field.getType().getName() + " of field '" +field.getName() +"' in class " + field.getDeclaringClass().getName());
     }
 
     protected void addServletFilter(Filter filter) {
