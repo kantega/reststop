@@ -2,17 +2,11 @@ package org.kantega.reststop.maven;
 
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.*;
-import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.jetty.maven.plugin.JettyWebAppContext;
 import org.eclipse.jetty.server.Server;
 
 import java.awt.*;
-import java.io.File;
-import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,25 +29,26 @@ public class RunMojo extends AbstractReststopMojo {
     @Override
     protected void afterServerStart(Server server, int port) throws MojoFailureException {
         try {
-            openInBrowser(port);
+            openInBrowser("http://localhost:" + port);
             server.join();
         } catch (InterruptedException e) {
             throw new MojoFailureException(e.getMessage(), e);
         }
     }
 
-    private void openInBrowser(int port) throws MojoFailureException {
+    private void openInBrowser(String url) throws MojoFailureException {
         try {
-        if(Desktop.isDesktopSupported()) {
-            String u = "http://localhost:" + port;
-            if(path != null) {
-                u +="/" + path;
+            if (Desktop.isDesktopSupported()) {
+                if (path != null) {
+                    url += "/" + path;
+                }
+                DesktopApi.browse(new URI(url));
+                if (openProjectDir) {
+                    DesktopApi.open(mavenProject.getBasedir());
+                }
             }
-            Desktop.getDesktop().browse(new URI(u));
-            if(openProjectDir) {
-                Desktop.getDesktop().open(mavenProject.getBasedir());
-            }
-        }} catch (IOException | URISyntaxException e) {
+
+        } catch (URISyntaxException e) {
             throw new MojoFailureException(e.getMessage(), e);
         }
     }
