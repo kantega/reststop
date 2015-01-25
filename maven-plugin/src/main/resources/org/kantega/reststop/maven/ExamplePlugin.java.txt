@@ -1,11 +1,11 @@
 package org.kantega.reststop.maven;
 
-import org.kantega.reststop.api.DefaultReststopPlugin;
+import org.kantega.reststop.jaxrsapi.DefaultJaxRsPlugin;
 
 /**
  *
  */
-public class ExamplePlugin extends DefaultReststopPlugin {
+public class ExamplePlugin extends DefaultJaxRsPlugin{
 
     public ExamplePlugin() {
         addJaxRsSingletonResource(new HelloworldResource());

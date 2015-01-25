@@ -16,7 +16,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -56,7 +55,7 @@ public class CreateMojo extends AbstractMojo {
         File pomFile = new File(directory, "pom.xml");
 
         try {
-            String pom = IOUtils.toString(getClass().getResourceAsStream("template-pom.xml"), "utf-8");
+            String pom = IOUtils.toString(getClass().getResourceAsStream("dist/template-pom.xml"), "utf-8");
             pom = pom.replace("${groupId}", groupId).
                     replace("${artifactId}", artifactId)
                     .replace("${reststopVersion}", pluginDescriptor.getVersion());
@@ -85,7 +84,6 @@ public class CreateMojo extends AbstractMojo {
         request.setPomFile(pomFile);
 
         request.setGoals(asList("reststop:run", "-Dpath=helloworld", "-DopenProjectDir=true"));
-
 
         try {
             invoker.execute(request);
