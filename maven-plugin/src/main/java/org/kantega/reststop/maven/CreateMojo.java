@@ -107,6 +107,9 @@ public class CreateMojo extends AbstractMojo {
 
             createClasses(pack, testClassNames, new File(pluginDir, "src/test/java/"));
 
+            new File(pluginDir, "src/main/resources").mkdirs();
+            new File(pluginDir, "src/test/resources").mkdirs();
+
             // webapp
             String webappPom = IOUtils.toString(getClass().getResourceAsStream("dist/template-plugin-webapp-pom.xml"), "utf-8");
             webappPom = webappPom.replace("${groupId}", groupId).
