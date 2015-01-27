@@ -14,7 +14,6 @@ import org.apache.maven.shared.invoker.MavenInvocationException;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,7 +21,6 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 import static java.util.Arrays.asList;
-import static java.util.Collections.singleton;
 
 /**
  *
@@ -108,10 +106,6 @@ public class CreateMojo extends AbstractMojo {
             List<String> testClassNames = asList("HelloworldResourceTest.java");
 
             createClasses(pack, testClassNames, new File(pluginDir, "src/test/java/"));
-
-            File file = new File(pluginDir, "src/main/resources/META-INF/services/ReststopPlugin/simple.txt");
-            file.getParentFile().mkdirs();
-            Files.write(file.toPath(), singleton(pack + ".ExamplePlugin"), Charset.forName("utf-8"));
 
             // webapp
             String webappPom = IOUtils.toString(getClass().getResourceAsStream("dist/template-plugin-webapp-pom.xml"), "utf-8");
