@@ -46,47 +46,105 @@ public class CreateMojo extends AbstractMojo {
         String artifactId = options.get("artifactId");
 
         File directory = new File(artifactId);
+        File pluginsDir = new File(directory, "plugins");
+        File pluginDir = new File(pluginsDir, "helloworld");
+        File webappDir = new File(directory, "webapp");
+        File webappTestJettyDir = new File(new File(new File(webappDir, "src"), "test"), "jetty");
 
         if(directory.exists()) {
             throw new MojoFailureException("Directory already exists: " + directory);
         }
         directory.mkdirs();
 
+        if(pluginsDir.exists()) {
+            throw new MojoFailureException("Directory already exists: " + pluginsDir);
+        }
+        pluginsDir.mkdirs();
+
+        if(pluginDir.exists()) {
+            throw new MojoFailureException("Directory already exists: " + pluginDir);
+        }
+        pluginDir.mkdirs();
+
+        if(webappDir.exists()) {
+            throw new MojoFailureException("Directory already exists: " + webappDir);
+        }
+        webappDir.mkdirs();
+        webappTestJettyDir.mkdirs();
+
         File pomFile = new File(directory, "pom.xml");
+        File pluginPomFile = new File(pluginDir, "pom.xml");
+        File pluginsPomFile = new File(pluginsDir, "pom.xml");
+        File webappPomFile = new File(webappDir, "pom.xml");
+        File webappTestJettyFile = new File(webappTestJettyDir, "web-override.xml");
 
         try {
-            String pom = IOUtils.toString(getClass().getResourceAsStream("dist/template-pom.xml"), "utf-8");
+            // root
+            String pom = IOUtils.toString(getClass().getResourceAsStream("dist/template-plugin-pom.xml"), "utf-8");
             pom = pom.replace("${groupId}", groupId).
                     replace("${artifactId}", artifactId)
                     .replace("${reststopVersion}", pluginDescriptor.getVersion());
 
             Files.write(pomFile.toPath(), pom.getBytes("utf-8"));
 
+            // plugins
+            String pluginsPom = IOUtils.toString(getClass().getResourceAsStream("dist/template-plugin-plugins-pom.xml"), "utf-8");
+            pluginsPom = pluginsPom.replace("${groupId}", groupId).
+                    replace("${artifactId}", artifactId);
+
+            Files.write(pluginsPomFile.toPath(), pluginsPom.getBytes("utf-8"));
+
+            // plugin
+            String pluginPom = IOUtils.toString(getClass().getResourceAsStream("dist/template-plugin-plugin-pom.xml"), "utf-8");
+            pluginPom = pluginPom.replace("${groupId}", groupId).
+                    replace("${artifactId}", artifactId);
+
+            Files.write(pluginPomFile.toPath(), pluginPom.getBytes("utf-8"));
 
             List<String> classNames = asList("ExamplePlugin.java", "HelloworldResource.java", "Hello.java");
 
-            createClasses(pack, classNames, new File(directory, "src/main/java/"));
+            createClasses(pack, classNames, new File(pluginDir, "src/main/java/"));
 
             List<String> testClassNames = asList("HelloworldResourceTest.java");
 
-            createClasses(pack, testClassNames, new File(directory, "src/test/java/"));
+            createClasses(pack, testClassNames, new File(pluginDir, "src/test/java/"));
 
-            File file = new File(directory, "src/main/resources/META-INF/services/ReststopPlugin/simple.txt");
+            File file = new File(pluginDir, "src/main/resources/META-INF/services/ReststopPlugin/simple.txt");
             file.getParentFile().mkdirs();
             Files.write(file.toPath(), singleton(pack + ".ExamplePlugin"), Charset.forName("utf-8"));
+
+            // webapp
+            String webappPom = IOUtils.toString(getClass().getResourceAsStream("dist/template-plugin-webapp-pom.xml"), "utf-8");
+            webappPom = webappPom.replace("${groupId}", groupId).
+                    replace("${artifactId}", artifactId);
+
+            Files.write(webappPomFile.toPath(), webappPom.getBytes("utf-8"));
+
+
+            String webOverride = IOUtils.toString(getClass().getResourceAsStream("dist/template-web-override.xml"), "utf-8");
+            Files.write(webappTestJettyFile.toPath(), webOverride.getBytes("utf-8"));
+
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
 
 
         InvocationRequest request = new DefaultInvocationRequest();
-
         request.setPomFile(pomFile);
-
-        request.setGoals(asList("reststop:run", "-Dpath=helloworld", "-DopenProjectDir=true"));
+        request.setGoals(asList("clean","install"));
 
         try {
             invoker.execute(request);
+        } catch (MavenInvocationException e) {
+            throw new MojoExecutionException("Failed executing reststop:run on created project", e);
+        }
+
+        InvocationRequest request2 = new DefaultInvocationRequest();
+        request2.setPomFile(webappPomFile);
+        request2.setGoals(asList("jetty:run"));
+
+        try {
+            invoker.execute(request2);
         } catch (MavenInvocationException e) {
             throw new MojoExecutionException("Failed executing reststop:run on created project", e);
         }
