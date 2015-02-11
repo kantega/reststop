@@ -81,7 +81,7 @@ While writing code it is very convenient to have automatic recompile and hot-dep
 For a fully debugging enabled environment do the following:
 
         mvn clean install
-        mvnDebug -f webapp/pom.xm jetty:run.
+        mvnDebug -f webapp/pom.xml jetty:run.
 
 Then attach your debugger. Using this combination of automatic recompile, hot-deploy and debugging enables a
 friction-free web development with the feedback loop of a dynamic language.
