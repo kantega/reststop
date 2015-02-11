@@ -97,17 +97,10 @@ public class CreatePluginMojo extends AbstractCreateMojo {
                 throw new MojoFailureException("Could not find the webapp directory, resulting in an improper Reststop directory structure, please use create goal.");
             }
 
-            if (pack == null || pluginName == null) {
-                Map<String, String> options = getOptions();
+            Map<String, String> options = getOptions();
+            pack = options.get("package").toLowerCase();
+            pluginName = options.get("name").toLowerCase();
 
-                if (pack == null) {
-                    pack = options.get("package");
-                }
-                if (pluginName == null) {
-                    pluginName = options.get("Name of plugin");
-                }
-            }
-            pluginName = pluginName.toLowerCase();
             File pluginDir = new File(pluginsDir, pluginName);
 
             if (pluginDir.exists()) {
@@ -117,7 +110,7 @@ public class CreatePluginMojo extends AbstractCreateMojo {
 
             Map<String, String> tokens = new HashMap<>();
             tokens.put("${groupId}", groupId);
-            tokens.put("${Name of plugin}", pluginName);
+            tokens.put("${name}", pluginName);
             tokens.put("${rootArtifactId}", rootArtifactId);
             createMavenModule(tokens, getClass().getResourceAsStream("dist/template-newplugin-pom.xml"), pluginPomFile);
 
@@ -212,20 +205,29 @@ public class CreatePluginMojo extends AbstractCreateMojo {
 
         do {
 
-            readValue(values, "Name of plugin", "example");
-            String defaultPackage = groupId + "." + values.get("Name of plugin");
-            String pack;
-            for (; ; ) {
-                pack = readLineWithDefault("package", defaultPackage).trim();
-                if (pack.isEmpty()) pack = defaultPackage;
-
-                Pattern p = Pattern.compile("^[a-zA-Z_\\$][\\w\\$]*(?:\\.[a-zA-Z_\\$][\\w\\$]*)*$");
-                if (p.matcher(pack).matches()) {
-                    break;
-                }
+            if (pluginName == null) {
+                readValue(values, "name", "example");
+            } else {
+                values.put("name", pluginName);
             }
 
-            values.put("package", pack);
+            if (pack == null) {
+                String defaultPackage = groupId + "." + values.get("name");
+                String pack;
+                for (; ; ) {
+                    pack = readLineWithDefault("package", defaultPackage).trim();
+                    if (pack.isEmpty()) pack = defaultPackage;
+
+                    Pattern p = Pattern.compile("^[a-zA-Z_\\$][\\w\\$]*(?:\\.[a-zA-Z_\\$][\\w\\$]*)*$");
+                    if (p.matcher(pack).matches()) {
+                        break;
+                    }
+                }
+
+                values.put("package", pack);
+            } else {
+                values.put("package", pack);
+            }
 
             System.out.println();
             System.out.println("Please confirm configuration:");

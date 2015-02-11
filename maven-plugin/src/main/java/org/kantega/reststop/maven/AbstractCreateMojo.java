@@ -36,7 +36,7 @@ public abstract class AbstractCreateMojo extends AbstractMojo {
         JCodeModel cm = new JCodeModel();
         JPackage jPackage = cm._package(pack);
         JDefinedClass dc;
-        String className = WordUtils.capitalize(prefixName) + "Plugin";
+        String className = removeSpecialCharactersAndCapitalize(prefixName) + "Plugin";
         try {
             dc = jPackage._class(className)._extends(extendsClass);
         } catch (JClassAlreadyExistsException e) {
@@ -48,6 +48,13 @@ public abstract class AbstractCreateMojo extends AbstractMojo {
         } catch (IOException e) {
             throw new MojoExecutionException(String.format("Writing source file %s%s.java failed.", sourceDir, className),e);
         }
+    }
+
+    private String removeSpecialCharactersAndCapitalize(String s) {
+        s = s.replaceAll("\\W", " ");
+        s = WordUtils.capitalizeFully(s);
+        s = s.replaceAll("\\s+","");
+        return s;
     }
 
     protected void createMavenModule(Map<String, String> tokens, InputStream template, File destination) throws MojoFailureException, IOException {
