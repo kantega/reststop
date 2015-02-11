@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Kantega AS
+ * Copyright 2015 Kantega AS
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.kantega.reststop.maven;
 
-import org.eclipse.aether.artifact.Artifact;
 import org.kantega.reststop.classloaderutils.PluginInfo;
 
 import java.io.File;
