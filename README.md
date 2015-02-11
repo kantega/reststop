@@ -24,15 +24,13 @@ Create Reststop project:
 
         mvn reststop:create
 
-Open a browser with the url:
+Open a browser with the url [http://localhost:8080/helloworld/](http://localhost:8080/helloworld/)
 
-        http://localhost:8080/helloworld/
-
-Showing a page with the simple message:
+This will show a page with the simple message:
 
         {"message":"Hello world"}
 
-Now edit the return statement in plugins/helloworld/src/main/java/<YOUR PACKAGE NAME>/HelloworldResource.java to:
+Now edit the return statement in plugins/helloworld/src/main/java/YOUR.PACKAGE.NAME/HelloworldResource.java to:
 
         return new Hello("New world");
 
@@ -42,24 +40,22 @@ Then just hit the reload button in the browser, and while you did that Reststop 
 
 ### Next Level
 
-Try to change the word "world" into something different like, and the reload again:
+Try to change the word "world" into something different, and reload again:
 
         return new Hello("New order");
 
-Reststop just discovered that a Test failed, showing test code and stack trace. Now update the HelloworldResourceTest and reload again.
+Reststop just discovered that a Test failed, showing test code and stack trace. Now update the HelloworldResourceTest.java to match and reload again.
 
-Now try to remove the following line in HelloworldResource.java and reload:
+Next try to remove the following line in HelloworldResource.java:
 
         return new Hello("New world");
 
-Reststop now shows where you have compilation error, with location and error message from compiler. Wasn't that friction-free like a dynamic language?
+Reststop now shows you an compilation error, with location and error message from the compiler. Wasn't that friction-free like a dynamic language?
 
 
 ### Under the hood
 
-To get a little more insight into Reststop, change the browser to:
-
-        http://localhost:8080/dev
+To get a little more insight into Reststop, point your browser to [http://localhost:8080/dev](http://localhost:8080/dev)
 
 This Development Console shows you all the plugins, classes and source dirs that Reststop is currently tracking for you.
 
@@ -75,20 +71,19 @@ This automatically creates a new plugin, with maven module and Reststops configu
 
 ## Automatic recompile and hot-deploy
 
-While writing code it is very convenient to have automatic recompile and hot-deploy. To experience this while developing,
-go to the webapp module of your project and run:
+While writing code it is very convenient to have automatic recompile and hot-deploy. To experience this while developing, do the following:
 
-        mvn clean install -f ../pom.xml
-        mvn jetty:run.
+        mvn clean install
+        mvn -f webapp/pom.xml jetty:run.
 
 ### Add debugging
 
 For a fully debugging enabled environment do the following:
 
-        mvn clean install -f ../pom.xml
-        mvnDebug jetty:run.
+        mvn clean install
+        mvnDebug -f webapp/pom.xm jetty:run.
 
-The attach your IDE debugger. Using this combination of automatic recompile, hot-deploy and debugging enables you
+Then attach your debugger. Using this combination of automatic recompile, hot-deploy and debugging enables a
 friction-free web development with the feedback loop of a dynamic language.
 
 ## Maven Goals
