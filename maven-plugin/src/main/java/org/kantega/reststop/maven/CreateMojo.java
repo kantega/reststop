@@ -1,7 +1,22 @@
+/*
+ * Copyright 2015 Kantega AS
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.kantega.reststop.maven;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
@@ -15,6 +30,7 @@ import org.apache.maven.shared.invoker.MavenInvocationException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,10 +39,10 @@ import java.util.regex.Pattern;
 import static java.util.Arrays.asList;
 
 /**
- *
+ * Creates a default Reststop Maven project with an example plugin called Helloworld.
  */
 @Mojo(name = "create", requiresProject = false)
-public class CreateMojo extends AbstractMojo {
+public class CreateMojo extends AbstractCreateMojo {
 
 
     @Component
@@ -40,64 +56,29 @@ public class CreateMojo extends AbstractMojo {
         Map<String, String> options = getOptions();
 
         String pack = options.get("package");
-        String groupId = options.get("groupId");
-        String artifactId = options.get("artifactId");
 
-        File directory = new File(artifactId);
-        File pluginsDir = new File(directory, "plugins");
-        File pluginDir = new File(pluginsDir, "helloworld");
-        File webappDir = new File(directory, "webapp");
-        File webappTestJettyDir = new File(new File(new File(webappDir, "src"), "test"), "jetty");
-
-        if(directory.exists()) {
-            throw new MojoFailureException("Directory already exists: " + directory);
-        }
-        directory.mkdirs();
-
-        if(pluginsDir.exists()) {
-            throw new MojoFailureException("Directory already exists: " + pluginsDir);
-        }
-        pluginsDir.mkdirs();
-
-        if(pluginDir.exists()) {
-            throw new MojoFailureException("Directory already exists: " + pluginDir);
-        }
-        pluginDir.mkdirs();
-
-        if(webappDir.exists()) {
-            throw new MojoFailureException("Directory already exists: " + webappDir);
-        }
-        webappDir.mkdirs();
-        webappTestJettyDir.mkdirs();
-
-        File pomFile = new File(directory, "pom.xml");
-        File pluginPomFile = new File(pluginDir, "pom.xml");
-        File pluginsPomFile = new File(pluginsDir, "pom.xml");
-        File webappPomFile = new File(webappDir, "pom.xml");
-        File webappTestJettyFile = new File(webappTestJettyDir, "web-override.xml");
+        File rootDir = new File(options.get("artifactId"));
+        File rootPom = new File(rootDir, "pom.xml");
+        File webappDir = new File(rootDir, "webapp");
+        File webappPom = new File(webappDir, "pom.xml");
 
         try {
-            // root
-            String pom = IOUtils.toString(getClass().getResourceAsStream("dist/template-plugin-pom.xml"), "utf-8");
-            pom = pom.replace("${groupId}", groupId).
-                    replace("${artifactId}", artifactId)
-                    .replace("${reststopVersion}", pluginDescriptor.getVersion());
+            Map<String,String> tokens = new HashMap<>();
+            tokens.put("${groupId}", options.get("groupId"));
+            tokens.put("${artifactId}", options.get("artifactId"));
+            tokens.put("${reststopVersion}", pluginDescriptor.getVersion());
 
-            Files.write(pomFile.toPath(), pom.getBytes("utf-8"));
+            // root
+            createMavenModule(tokens, getClass().getResourceAsStream("dist/template-plugin-pom.xml"), rootPom);
+            tokens.remove("${reststopVersion}");
 
             // plugins
-            String pluginsPom = IOUtils.toString(getClass().getResourceAsStream("dist/template-plugin-plugins-pom.xml"), "utf-8");
-            pluginsPom = pluginsPom.replace("${groupId}", groupId).
-                    replace("${artifactId}", artifactId);
-
-            Files.write(pluginsPomFile.toPath(), pluginsPom.getBytes("utf-8"));
+            File pluginsDir = new File(rootDir, "plugins");
+            createMavenModule(tokens, getClass().getResourceAsStream("dist/template-plugin-plugins-pom.xml"), new File(pluginsDir, "pom.xml"));
 
             // plugin
-            String pluginPom = IOUtils.toString(getClass().getResourceAsStream("dist/template-plugin-plugin-pom.xml"), "utf-8");
-            pluginPom = pluginPom.replace("${groupId}", groupId).
-                    replace("${artifactId}", artifactId);
-
-            Files.write(pluginPomFile.toPath(), pluginPom.getBytes("utf-8"));
+            File pluginDir = new File(pluginsDir, "helloworld");
+            createMavenModule(tokens, getClass().getResourceAsStream("dist/template-plugin-plugin-pom.xml"), new File(pluginDir, "pom.xml"));
 
             List<String> classNames = asList("ExamplePlugin.java", "HelloworldResource.java", "Hello.java");
 
@@ -111,15 +92,13 @@ public class CreateMojo extends AbstractMojo {
             new File(pluginDir, "src/test/resources").mkdirs();
 
             // webapp
-            String webappPom = IOUtils.toString(getClass().getResourceAsStream("dist/template-plugin-webapp-pom.xml"), "utf-8");
-            webappPom = webappPom.replace("${groupId}", groupId).
-                    replace("${artifactId}", artifactId);
+            createMavenModule(tokens, getClass().getResourceAsStream("dist/template-plugin-webapp-pom.xml"), webappPom);
 
-            Files.write(webappPomFile.toPath(), webappPom.getBytes("utf-8"));
-
+            File webappDirTest = new File(new File(new File(webappDir, "src"),"test"), "jetty");
+            webappDirTest.mkdirs();
 
             String webOverride = IOUtils.toString(getClass().getResourceAsStream("dist/template-web-override.xml"), "utf-8");
-            Files.write(webappTestJettyFile.toPath(), webOverride.getBytes("utf-8"));
+            Files.write(new File(webappDirTest, "web-override.xml").toPath(), webOverride.getBytes("utf-8"));
 
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
@@ -127,7 +106,7 @@ public class CreateMojo extends AbstractMojo {
 
 
         InvocationRequest request = new DefaultInvocationRequest();
-        request.setPomFile(pomFile);
+        request.setPomFile(rootPom);
         request.setGoals(asList("clean","install"));
 
         try {
@@ -137,7 +116,7 @@ public class CreateMojo extends AbstractMojo {
         }
 
         InvocationRequest request2 = new DefaultInvocationRequest();
-        request2.setPomFile(webappPomFile);
+        request2.setPomFile(webappPom);
         request2.setGoals(asList("jetty:run"));
 
         try {
@@ -152,7 +131,7 @@ public class CreateMojo extends AbstractMojo {
         for (String className : classNames) {
             String source = IOUtils.toString(getClass().getResourceAsStream(className +".txt"), "utf-8");
 
-            source= source
+            source = source
                     .replace("package org.kantega.reststop.maven", "package " + pack);
 
 
@@ -194,13 +173,4 @@ public class CreateMojo extends AbstractMojo {
         return values;
     }
 
-    private void readValue(Map<String, String> values, String name, String defaultValue) {
-        String value = readLineWithDefault(name, defaultValue);
-
-        values.put(name, value.isEmpty() ? defaultValue : value);
-    }
-
-    private String readLineWithDefault(String name, String defaultValue) {
-        return System.console().readLine("Define value for property '%s' [ %s ] : ", name, defaultValue).trim();
-    }
 }

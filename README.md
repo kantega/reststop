@@ -13,9 +13,16 @@ loop of a dynamic language.
 
 ## Getting Started
 
-Create project structure:
+Add the following prefix to the Maven settings file (per-user: ~/.m2/settings.xml; global: $M2_HOME/conf/settings.xml):
 
-        mvn org.kantega.reststop:reststop-maven-plugin:create
+        <pluginGroups>
+          <pluginGroup>org.kantega.reststop</pluginGroup>
+        </pluginGroups>
+
+
+Create Reststop project:
+
+        mvn reststop:create
 
 Open a browser with the url:
 
@@ -57,9 +64,37 @@ To get a little more insight into Reststop, change the browser to:
 This Development Console shows you all the plugins, classes and source dirs that Reststop is currently tracking for you.
 
 
+## Creating a new plugin
+
+Go to root of your Reststop project and run:
+
+        mvn reststop:createplugin -Dname=api -Dpackage=org.company.helloworld.api
+
+This automatically creates a new plugin, with maven module and Reststops configuration.
+
+
+## Automatic recompile and hot-deploy
+
+While writing code it is very convenient to have automatic recompile and hot-deploy. To experience this while developing,
+go to the webapp module of your project and run:
+
+        mvn clean install -f ../pom.xml
+        mvn jetty:run.
+
+### Add debugging
+
+For a fully debugging enabled environment do the following:
+
+        mvn clean install -f ../pom.xml
+        mvnDebug jetty:run.
+
+The attach your IDE debugger. Using this combination of automatic recompile, hot-deploy and debugging enables you
+friction-free web development with the feedback loop of a dynamic language.
+
 ## Maven Goals
 
-    reststop:create                 Creates simple project
+    reststop:create                 Creates Reststop project
+    reststop:createplugin           Creates Reststop plugin
     reststop:run                    Run application and open project and browser
     reststop:start                  Starts application
     reststop:stop                   Stops application
