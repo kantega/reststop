@@ -30,15 +30,15 @@ import java.util.*;
 public class WebjarsReststopPlugin extends DefaultReststopPlugin {
 
     @Export
-    private final WebjarsVersions versions;
+    private final WebjarsVersions v;
 
-    private Map<String, String> v;
+    private Map<String, String> versions;
 
     public WebjarsReststopPlugin(final Reststop reststop, final ReststopPluginManager reststopPluginManager) {
 
         addServletFilter(reststop.createFilter(new WebJarsFilter(reststopPluginManager), "/webjars/*", FilterPhase.USER));
 
-        versions = new WebjarsVersions() {
+        v = new WebjarsVersions() {
             @Override
             public Map<String, String> getVersions() {
                 return getVersionsForWebJars(reststopPluginManager);
@@ -48,8 +48,8 @@ public class WebjarsReststopPlugin extends DefaultReststopPlugin {
 
     private synchronized Map<String, String> getVersionsForWebJars(ReststopPluginManager reststopPluginManager) {
 
-        if (v == null) {
-            v = new HashMap<>();
+        if (versions == null) {
+            versions = new HashMap<>();
 
             Set<String> webjars = new HashSet<>();
 
@@ -79,12 +79,12 @@ public class WebjarsReststopPlugin extends DefaultReststopPlugin {
                     version = version.substring(0, version.lastIndexOf("-"));
                 }
 
-                v.put("v." + artifactId, version);
+                versions.put("versions." + artifactId, version);
             }
 
-            return v;
+            return versions;
         } else {
-            return v;
+            return versions;
         }
     }
 }
