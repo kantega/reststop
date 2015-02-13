@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2013 Kantega AS
+  ~ Copyright 2015 Kantega AS
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -41,8 +41,8 @@
         <module>jaxrs-metrics</module>
         <module>wicket</module>
         <module>springmvc</module>
-	<module>wsdl-test</module>
-
+    	<module>wsdl-test</module>
+        <module>webjars</module>
     </modules>
     <dependencies>
         <dependency>
