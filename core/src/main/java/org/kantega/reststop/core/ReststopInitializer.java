@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Kantega AS
+ * Copyright 2015 Kantega AS
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,10 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -720,8 +723,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
                         resp.setContentType(mimeType);
                     }
 
-                    copy(resource.openStream(), servletResponse.getOutputStream());
-
+                    try (InputStream in = resource.openStream()) {
+                        copy(in, servletResponse.getOutputStream());
+                    }
                     return;
                 }
             }
