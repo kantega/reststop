@@ -1,0 +1,4 @@
+
+* createplugin: add the plugin as a managed dependency in top level pom
+* createplugin: Make this and other tools a webapp (using Angular?)
+* Adding HTTP caching headers to AssetFilter, WebJarFilter etc
