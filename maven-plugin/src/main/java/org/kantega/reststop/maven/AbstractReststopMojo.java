@@ -124,6 +124,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
             JettyWebAppContext context = new JettyWebAppContext();
 
+            context.addServerClass("org.eclipse.aether.");
             context.setWar(war.getAbsolutePath());
             context.setContextPath(contextPath);
             context.getServletContext().setAttribute("pluginsXml", createPluginXmlDocument(false));
