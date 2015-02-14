@@ -129,6 +129,11 @@
                 <artifactId>reststop-security-plugin</artifactId>
                 <version>${project.version}</version>
             </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>reststop-jaxrs-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <!-- External deps -->
             <dependency>
                 <groupId>javax.servlet</groupId>

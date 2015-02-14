@@ -183,6 +183,12 @@
                             <artifactId>reststop-wsdl-test-plugin</artifactId>
                             <version>${project.version}</version>
                         </plugin>
+
+                        <plugin>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>reststop-deploy-plugin</artifactId>
+                            <version>${project.version}</version>
+                        </plugin>
                     </plugins>
                 </configuration>
                 <executions>
