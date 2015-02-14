@@ -881,5 +881,12 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 plugin.destroy();
             }
         }
+
+        @Override
+        public void afterActivation(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader, PluginLoader<ReststopPlugin> pluginLoader, Collection<ReststopPlugin> plugins) {
+            for (ReststopPlugin plugin : plugins) {
+                plugin.init();
+            }
+        }
     }
 }

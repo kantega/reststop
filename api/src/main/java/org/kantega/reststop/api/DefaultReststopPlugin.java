@@ -116,4 +116,9 @@ public class DefaultReststopPlugin implements ReststopPlugin {
     public void destroy() {
 
     }
+
+    @Override
+    public void init() {
+
+    }
 }

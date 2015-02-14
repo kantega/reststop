@@ -31,4 +31,6 @@ public interface ReststopPlugin {
     Collection<PluginListener> getPluginListeners();
 
     void destroy();
+
+    void init();
 }
