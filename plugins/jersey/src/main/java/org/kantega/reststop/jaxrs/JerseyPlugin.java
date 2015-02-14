@@ -5,6 +5,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.servlet.ServletProperties;
 import org.kantega.reststop.api.*;
+import org.kantega.reststop.jaxrsapi.JaxRsPlugin;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -12,10 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  *
@@ -24,6 +22,7 @@ public class JerseyPlugin extends DefaultReststopPlugin {
 
 
     private ServletContainer filter;
+    private Set<Integer> currentPlugins = new HashSet<>();
 
     public JerseyPlugin(final Reststop reststop, final ReststopPluginManager pluginManager) throws ServletException {
 
@@ -41,17 +40,27 @@ public class JerseyPlugin extends DefaultReststopPlugin {
 
             private void reloadFromPlugins(Collection<ReststopPlugin> plugins) {
                 synchronized (JerseyPlugin.this) {
-                    try {
-                        if(filter == null) {
-                            filter = addJerseyFilter( new ReststopApplication(plugins));
-                            filter.init(reststop.createFilterConfig("jersey", new Properties()));
-
-                            addServletFilter(reststop.createFilter(filter, "/*", FilterPhase.USER));
-                        } else {
-                            filter.reload(getResourceConfig(new ReststopApplication(plugins)));
+                    Set<Integer> newJaxRsPlugins = new HashSet<>();
+                    for (ReststopPlugin plugin : plugins) {
+                        if(plugin instanceof JaxRsPlugin) {
+                            newJaxRsPlugins.add(System.identityHashCode(plugin));
                         }
-                    } catch (ServletException e) {
-                        throw new RuntimeException(e);
+                    }
+
+                    if(!newJaxRsPlugins.equals(currentPlugins)) {
+                        currentPlugins = newJaxRsPlugins;
+                        try {
+                            if (filter == null) {
+                                filter = addJerseyFilter(new ReststopApplication(plugins));
+                                filter.init(reststop.createFilterConfig("jersey", new Properties()));
+
+                                addServletFilter(reststop.createFilter(filter, "/*", FilterPhase.USER));
+                            } else {
+                                filter.reload(getResourceConfig(new ReststopApplication(plugins)));
+                            }
+                        } catch (ServletException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
 
                 }
