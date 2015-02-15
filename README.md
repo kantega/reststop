@@ -64,7 +64,7 @@ This Development Console shows you all the plugins, classes and source dirs that
 
 Go to root of your Reststop project and run:
 
-        mvn reststop:createplugin -Dname=api -Dpackage=org.company.helloworld.api
+        mvn reststop:create-plugin -Dname=api -Dpackage=org.company.helloworld.api
 
 This automatically creates a new plugin, with maven module and Reststops configuration.
 
@@ -74,14 +74,16 @@ This automatically creates a new plugin, with maven module and Reststops configu
 While writing code it is very convenient to have automatic recompile and hot-deploy. To experience this while developing, do the following:
 
         mvn clean install
-        mvn -f webapp/pom.xml jetty:run.
+        cd webapp
+        mvn jetty:run.
 
 ### Add debugging
 
 For a fully debugging enabled environment do the following:
 
         mvn clean install
-        mvnDebug -f webapp/pom.xml jetty:run.
+        cd webapp
+        mvnDebug jetty:run.
 
 Then attach your debugger. Using this combination of automatic recompile, hot-deploy and debugging enables a
 friction-free web development with the feedback loop of a dynamic language.
@@ -89,7 +91,7 @@ friction-free web development with the feedback loop of a dynamic language.
 ## Maven Goals
 
     reststop:create                 Creates Reststop project
-    reststop:createplugin           Creates Reststop plugin
+    reststop:create-plugin          Creates Reststop plugin
     reststop:run                    Run application and open project and browser
     reststop:start                  Starts application
     reststop:stop                   Stops application

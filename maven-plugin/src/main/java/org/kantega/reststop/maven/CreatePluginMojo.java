@@ -19,7 +19,6 @@ package org.kantega.reststop.maven;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -28,10 +27,13 @@ import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.kantega.reststop.api.DefaultReststopPlugin;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.xpath.XPathExpressionException;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -40,8 +42,10 @@ import java.util.regex.Pattern;
 
 /**
  * Creates a new Reststop plugins in an already created Reststop Maven project.
+ *
+ * TODO: Add files directly to git
  */
-@Mojo(name = "createplugin", requiresProject = true, aggregator = true)
+@Mojo(name = "create-plugin", requiresProject = true, aggregator = true)
 public class CreatePluginMojo extends AbstractCreateMojo {
 
     @Parameter(defaultValue = "${project.groupId}", property = "groupId")
@@ -91,6 +95,8 @@ public class CreatePluginMojo extends AbstractCreateMojo {
                 }
                 webappDir = new File(basedir, "webapp");
             } else {
+                //TODO: Check parent until we find root of project.
+                //basedir.getParentFile();
                 throw new MojoFailureException("Could not find a proper Reststop directory structure, please use create goal.");
             }
             if (!webappDir.exists()) {
@@ -135,10 +141,13 @@ public class CreatePluginMojo extends AbstractCreateMojo {
         Model model = getModelFromPom(pom);
 
         if (!model.getModules().contains(name)) {
-            model.addModule(name);
+            MavenPomUtils pomUtils = new MavenPomUtils();
+            try {
+                pomUtils.addModule(pom, pom, name);
+            } catch (IOException | ParserConfigurationException | TransformerException | SAXException e) {
+                throw new MojoExecutionException(String.format("Could not add module %s to pom file %s", name, pom), e);
+            }
         }
-
-        writeModelToPom(pom, model);
     }
 
     private void pomAddPluginToReststop(File pom, String groupId, String artifactId, String version) throws MojoExecutionException {
@@ -158,34 +167,18 @@ public class CreatePluginMojo extends AbstractCreateMojo {
                     }
 
                     if (!present) {
-                        Xpp3Dom dom = new Xpp3Dom("plugin");
-                        addDom(dom, "groupId", groupId);
-                        addDom(dom, "artifactId", artifactId);
-                        addDom(dom, "version", version);
-
-                        plugins.addChild(dom);
+                        MavenPomUtils pomUtils = new MavenPomUtils();
+                        try {
+                            pomUtils.addPluginToReststop(pom, pom, groupId, artifactId, version);
+                        } catch (IOException | ParserConfigurationException | TransformerException | SAXException | XPathExpressionException e) {
+                            throw new MojoExecutionException(String.format("Could not add plugin %s:%s:%s to pom file %s", groupId, artifactId, version, pom), e);
+                        }
                     }
                 }
             }
         }
-
-        writeModelToPom(pom, model);
     }
 
-    private void addDom(Xpp3Dom dom, String name, String value) {
-        Xpp3Dom toAdd = new Xpp3Dom(name);
-        toAdd.setValue(value);
-        dom.addChild(toAdd);
-    }
-
-    private void writeModelToPom(File pom, Model model) throws MojoExecutionException {
-        MavenXpp3Writer writer = new MavenXpp3Writer();
-        try {
-            writer.write(new FileOutputStream(pom), model);
-        } catch (IOException e) {
-            throw new MojoExecutionException(String.format("Could not write to file: %s", pom), e);
-        }
-    }
 
     private Model getModelFromPom(File pom) throws MojoExecutionException {
         MavenXpp3Reader reader = new MavenXpp3Reader();
@@ -205,13 +198,16 @@ public class CreatePluginMojo extends AbstractCreateMojo {
 
         do {
 
+            boolean onlyParameterValues = true;
             if (pluginName == null) {
+                onlyParameterValues = false;
                 readValue(values, "name", "example");
             } else {
                 values.put("name", pluginName);
             }
 
             if (pack == null) {
+                onlyParameterValues = false;
                 String defaultPackage = groupId + "." + values.get("name");
                 String pack;
                 for (; ; ) {
@@ -228,6 +224,8 @@ public class CreatePluginMojo extends AbstractCreateMojo {
             } else {
                 values.put("package", pack);
             }
+
+            if(onlyParameterValues) return values;
 
             System.out.println();
             System.out.println("Please confirm configuration:");
