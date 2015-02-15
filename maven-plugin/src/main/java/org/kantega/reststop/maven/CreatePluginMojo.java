@@ -26,6 +26,8 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.kantega.reststop.api.DefaultReststopPlugin;
 import org.xml.sax.SAXException;
 
@@ -125,9 +127,29 @@ public class CreatePluginMojo extends AbstractCreateMojo {
             File sourceDir = new File(pluginDir, "src/main/java");
             sourceDir.mkdirs();
 
-            createPluginClass(pluginName, sourceDir, DefaultReststopPlugin.class, pack);
+            File pluginClassFile = createPluginClass(pluginName, sourceDir, DefaultReststopPlugin.class, pack);
             pomAddModule(new File(pluginsDir, "pom.xml"), pluginName);
             pomAddPluginToReststop(new File(webappDir, "pom.xml"), groupId, rootArtifactId + "-" + pluginName, "${project.version}");
+
+
+            File gitDir = new File(new File(pluginsDir.getParent()), ".git");
+            if (gitDir.exists()) {
+                File workDir = new File(gitDir.getParent());
+                Git git = null;
+
+                try {
+                    git = Git.open(workDir);
+                    git.add().addFilepattern(getRelativeTo(pluginPomFile, workDir)).call();
+                    git.add().addFilepattern(getRelativeTo(pluginClassFile, workDir)).call();
+                } catch (GitAPIException e) {
+                    // ignore
+                } finally {
+                    if (git != null) {
+                        git.close();
+                    }
+
+                }
+            }
 
             getLog().info(String.format("Successfully generated new plugin '%s' in %s.", pluginName, pluginDir));
         } catch (IOException e) {
@@ -135,6 +157,10 @@ public class CreatePluginMojo extends AbstractCreateMojo {
         }
 
 
+    }
+
+    private String getRelativeTo(File file, File base) {
+        return base.toURI().relativize(file.toURI()).getPath();
     }
 
     private void pomAddModule(File pom, String name) throws MojoExecutionException {

@@ -32,7 +32,7 @@ import java.util.Map;
 
 public abstract class AbstractCreateMojo extends AbstractMojo {
 
-    protected void createPluginClass(String prefixName, File sourceDir, Class<?> extendsClass, String pack) throws MojoExecutionException {
+    protected File createPluginClass(String prefixName, File sourceDir, Class<?> extendsClass, String pack) throws MojoExecutionException {
         JCodeModel cm = new JCodeModel();
         JPackage jPackage = cm._package(pack);
         JDefinedClass dc;
@@ -48,6 +48,13 @@ public abstract class AbstractCreateMojo extends AbstractMojo {
         } catch (IOException e) {
             throw new MojoExecutionException(String.format("Writing source file %s%s.java failed.", sourceDir, className),e);
         }
+
+        File dest = sourceDir;
+        for (String s : pack.split("\\.")) {
+            dest = new File(dest, s);
+        }
+
+        return new File(dest, className+".java");
     }
 
     private String removeSpecialCharactersAndCapitalize(String s) {
