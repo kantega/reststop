@@ -44,8 +44,6 @@ import java.util.regex.Pattern;
 
 /**
  * Creates a new Reststop plugins in an already created Reststop Maven project.
- *
- * TODO: Add files directly to git
  */
 @Mojo(name = "create-plugin", requiresProject = true, aggregator = true)
 public class CreatePluginMojo extends AbstractCreateMojo {
@@ -131,25 +129,7 @@ public class CreatePluginMojo extends AbstractCreateMojo {
             pomAddModule(new File(pluginsDir, "pom.xml"), pluginName);
             pomAddPluginToReststop(new File(webappDir, "pom.xml"), groupId, rootArtifactId + "-" + pluginName, "${project.version}");
 
-
-            File gitDir = new File(new File(pluginsDir.getParent()), ".git");
-            if (gitDir.exists()) {
-                File workDir = new File(gitDir.getParent());
-                Git git = null;
-
-                try {
-                    git = Git.open(workDir);
-                    git.add().addFilepattern(getRelativeTo(pluginPomFile, workDir)).call();
-                    git.add().addFilepattern(getRelativeTo(pluginClassFile, workDir)).call();
-                } catch (GitAPIException e) {
-                    // ignore
-                } finally {
-                    if (git != null) {
-                        git.close();
-                    }
-
-                }
-            }
+            addNewFilesToGit(pluginsDir, pluginPomFile, pluginClassFile);
 
             getLog().info(String.format("Successfully generated new plugin '%s' in %s.", pluginName, pluginDir));
         } catch (IOException e) {
@@ -157,6 +137,27 @@ public class CreatePluginMojo extends AbstractCreateMojo {
         }
 
 
+    }
+
+    private void addNewFilesToGit(File pluginsDir, File pluginPomFile, File pluginClassFile) throws IOException {
+        File gitDir = new File(new File(pluginsDir.getParent()), ".git");
+        if (gitDir.exists()) {
+            File workDir = new File(gitDir.getParent());
+            Git git = null;
+
+            try {
+                git = Git.open(workDir);
+                git.add().addFilepattern(getRelativeTo(pluginPomFile, workDir)).call();
+                git.add().addFilepattern(getRelativeTo(pluginClassFile, workDir)).call();
+            } catch (GitAPIException e) {
+                // ignore
+            } finally {
+                if (git != null) {
+                    git.close();
+                }
+
+            }
+        }
     }
 
     private String getRelativeTo(File file, File base) {
