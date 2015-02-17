@@ -43,7 +43,6 @@
         <module>springmvc</module>
     	<module>wsdl-test</module>
         <module>webjars</module>
-        <module>deploy</module>
     </modules>
     <dependencies>
         <dependency>
