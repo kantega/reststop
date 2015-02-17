@@ -57,7 +57,7 @@ public abstract class AbstractCreateMojo extends AbstractMojo {
         return new File(dest, className+".java");
     }
 
-    private String removeSpecialCharactersAndCapitalize(String s) {
+    protected String removeSpecialCharactersAndCapitalize(String s) {
         s = s.replaceAll("\\W", " ");
         s = WordUtils.capitalizeFully(s);
         s = s.replaceAll("\\s+","");

@@ -235,7 +235,7 @@ public class CreatePluginMojo extends AbstractCreateMojo {
 
             if (pack == null) {
                 onlyParameterValues = false;
-                String defaultPackage = groupId + "." + values.get("name");
+                String defaultPackage = groupId + "." + removeSpecialCharactersAndCapitalize(values.get("name")).toLowerCase();
                 String pack;
                 for (; ; ) {
                     pack = readLineWithDefault("package", defaultPackage).trim();
