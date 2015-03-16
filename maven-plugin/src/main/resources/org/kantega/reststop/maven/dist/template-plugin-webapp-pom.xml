@@ -21,6 +21,9 @@
         </dependency>
     </dependencies>
 
+    <properties>
+        <reststopPort>8080</reststopPort>
+    </properties>
     <build>
         <plugins>
             <plugin>
@@ -70,7 +73,7 @@
                     <systemProperties>
                         <systemProperty>
                             <name>reststopPort</name>
-                            <value>8080</value>
+                            <value>${reststopPort}</value>
                         </systemProperty>
                     </systemProperties>
                     <webAppConfig>
