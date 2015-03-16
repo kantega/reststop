@@ -76,9 +76,13 @@
                             <name>reststopPort</name>
                             <value>${reststopPort}</value>
                         </systemProperty>
+                        <systemProperty>
+                            <name>basedir</name>
+                            <value>${basedir}</value>
+                        </systemProperty>
                     </systemProperties>
+                    <contextXml>${basedir}/src/test/jetty/context.xml</contextXml>
                     <webAppConfig>
-                        <overrideDescriptor>${basedir}/src/test/jetty/web-override.xml</overrideDescriptor>
                         <contextPath>/</contextPath>
                     </webAppConfig>
                 </configuration>

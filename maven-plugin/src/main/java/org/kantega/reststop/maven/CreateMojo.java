@@ -57,7 +57,8 @@ public class CreateMojo extends AbstractCreateMojo {
 
         String pack = options.get("package");
 
-        File rootDir = new File(options.get("artifactId"));
+        String artifactId = options.get("artifactId");
+        File rootDir = new File(artifactId);
         File rootPom = new File(rootDir, "pom.xml");
         File webappDir = new File(rootDir, "webapp");
         File webappPom = new File(webappDir, "pom.xml");
@@ -65,7 +66,7 @@ public class CreateMojo extends AbstractCreateMojo {
         try {
             Map<String,String> tokens = new HashMap<>();
             tokens.put("${groupId}", options.get("groupId"));
-            tokens.put("${artifactId}", options.get("artifactId"));
+            tokens.put("${artifactId}", artifactId);
             tokens.put("${reststopVersion}", pluginDescriptor.getVersion());
 
             // root
@@ -97,8 +98,20 @@ public class CreateMojo extends AbstractCreateMojo {
             File webappDirTest = new File(new File(new File(webappDir, "src"),"test"), "jetty");
             webappDirTest.mkdirs();
 
-            String webOverride = IOUtils.toString(getClass().getResourceAsStream("dist/template-web-override.xml"), "utf-8");
-            Files.write(new File(webappDirTest, "web-override.xml").toPath(), webOverride.getBytes("utf-8"));
+            String webOverride = IOUtils.toString(getClass().getResourceAsStream("dist/template-context.xml"), "utf-8");
+            Files.write(new File(webappDirTest, "context.xml").toPath(), webOverride.getBytes("utf-8"));
+
+            File webinfDir = webappDir.toPath().resolve("src").resolve("main").resolve("webapp").resolve("WEB-INF").toFile();
+            webinfDir.mkdirs();
+            String webXml = IOUtils.toString(getClass().getResourceAsStream("dist/template-web.xml"), "utf-8");
+            webXml = webXml.replace("${artifactId}", artifactId);
+            Files.write(new File(webinfDir, "web.xml").toPath(), webXml.getBytes("utf-8"));
+
+            File config = new File(new File(webappDir, "src/config/"), artifactId +".conf");
+            config.getParentFile().mkdirs();
+            Files.write(config.toPath(), "greeting=Hello".getBytes("utf-8"));
+
+
 
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);

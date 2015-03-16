@@ -5,11 +5,7 @@
          version="3.0">
 
     <context-param>
-        <param-name>plugins.xml</param-name>
-        <param-value>target/reststop/plugins.xml</param-value>
-    </context-param>
-    <context-param>
-        <param-name>pluginConfigurationDirectory</param-name>
-        <param-value>src/config</param-value>
+        <param-name>applicationName</param-name>
+        <param-value>${artifactId}</param-value>
     </context-param>
 </web-app>

@@ -1,5 +1,6 @@
 package org.kantega.reststop.maven;
 
+import org.kantega.reststop.api.Config;
 import org.kantega.reststop.jaxrsapi.DefaultJaxRsPlugin;
 
 /**
@@ -7,8 +8,11 @@ import org.kantega.reststop.jaxrsapi.DefaultJaxRsPlugin;
  */
 public class ExamplePlugin extends DefaultJaxRsPlugin{
 
+    @Config
+    private String greeting;
+
     public ExamplePlugin() {
-        addJaxRsSingletonResource(new HelloworldResource());
+        addJaxRsSingletonResource(new HelloworldResource(greeting));
     }
 
 }

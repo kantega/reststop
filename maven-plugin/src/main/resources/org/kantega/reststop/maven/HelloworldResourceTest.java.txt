@@ -11,6 +11,6 @@ public class HelloworldResourceTest {
 
     @Test
     public void shouldReturnHelloworld() {
-        assertThat(new HelloworldResource().hello().getMessage(), containsString("world"));
+        assertThat(new HelloworldResource("Hello").hello().getMessage(), containsString("world"));
     }
 }
