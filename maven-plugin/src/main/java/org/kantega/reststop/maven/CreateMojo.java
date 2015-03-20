@@ -162,7 +162,7 @@ public class CreateMojo extends AbstractCreateMojo {
 
             readValue(values, "groupId", "com.example");
             readValue(values, "artifactId", "exampleservice");
-            String defaultPackage = values.get("groupId") +"." + values.get("artifactId");
+            String defaultPackage = values.get("groupId") + "." + removeSpecialCharactersAndCapitalize(values.get("artifactId")).toLowerCase();
             String pack;
             for(;;) {
                 pack = readLineWithDefault("package", defaultPackage).trim();
