@@ -13,32 +13,38 @@ import static org.junit.Assert.assertThat;
  *
  */
 public class PluginInfoTest {
+    private final PluginInfo c;
+    private final PluginInfo a;
+    private final PluginInfo b;
+    private final List<PluginInfo> infos;
 
-    @Test
-    public void shouldSortByDependencies() {
-        List<PluginInfo> infos = new ArrayList<>();
-
-        PluginInfo a = new PluginInfo();
+    public PluginInfoTest() {
+        a = new PluginInfo();
         a.setGroupId("com.example");
         a.setArtifactId("a");
         a.setVersion("1.0");
 
 
-        PluginInfo b = new PluginInfo();
+        b = new PluginInfo();
         b.setGroupId("com.example");
         b.setArtifactId("b");
         b.setVersion("1.0");
 
 
-        PluginInfo c = new PluginInfo();
+        c = new PluginInfo();
         c.setGroupId("com.example");
         c.setArtifactId("c");
         c.setVersion("1.0");
 
+        infos = new ArrayList<>();
 
         infos.add(a);
         infos.add(b);
         infos.add(c);
+    }
+
+    @Test
+    public void shouldSortByDependencies() {
 
         // c depends on b
         c.addDependsOn(b);
@@ -55,5 +61,37 @@ public class PluginInfoTest {
         assertThat(b, is(sorted.get(1)));
         assertThat(c, is(sorted.get(2)));
 
+    }
+
+    @Test
+    public void treeShouldSortByDependencies() {
+
+        // a depends on b
+        c.addDependsOn(b);
+        // a depends on c
+        b.addDependsOn(a);
+
+        for(int i = 0; i < 200; i++) {
+            Collections.shuffle(infos);
+        }
+
+        List<PluginInfo> sorted = PluginInfo.resolveStartupOrder(infos);
+
+        assertThat(a, is(sorted.get(0)));
+    }
+
+    @Test(expected = CircularDependencyException.class)
+    public void shouldDetectCircularDependency() {
+
+        // c depends on b
+        c.addDependsOn(b);
+        // b depends on a
+        b.addDependsOn(a);
+        // a depends on c
+        a.addDependsOn(c);
+
+
+
+        PluginInfo.resolveStartupOrder(infos);
     }
 }

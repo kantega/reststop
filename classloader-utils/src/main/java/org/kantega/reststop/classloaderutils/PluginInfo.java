@@ -276,7 +276,7 @@ public class PluginInfo extends Artifact {
         return directDeploy;
     }
 
-    public static List<PluginInfo> resolveStartupOrder(List<PluginInfo> infos) {
+    public static List<PluginInfo> resolveStartupOrder(List<PluginInfo> infos) throws CircularDependencyException {
 
         infos = sortByPriority(new ArrayList<>(infos));
 
@@ -288,9 +288,10 @@ public class PluginInfo extends Artifact {
             plugins.put(info.getGroupIdAndArtifactId(), info);
         }
 
+        Set<String> ancestors = new LinkedHashSet<>();
         for (PluginInfo info : infos) {
-            if (!colors.containsKey(info.getGroupIdAndArtifactId()))
-                dfs(info, plugins, colors, sorted);
+            if (!Boolean.TRUE.equals(colors.get(info.getGroupIdAndArtifactId())))
+                dfs(info, plugins, colors, ancestors, sorted);
         }
         return sorted;
     }
@@ -305,16 +306,38 @@ public class PluginInfo extends Artifact {
         return pluginInfos;
     }
 
-    private static void dfs(PluginInfo info, Map<String, PluginInfo> plugins, Map<String, Boolean> colors, List<PluginInfo> sorted) {
+    private static void dfs(PluginInfo info, Map<String, PluginInfo> plugins, Map<String, Boolean> colors, Set<String> ancestors, List<PluginInfo> sorted) {
+        detectCircularDependencyChain(info, ancestors);
+        ancestors.add(info.getGroupIdAndArtifactId());
+
         colors.put(info.getGroupIdAndArtifactId(), Boolean.FALSE);
         for (Artifact dep : info.getStartupDeps()) {
             String key = dep.getGroupIdAndArtifactId();
-            if (plugins.containsKey(key) && !colors.containsKey(key)) {
-                dfs(plugins.get(key), plugins, colors, sorted);
+            if (plugins.containsKey(key) && !Boolean.TRUE.equals(colors.get(key))) {
+                dfs(plugins.get(key), plugins, colors, ancestors, sorted);
             }
         }
         colors.put(info.getGroupIdAndArtifactId(), Boolean.TRUE);
         sorted.add(info);
+    }
+
+    private static void detectCircularDependencyChain(PluginInfo info, Set<String> ancestors) {
+        if(ancestors.contains(info.getGroupIdAndArtifactId())) {
+            StringBuilder chain = new StringBuilder();
+            for (String ancestor : ancestors) {
+                if(chain.length() > 0 || ancestor.equals(info.getGroupIdAndArtifactId())) {
+                    if(chain.length() > 0) {
+                        chain.append(" => ");
+                    }
+                    chain.append(ancestor);
+                }
+            }
+            if(chain.length() > 0) {
+                chain.append(" => ");
+            }
+            chain.append(info.getGroupIdAndArtifactId());
+            throw new CircularDependencyException("Detected circular plugin dependency chain: " + chain.toString());
+        }
     }
 
     private List<Artifact> getStartupDeps() {
