@@ -38,6 +38,7 @@ import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.kantega.reststop.classloaderutils.CircularDependencyException;
 import org.kantega.reststop.classloaderutils.PluginInfo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -163,7 +164,11 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
         List<PluginInfo> pluginInfos = getPluginInfos();
 
-        return buildPluginsDocument(prod, pluginInfos);
+        Document document = buildPluginsDocument(prod, pluginInfos);
+
+        validateCircularDependencies(document);
+
+        return document;
 
 
     }
@@ -327,6 +332,14 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
         validateTransitivePluginsMissing(pluginInfos);
         validateNoPluginArtifactsOnRuntimeClasspath(pluginInfos);
         return pluginInfos;
+    }
+
+    private void validateCircularDependencies(Document document) throws MojoFailureException {
+        try {
+            PluginInfo.resolveStartupOrder(PluginInfo.parse(document));
+        } catch (CircularDependencyException e) {
+            throw new MojoFailureException(e.getMessage(), e);
+        }
     }
 
     private void validateNoPluginArtifactsOnRuntimeClasspath(List<PluginInfo> pluginInfos) throws MojoExecutionException, MojoFailureException {
