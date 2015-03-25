@@ -697,24 +697,22 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
             String contextRelative = req.getRequestURI().substring(req.getContextPath().length());
 
-            String path = "assets/" +contextRelative.substring("/assets/".length());
+            final String path = "assets/" +contextRelative.substring("/assets/".length());
 
             for(ClassLoader loader : manager.getPluginClassLoaders()) {
+
 
 
                 URL resource = loader.getResource(path);
 
 
-                if(resource != null
-                        && resource.getPath().endsWith("/")
-                        && !path.endsWith("/")) {
+                if(resource != null && !path.endsWith("/") && loader.getResource(path +"/") != null ) {
                     resp.sendRedirect(req.getRequestURI() +"/");
                     return;
 
                 }
                 if(path.endsWith("/")) {
-                    path +="index.html";
-                    resource = loader.getResource(path);
+                    resource = loader.getResource(path +"index.html");
                 }
 
                 if(resource != null) {
