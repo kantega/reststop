@@ -393,9 +393,10 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
                     if(isPlugin && !isDeclaredPlugin(dep, pluginInfos)) {
                         missing.put(dep.getGroupIdAndArtifactId(), dep);
-                        getLog().error("Plugin " + pluginInfo.getPluginId() +" depends on plugin " + dep.getPluginId() +" which must be declared as a <plugin>!");
+                        File pomFile = new File(mavenProject.getBasedir(), "pom.xml");
+                        getLog().error("Plugin " + pluginInfo.getPluginId() +" depends on the plugin " + dep.getPluginId() +" which is not declared as a <plugin> in " + pomFile);
                         String decl = String.format("\t<plugin>\n\t\t<groupId>%s</groupId>\n\t\t<artifactId>%s</artifactId>\n\t\t<version>%s</version>\n\t</plugin>", dep.getGroupId(), dep.getArtifactId(), dep.getVersion());
-                        getLog().error("Please add the following to your <plugins> section:\n" + decl);
+                        getLog().error("Please add the following to maven-reststop-plugin's <plugins> section in " +pomFile + ":\n" + decl);
                     }
 
 
