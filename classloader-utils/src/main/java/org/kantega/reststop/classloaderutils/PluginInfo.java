@@ -409,27 +409,22 @@ public class PluginInfo extends Artifact {
         return priority;
     }
 
-    public static void configure(List<PluginInfo> pluginInfos, String pluginConfigurationDirectory, String applicationName1) {
-        String configDirPath = pluginConfigurationDirectory;
-        if(configDirPath != null) {
-            File configDir = new File(configDirPath);
-            String applicationName = applicationName1;
-            File globalConfigFile = applicationName != null ? new File(configDir, applicationName +".conf") : null;
-            if(configDir.exists()) {
-                for (PluginInfo info : pluginInfos) {
+    public static void configure(List<PluginInfo> pluginInfos, File globalConfigFile) {
 
-                    File artifact = new File(configDir, info.getArtifactId() +".conf");
-                    File artifactVersion = new File(configDir, info.getArtifactId() +"-" + info.getVersion() +".properties");
+        for (PluginInfo info : pluginInfos) {
 
-                    Properties properties = new Properties();
-                    properties.putAll(info.getConfig());
+            File artifact = new File(globalConfigFile.getParentFile(), info.getArtifactId() +".conf");
+            File artifactVersion = new File(globalConfigFile.getParentFile(), info.getArtifactId() +"-" + info.getVersion() +".conf");
 
-                    addProperties(properties, globalConfigFile, artifact, artifactVersion);
+            Properties properties = new Properties();
+            properties.putAll(info.getConfig());
 
-                    info.setConfig(properties);
-                }
-            }
+            addProperties(properties, globalConfigFile, artifact, artifactVersion);
+
+            info.setConfig(properties);
         }
+
+
     }
 
     private static void addProperties(Properties properties, File... files) {

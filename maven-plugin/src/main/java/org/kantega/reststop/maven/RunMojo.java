@@ -34,7 +34,7 @@ import java.util.List;
         requiresDirectInvocation = true,
         requiresDependencyResolution = ResolutionScope.TEST)
 @Execute(phase = LifecyclePhase.PACKAGE)
-public class RunMojo extends AbstractReststopMojo {
+public class RunMojo extends AbstractReststopRunMojo {
 
     @Parameter(defaultValue = "${path}")
     private String path;

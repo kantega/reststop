@@ -135,7 +135,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
         writePluginsXml(new File(distDirectory, "plugins.xml"));
 
-        Artifact warArifact = resolveArtifactFile(warCoords);
+        Artifact warArifact = resolveArtifact(warCoords);
         copyArtifactToRepository(warArifact, manager);
 
         File containerDistrDir = new File(distDirectory, container);
@@ -260,7 +260,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     }
 
     private void copyTomcat(File tomcatDir) throws MojoFailureException, MojoExecutionException {
-        Artifact tomcatArtifact = resolveArtifactFile(tomcatdistPrefix+tomcatVersion);
+        Artifact tomcatArtifact = resolveArtifact(tomcatdistPrefix+tomcatVersion);
 
         if (tomcatDir.exists()) {
             try {
@@ -306,7 +306,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     }
 
     private void copyJetty(File jettyDir) throws MojoFailureException, MojoExecutionException {
-        Artifact jettyDistroArtifact = resolveArtifactFile(jettydistPrefix+getJettyVersion());
+        Artifact jettyDistroArtifact = resolveArtifact(jettydistPrefix+getJettyVersion());
 
         if (jettyDir.exists()) {
             try {
@@ -374,7 +374,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
             for (Plugin plugin : plugins) {
 
-                Artifact pluginArtifact = resolveArtifactFile(plugin.getCoords());
+                Artifact pluginArtifact = resolveArtifact(plugin.getCoords());
                 copyArtifactToRepository(pluginArtifact, manager);
                 resolveSources(pluginArtifact, manager);
                 CollectRequest collectRequest = new CollectRequest(new Dependency(pluginArtifact, "compile"), remoteRepos);
@@ -404,7 +404,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         if (resolveSources) {
             String coords = artifact.getGroupId() + ":" + artifact.getArtifactId() + ":jar:sources:" + artifact.getVersion();
             try {
-                Artifact sourceArtifact = resolveArtifactFile(coords);
+                Artifact sourceArtifact = resolveArtifact(coords);
                 copyArtifactToRepository(sourceArtifact, manager);
             } catch (MojoFailureException | MojoExecutionException e) {
 
@@ -425,32 +425,6 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         }
     }
 
-    private Artifact resolveArtifactFile(String coords) throws MojoFailureException, MojoExecutionException {
-        Artifact artifact;
-        try {
-            artifact = new DefaultArtifact(coords);
-        } catch (IllegalArgumentException e) {
-            throw new MojoFailureException(e.getMessage(), e);
-        }
-
-        ArtifactRequest request = new ArtifactRequest();
-        request.setArtifact(artifact);
-        request.setRepositories(remoteRepos);
-
-        getLog().info("Resolving artifact " + artifact + " from " + remoteRepos);
-
-        ArtifactResult result;
-        try {
-            result = repoSystem.resolveArtifact(repoSession, request);
-        } catch (ArtifactResolutionException e) {
-            throw new MojoExecutionException(e.getMessage(), e);
-        }
-
-        getLog().info("Resolved artifact " + artifact + " to " + result.getArtifact().getFile() + " from "
-                + result.getRepository());
-
-        return result.getArtifact();
-    }
 
     public List<Plugin> getPlugins() {
         List<Plugin> plugins = new ArrayList<>(super.getPlugins());

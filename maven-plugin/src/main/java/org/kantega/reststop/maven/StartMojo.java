@@ -32,7 +32,7 @@ import java.util.List;
         defaultPhase = LifecyclePhase.PRE_INTEGRATION_TEST,
         requiresDependencyResolution = ResolutionScope.RUNTIME)
 
-public class StartMojo extends AbstractReststopMojo {
+public class StartMojo extends AbstractReststopRunMojo {
 
     @Override
     protected List<Plugin> getPlugins() {

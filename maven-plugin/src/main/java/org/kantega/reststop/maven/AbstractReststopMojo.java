@@ -77,9 +77,6 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
     @Parameter (defaultValue = "org.kantega.reststop:reststop-webapp:war:${plugin.version}")
     protected String warCoords;
 
-    @Parameter(defaultValue = "${project.build.directory}/reststop/temp")
-    private File tempDirectory;
-
     @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}.${project.packaging}")
     private File pluginJar;
 
@@ -89,68 +86,14 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
     @Parameter
     protected List<Plugin> plugins;
 
-    @Parameter(defaultValue =  "${basedir}/src/config")
-    private File configDir;
-
-    @Parameter (defaultValue = "/")
-    private String contextPath;
 
     @Parameter (defaultValue = "${plugin.version}")
     private String pluginVersion;
 
 
-    @Override
-    public void execute() throws MojoExecutionException, MojoFailureException {
-
-        File war = resolveArtifactFile(warCoords);
-
-        startJetty(war);
 
 
-    }
 
-    private void startJetty(File war) throws MojoExecutionException {
-        try {
-
-            System.setProperty("reststopPluginDir", mavenProject.getBasedir().getAbsolutePath());
-
-            int port = nextAvailablePort(8080);
-
-            mavenProject.getProperties().setProperty("reststopPort", Integer.toString(port));
-            System.setProperty("reststopPort", Integer.toString(port));
-
-            Server server = new Server(port);
-
-            mavenProject.setContextValue("jettyServer", server);
-
-            JettyWebAppContext context = new JettyWebAppContext();
-
-            context.addServerClass("org.eclipse.aether.");
-            context.setWar(war.getAbsolutePath());
-            context.setContextPath(contextPath);
-            context.getServletContext().setAttribute("pluginsXml", createPluginXmlDocument(false));
-            context.setInitParameter("pluginConfigurationDirectory", configDir.getAbsolutePath());
-
-            customizeContext(context);
-
-            tempDirectory.mkdirs();
-            context.setTempDirectory(tempDirectory);
-            context.setThrowUnavailableOnStartupException(true);
-
-            HandlerCollection handlers = new HandlerCollection();
-
-            handlers.addHandler(new ShutdownHandler(server, getLog()));
-            handlers.addHandler(context);
-            server.setHandler(handlers);
-
-            server.start();
-
-            afterServerStart(server, port);
-
-        } catch (Exception e) {
-            throw new MojoExecutionException("Failed starting Jetty ", e);
-        }
-    }
 
     protected void customizeContext(JettyWebAppContext context) {
 
@@ -456,24 +399,13 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
         return classpath.toString();
     }
 
-    private int nextAvailablePort(int first) {
-        int port = first;
-        for(;;) {
-            try {
-                ServerSocket socket = new ServerSocket(port);
-                socket.close();
-                return port;
-            } catch (IOException e) {
-                port++;
-            }
-        }
-    }
-    private File resolveArtifactFile(String coords) throws MojoFailureException, MojoExecutionException {
+
+    protected File resolveArtifactFile(String coords) throws MojoFailureException, MojoExecutionException {
         return resolveArtifact(coords).getFile();
     }
 
 
-    private Artifact resolveArtifact(String coords) throws MojoFailureException, MojoExecutionException {
+    protected Artifact resolveArtifact(String coords) throws MojoFailureException, MojoExecutionException {
         Artifact artifact;
         try
         {
@@ -539,36 +471,4 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
         }
     }
 
-    private class ShutdownHandler extends AbstractHandler {
-        private final Server server;
-        private final Log log;
-
-        public ShutdownHandler(Server server, Log log) {
-            this.server = server;
-            this.log = log;
-        }
-
-        @Override
-        public void handle(String target, Request baseRequest, HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-
-            if("/shutdown".equals(target) && ! (server.isStopping() || server.isStopped())) {
-                try {
-                    log.info("Shutting down Jetty server");
-                    new Thread() {
-                        @Override
-                        public void run() {
-                            try {
-                                server.stop();
-                            } catch (Throwable e) {
-                                org.eclipse.jetty.util.log.Log.getLogger(getClass()).ignore(e);
-                            }
-                        }
-                    }.start();
-                } catch (Exception e) {
-                    throw new ServletException(e);
-                }
-                baseRequest.setHandled(true);
-            }
-        }
-    }
 }

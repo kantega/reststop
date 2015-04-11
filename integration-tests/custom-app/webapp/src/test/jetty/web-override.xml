@@ -24,4 +24,9 @@
         <param-name>plugins.xml</param-name>
         <param-value>target/reststop/plugins.xml</param-value>
     </context-param>
+
+    <context-param>
+        <param-name>pluginConfigurationDirectory</param-name>
+        <param-value>src/config</param-value>
+    </context-param>
 </web-app>

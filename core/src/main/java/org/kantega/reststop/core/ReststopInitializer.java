@@ -56,9 +56,11 @@ public class ReststopInitializer implements ServletContainerInitializer{
     @Override
     public void onStartup(Set<Class<?>> classes, ServletContext servletContext) throws ServletException {
 
+        File globalConfigFile = findGlobalConfigFile(servletContext);
+
         DefaultReststopPluginManager reststopPluginManager = new DefaultReststopPluginManager();
 
-        final DefaultPluginManager<ReststopPlugin> manager = buildPluginManager(servletContext, reststopPluginManager);
+        final DefaultPluginManager<ReststopPlugin> manager = buildPluginManager(servletContext, reststopPluginManager, globalConfigFile);
 
         reststopPluginManager.setManager(manager);
 
@@ -73,6 +75,27 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         servletContext.addListener(new ShutdownListener(manager));
 
+    }
+
+    private File findGlobalConfigFile(ServletContext servletContext) throws ServletException {
+        String configDirectory = requiredInitParam(servletContext, "pluginConfigurationDirectory");
+        String applicationName = requiredInitParam(servletContext, "applicationName");
+
+        File globalConfigurationFile = new File(configDirectory, applicationName +".conf");
+        if(!globalConfigurationFile.exists()) {
+            throw new ServletException("Configuration file does not exist: " + globalConfigurationFile.getAbsolutePath());
+        }
+
+        return globalConfigurationFile;
+
+    }
+
+    private String requiredInitParam(ServletContext servletContext, String paramName) throws ServletException {
+        String value = servletContext.getInitParameter(paramName);
+        if(value == null) {
+            throw new ServletException("You web application is missing a required servlet context-param '" + paramName + "'");
+        }
+        return value;
     }
 
     private static class ShutdownListener implements ServletContextListener {
@@ -93,14 +116,14 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
     }
 
-    private DefaultPluginManager<ReststopPlugin> buildPluginManager(ServletContext servletContext, DefaultReststopPluginManager reststopPluginManager) throws ServletException {
+    private DefaultPluginManager<ReststopPlugin> buildPluginManager(ServletContext servletContext, DefaultReststopPluginManager reststopPluginManager, File globalConfigFile) throws ServletException {
 
         DefaultReststop reststop = new DefaultReststop(servletContext);
 
         final PluginExportsServiceLocator exportsServiceLocator = new PluginExportsServiceLocator();
         DefaultPluginManager<ReststopPlugin> manager = buildFor(ReststopPlugin.class)
                 .withClassLoaderProvider(reststop)
-                .withClassLoaderProviders(findClassLoaderProviders(servletContext))
+                .withClassLoaderProviders(findClassLoaderProviders(servletContext, globalConfigFile))
                 .withClassLoader(getClass().getClassLoader())
                 .withPluginLoader(new ConstructorInjectionPluginLoader())
                 .withService(ServiceKey.by(Reststop.class), reststop)
@@ -189,16 +212,16 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
     }
 
-    private ClassLoaderProvider[] findClassLoaderProviders(ServletContext servletContext) throws ServletException {
+    private ClassLoaderProvider[] findClassLoaderProviders(ServletContext servletContext, File globalConfigFile) throws ServletException {
         List<ClassLoaderProvider> providers = new ArrayList<>();
 
-        addExternalProvider(servletContext, providers);
-        addWarBundledProvider(servletContext, providers);
+        addExternalProvider(servletContext, providers, globalConfigFile);
+        addWarBundledProvider(servletContext, providers, globalConfigFile);
         return providers.toArray(new ClassLoaderProvider[providers.size()]);
 
     }
 
-    private void addWarBundledProvider(ServletContext servletContext, List<ClassLoaderProvider> providers) {
+    private void addWarBundledProvider(ServletContext servletContext, List<ClassLoaderProvider> providers, File globalConfigFile) {
         String pluginsPath = servletContext.getRealPath("/WEB-INF/reststop/plugins.xml");
         String repositoryPath = servletContext.getRealPath("/WEB-INF/reststop/repository/");
         if(pluginsPath != null && repositoryPath != null) {
@@ -209,7 +232,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
                     Document pluginsXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(pluginsFile);
 
                     if(pluginsXml != null) {
-                        addPluginClassLoaderProvider(pluginsXml, repoDir, servletContext, providers);
+                        addPluginClassLoaderProvider(pluginsXml, repoDir, providers, globalConfigFile);
                     }
                 }  catch (SAXException | IOException | ParserConfigurationException e) {
                     throw new RuntimeException(e);
@@ -218,15 +241,13 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
     }
 
-    private void addPluginClassLoaderProvider(Document pluginsXml, File repoDir, ServletContext servletContext, List<ClassLoaderProvider> providers) {
+    private void addPluginClassLoaderProvider(Document pluginsXml, File repoDir, List<ClassLoaderProvider> providers, File globalConfigurationFile) {
         List<PluginInfo> parsed = PluginInfo.parse(pluginsXml);
-        String pluginConfigurationDirectory = servletContext.getInitParameter("pluginConfigurationDirectory");
-        String applicationName = servletContext.getInitParameter("applicationName");
-        configure(parsed, pluginConfigurationDirectory, applicationName);
+        configure(parsed, globalConfigurationFile);
         providers.add(new PluginInfosClassLoaderProvider(parsed, repoDir));
     }
 
-    private void addExternalProvider(ServletContext servletContext, List<ClassLoaderProvider> providers) throws ServletException {
+    private void addExternalProvider(ServletContext servletContext, List<ClassLoaderProvider> providers, File globalConfigFile) throws ServletException {
         Document pluginsXml = (Document) servletContext.getAttribute("pluginsXml");
         String repoPath = servletContext.getInitParameter("repositoryPath");
         File repoDir = null;
@@ -253,7 +274,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
             }
         }
         if(pluginsXml != null) {
-            addPluginClassLoaderProvider(pluginsXml, repoDir, servletContext, providers);
+            addPluginClassLoaderProvider(pluginsXml, repoDir, providers, globalConfigFile);
         }
     }
 
