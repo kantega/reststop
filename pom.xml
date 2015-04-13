@@ -69,6 +69,7 @@
 
     <modules>
         <module>classloader-utils</module>
+        <module>annotation-processor</module>
         <module>api</module>
         <module>core</module>
         <module>webapp</module>
