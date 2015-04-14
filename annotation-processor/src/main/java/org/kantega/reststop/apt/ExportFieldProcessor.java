@@ -32,7 +32,7 @@ import java.util.Set;
  */
 @SupportedAnnotationTypes("org.kantega.reststop.api.Export")
 @SupportedSourceVersion(SourceVersion.RELEASE_7)
-public class FinalExportFieldProcessor extends AbstractProcessor {
+public class ExportFieldProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
