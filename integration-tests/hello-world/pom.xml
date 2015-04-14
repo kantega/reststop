@@ -92,6 +92,13 @@
             <scope>provided</scope>
         </dependency>
 
+        <dependency>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-annotation-processor</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
