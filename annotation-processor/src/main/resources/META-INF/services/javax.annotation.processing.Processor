@@ -1,1 +1,3 @@
 org.kantega.reststop.apt.ExportFieldProcessor
+org.kantega.reststop.apt.ConfigFieldProcessor
+

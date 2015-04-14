@@ -50,6 +50,12 @@ public class HelloworldJaxRsPlugin extends DefaultJaxRsPlugin {
     @Config(defaultValue = "a")
     private char aChar;
 
+    @Config(defaultValue = "a")
+    private Character aCharacter;
+
+    @Config(defaultValue = "a")
+    private String aString;
+
 
     public HelloworldJaxRsPlugin() {
         addJaxRsSingletonResource(new HelloWorldRootResource());
