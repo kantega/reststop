@@ -86,10 +86,28 @@ public class WebjarsReststopPlugin extends DefaultReststopPlugin {
                 }
             }
 
-            return versions;
-        } else {
-            return versions;
         }
+        return getWithCorrectPath(versions);
+    }
+
+    private Map<String, String> getWithCorrectPath(Map<String, String> versions) {
+        HashMap<String, String> v = new HashMap<>();
+        for (String key : versions.keySet()) {
+            String value = versions.get(key);
+            int i = value.indexOf("-");
+            if (i == -1) {
+                v.put(key, value);
+            } else {
+                String number = value.substring(i);
+                try {
+                    int buildNumber = new Integer(number);
+                    v.put(key, value.substring(0, i));
+                } catch (NumberFormatException e) {
+                    v.put(key, value);
+                }
+            }
+        }
+        return v;
     }
 }
 
