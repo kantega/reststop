@@ -36,9 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLClassLoader;
+import java.net.*;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -727,7 +725,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 URL resource = loader.getResource(path);
 
 
-                if(resource != null && !path.endsWith("/") && loader.getResource(path +"/") != null ) {
+                if(resource != null && !path.endsWith("/") && isDirectoryResource(resource, loader, path)) {
                     resp.sendRedirect(req.getRequestURI() +"/");
                     return;
 
@@ -750,6 +748,22 @@ public class ReststopInitializer implements ServletContainerInitializer{
             }
 
             filterChain.doFilter(servletRequest, servletResponse);
+        }
+
+        private boolean isDirectoryResource(URL resource, ClassLoader loader, String path) {
+
+            try {
+                if("file".equals(resource.getProtocol()) && new File(resource.toURI().getPath()).isDirectory()) {
+                    return true;
+
+                } else if("jar".equals(resource.getProtocol()) && loader.getResource(path +"/") != null) {
+                    return true;
+                }
+                return false;
+            } catch (URISyntaxException e) {
+                throw new RuntimeException(e);
+            }
+
         }
 
         private void copy(InputStream input, OutputStream output) throws IOException {
