@@ -80,7 +80,7 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
         List<PluginInfo> infos = PluginInfo.parse(pluginsXml);
         String pluginConfigurationDirectory = servletContext.getInitParameter("pluginConfigurationDirectory");
         String applicationName = servletContext.getInitParameter("applicationName");
-        File globalConfigFile = new File(pluginConfigurationDirectory, applicationName);
+        File globalConfigFile = new File(pluginConfigurationDirectory, applicationName +".conf");
         configure(infos, globalConfigFile);
         List<PluginInfo> sortedInfos = PluginInfo.resolveStartupOrder(infos);
         for (PluginInfo info : sortedInfos) {
