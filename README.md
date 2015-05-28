@@ -13,16 +13,9 @@ loop of a dynamic language.
 
 ## Getting Started
 
-Add the following prefix to the Maven settings file (per-user: ~/.m2/settings.xml; global: $M2_HOME/conf/settings.xml):
-
-        <pluginGroups>
-          <pluginGroup>org.kantega.reststop</pluginGroup>
-        </pluginGroups>
-
-
 Create Reststop project:
 
-        mvn reststop:create
+        mvn -U org.kantega.reststop:reststop-maven-plugin:RELEASE:create
 
 Open a browser with the url [http://localhost:8080/helloworld/](http://localhost:8080/helloworld/)
 
