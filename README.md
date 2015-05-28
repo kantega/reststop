@@ -30,25 +30,25 @@ This will show a page with the simple message:
 
         {"message":"Hello world"}
 
-Now edit the return statement in plugins/helloworld/src/main/java/YOUR.PACKAGE.NAME/HelloworldResource.java to:
+Now add som politeness to the return statement in plugins/helloworld/src/main/java/YOUR.PACKAGE.NAME/HelloworldResource.java:
 
-        return new Hello("New world");
+        return new Hello(greeting + " dear world");
 
-Then just hit the reload button in the browser, and while you did that Reststop notified the change, recompiled and hot-deployed it showing:
+Then hit the reload button, and while you did that Reststop notified the change, recompiled and hot-deployed it:
 
-        {"message":"New world"}
+        {"message":"Hello dear world"}
 
 ### Next Level
 
 Try to change the word "world" into something different, and reload again:
 
-        return new Hello("New order");
+        return new Hello(greeting + " dear friend");
 
 Reststop just discovered that a Test failed, showing test code and stack trace. Now update the HelloworldResourceTest.java to match and reload again.
 
 Next try to remove the following line in HelloworldResource.java:
 
-        return new Hello("New world");
+        return new Hello(greeting + " dear friend");
 
 Reststop now shows you an compilation error, with location and error message from the compiler. Wasn't that friction-free like a dynamic language?
 
