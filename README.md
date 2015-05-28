@@ -17,7 +17,7 @@ Create Reststop project:
 
         mvn -U org.kantega.reststop:reststop-maven-plugin:RELEASE:create
 
-Open a browser with the url [http://localhost:8080/helloworld/](http://localhost:8080/helloworld/)
+Open a browser to [http://localhost:8080/helloworld/](http://localhost:8080/helloworld/)
 
 This will show a page with the simple message:
 
