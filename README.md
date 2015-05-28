@@ -3,15 +3,32 @@ Reststop - friction-free web development
 
 ## About
 
-Reststop is a thin layer built on top of the Java Servlet API. Reststop’s module system lets you code independent
-features in individual modules. During development, Reststop will track your code base, recompile and hot-deploy the
-modules which changed.
+Reststop is a system for plugin based development on the Java Servlet API. The core of Reststop is a servlet filter
+that loads and reload plugins in separate class loaders. Using Reststop, you will develop your application as plugins,
+making it highly modular.
 
-The result is friction-free web development with robustness of the Java language and tool stack, but with the feedback
-loop of a dynamic language.
+A Reststop plugin is simply a Maven module, in which your provide a collection of Servlet Filters, and methods to
+start and stop (init and destroy) your plugin. You also have a simple dependency injection
+system for eksporting classes from one plugin, and injecting them in another.
 
+Reststop already provide a set of very useful plugins. We recommend you start
+looking at the following:
+
+ * _reststop-development-plugin_ This plugin is monitoring your files,
+ and automatically compiles and reloads java source code on changes.
+ * _reststop-development-console_ This plugin gives you handy information about
+ your application, exposed on the path _/dev_.
+ * _jaxrs-api_ This plugin makes it a breeze to wire up Jax-RS Resources.
+
+Reststop requires you to write your application as plugins, but what you do
+inside a plugin is entirely up to you. Inside a plugin you can introduce
+whatever framework you prefer.
 
 ## Getting Started
+
+The easiest way to understand Reststop, is to see it in action. In this section we will
+be using a Maven plugin to create a small project, and make some small changes to understand
+how things work. Let's start:
 
 Create Reststop project:
 
