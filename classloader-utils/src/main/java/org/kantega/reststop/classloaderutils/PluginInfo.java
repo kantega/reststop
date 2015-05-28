@@ -212,7 +212,7 @@ public class PluginInfo extends Artifact {
             }
 
         } catch (IOException e) {
-            throw new RuntimeException();
+            throw new RuntimeException(e);
         }
 
         return lines;
