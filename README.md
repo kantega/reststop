@@ -9,7 +9,7 @@ making it highly modular.
 
 A Reststop plugin is simply a Maven module, in which your provide a collection of Servlet Filters, and methods to
 start and stop (init and destroy) your plugin. You also have a simple dependency injection
-system for eksporting classes from one plugin, and injecting them in another.
+system for exporting services from one plugin, and injecting them by type in another.
 
 Reststop already provide a set of very useful plugins. We recommend you start
 looking at the following:
