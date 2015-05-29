@@ -201,7 +201,7 @@ public class ErrorReporter {
     }
 
     private String escapeJavascript(String message) {
-        String replaced = message.replace("\\", "\\\\").replace("\n", "\\n").replace("\"","\\\"");
+        String replaced = message.replace("\\", "\\\\").replace("\r\n", "\\n").replace("\n", "\\n").replace("\"","\\\"");
         return replaced;
     }
 
