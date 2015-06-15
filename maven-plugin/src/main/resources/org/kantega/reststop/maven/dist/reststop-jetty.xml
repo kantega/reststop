@@ -1,6 +1,6 @@
 <?xml version="1.0"  encoding="utf-8"?>
 <!--
-  ~ Copyright 2013 Kantega AS
+  ~ Copyright 2015 Kantega AS
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -22,6 +22,10 @@
     <Call name="setInitParameter">
         <Arg>plugins.xml</Arg>
         <Arg><SystemProperty name="jetty.home" default="." />/../plugins.xml</Arg>
+    </Call>
+    <Call name="setInitParameter">
+        <Arg>applicationName</Arg>
+        <Arg>WEBAPP</Arg>
     </Call>
     <Call name="setInitParameter">
         <Arg>repositoryPath</Arg>

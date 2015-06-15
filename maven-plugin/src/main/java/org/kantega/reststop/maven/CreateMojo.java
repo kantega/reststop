@@ -22,6 +22,8 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.project.MavenProject;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.InvocationRequest;
 import org.apache.maven.shared.invoker.Invoker;
@@ -45,11 +47,16 @@ import static java.util.Arrays.asList;
 public class CreateMojo extends AbstractCreateMojo {
 
 
+    @Parameter(defaultValue = "${project}", readonly = true)
+    private MavenProject mavenProject;
+
     @Component
     private Invoker invoker;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
+
+        MavenProject parent = mavenProject.getParent();
 
         PluginDescriptor pluginDescriptor = (PluginDescriptor) getPluginContext().get("pluginDescriptor");
 

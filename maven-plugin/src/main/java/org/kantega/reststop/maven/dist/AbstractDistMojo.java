@@ -29,12 +29,14 @@ import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Untar;
 import org.apache.tools.ant.types.EnumeratedAttribute;
 import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.LocalRepositoryManager;
-import org.eclipse.aether.resolution.*;
+import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.DependencyRequest;
+import org.eclipse.aether.resolution.DependencyResolutionException;
+import org.eclipse.aether.resolution.DependencyResult;
 import org.eclipse.aether.util.filter.ScopeDependencyFilter;
 import org.kantega.reststop.maven.AbstractReststopMojo;
 import org.kantega.reststop.maven.Plugin;
@@ -55,7 +57,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
-import static java.lang.String.format;
 import static java.util.Collections.singleton;
 
 /**
@@ -143,13 +144,13 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
             copyJetty(containerDistrDir);
 
-            createJettyContextXml(warArifact, manager, new File(containerDistrDir, "webapps/reststop.xml"));
+            createJettyContextXml(name, warArifact, manager, new File(containerDistrDir, "webapps/reststop.xml"));
 
             createJettyServicesFile(rootDirectory);
         } else if ("tomcat".compareTo(this.container) == 0) {
             copyTomcat(containerDistrDir);
 
-            createTomcatContextXml(warArifact, manager, new File(containerDistrDir, "conf/Catalina/localhost/ROOT.xml"));
+            createTomcatContextXml(name, warArifact, manager, new File(containerDistrDir, "conf/Catalina/localhost/ROOT.xml"));
         } else
             throw new MojoExecutionException("Unknown container " + this.container);
 
@@ -226,12 +227,13 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         }
     }
 
-    private void createTomcatContextXml(Artifact warArifact, LocalRepositoryManager manager, File contextFile) throws MojoExecutionException {
+    private void createTomcatContextXml(String name, Artifact warArifact, LocalRepositoryManager manager, File contextFile) throws MojoExecutionException {
         try {
             String xml = IOUtils.toString(getClass().getResourceAsStream("reststop-tomcat.xml"), "utf-8");
 
             String warLocation = "../../repository/" + manager.getPathForLocalArtifact(warArifact);
 
+            xml = xml.replaceAll("WEBAPP", name);
             xml = xml.replaceAll("RESTSTOPWAR", warLocation);
             xml = xml.replaceAll("CONTEXTPATH", contextPath);
 
@@ -243,12 +245,13 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
     }
 
-    private void createJettyContextXml(Artifact warArifact, LocalRepositoryManager manager, File contextXml) throws MojoExecutionException {
+    private void createJettyContextXml(String name, Artifact warArifact, LocalRepositoryManager manager, File contextXml) throws MojoExecutionException {
         try {
             String xml = IOUtils.toString(getClass().getResourceAsStream("reststop-jetty.xml"), "utf-8");
 
             String warLocation = "../repository/" + manager.getPathForLocalArtifact(warArifact);
 
+            xml = xml.replaceAll("WEBAPP", name);
             xml = xml.replaceAll("RESTSTOPWAR", warLocation);
             xml = xml.replaceAll("CONTEXTPATH", contextPath);
 
