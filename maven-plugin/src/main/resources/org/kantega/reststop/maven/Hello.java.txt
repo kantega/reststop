@@ -3,7 +3,7 @@ package org.kantega.reststop.maven;
 /**
  *
  */
-public class Hello {
+public class Hello implements Greeting {
     private final String message;
 
     public Hello(String message) {

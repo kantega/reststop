@@ -32,10 +32,7 @@ import org.apache.maven.shared.invoker.MavenInvocationException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import static java.util.Arrays.asList;
@@ -84,7 +81,24 @@ public class CreateMojo extends AbstractCreateMojo {
             File pluginsDir = new File(rootDir, "plugins");
             createMavenModule(tokens, getClass().getResourceAsStream("dist/template-plugin-plugins-pom.xml"), new File(pluginsDir, "pom.xml"));
 
-            // plugin
+            // api plugin
+            File apiPluginDir = new File(pluginsDir, "api");
+            Map<String, String> tokensApi = new HashMap<>();
+            tokensApi.put("${groupId}", options.get("groupId"));
+            tokensApi.put("${name}", "api");
+            tokensApi.put("${artifactId}", artifactId);
+            tokensApi.put("${rootArtifactId}", artifactId);
+            createMavenModule(tokensApi, getClass().getResourceAsStream("dist/template-newplugin-pom.xml"), new File(apiPluginDir, "pom.xml"));
+
+            new File(apiPluginDir, "src/main/resources").mkdirs();
+            new File(apiPluginDir, "src/test/resources").mkdirs();
+            File sourceDir = new File(apiPluginDir, "src/main/java");
+            sourceDir.mkdirs();
+            List<String> methods = new ArrayList<>();
+            methods.add("getMessage");
+            createInterface("Greeting", methods, sourceDir, pack);
+
+            // helloworld plugin
             File pluginDir = new File(pluginsDir, "helloworld");
             createMavenModule(tokens, getClass().getResourceAsStream("dist/template-plugin-plugin-pom.xml"), new File(pluginDir, "pom.xml"));
 

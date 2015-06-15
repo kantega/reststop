@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractCreateMojo extends AbstractMojo {
@@ -56,6 +57,33 @@ public abstract class AbstractCreateMojo extends AbstractMojo {
 
         return new File(dest, className+".java");
     }
+    protected File createInterface(String name, List<String> methods, File sourceDir, String pack) throws MojoExecutionException {
+        JCodeModel cm = new JCodeModel();
+        JPackage jPackage = cm._package(pack);
+        JDefinedClass dc;
+        String className = removeSpecialCharactersAndCapitalize(name);
+        try {
+            dc = jPackage._class(JMod.PUBLIC, className, ClassType.INTERFACE);
+        } catch (JClassAlreadyExistsException e) {
+            throw new MojoExecutionException(String.format("Generating source for %s failed, Java Class seem to already exist", className),e);
+        }
+        for(String method : methods){
+            dc.method(JMod.NONE, String.class, method);
+        }
+        try {
+            cm.build(sourceDir);
+        } catch (IOException e) {
+            throw new MojoExecutionException(String.format("Writing source file %s%s.java failed.", sourceDir, className),e);
+        }
+
+        File dest = sourceDir;
+        for (String s : pack.split("\\.")) {
+            dest = new File(dest, s);
+        }
+
+        return new File(dest, className+".java");
+    }
+
 
     protected String removeSpecialCharactersAndCapitalize(String s) {
         s = s.replaceAll("\\W", " ");
