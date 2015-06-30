@@ -89,10 +89,16 @@ public class ReststopInitializer implements ServletContainerInitializer{
     }
 
     private String requiredInitParam(ServletContext servletContext, String paramName) throws ServletException {
-        String value = servletContext.getInitParameter(paramName);
+        String value = initParam(servletContext, paramName);
         if(value == null) {
             throw new ServletException("You web application is missing a required servlet context-param '" + paramName + "'");
         }
+        return value;
+    }
+
+    private String initParam(ServletContext servletContext, String paramName) throws ServletException {
+        String value = servletContext.getInitParameter(paramName);
+        if (value == null) value = System.getProperty(paramName);
         return value;
     }
 
@@ -247,7 +253,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
     private void addExternalProvider(ServletContext servletContext, List<ClassLoaderProvider> providers, File globalConfigFile) throws ServletException {
         Document pluginsXml = (Document) servletContext.getAttribute("pluginsXml");
-        String repoPath = servletContext.getInitParameter("repositoryPath");
+        String repoPath = initParam(servletContext, "repositoryPath");
         File repoDir = null;
 
         if(repoPath != null) {
@@ -261,7 +267,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
         if(pluginsXml == null) {
 
-            String path = servletContext.getInitParameter("plugins.xml");
+            String path = initParam(servletContext, "plugins.xml");
             if(path != null) {
                 try {
                     pluginsXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(new File(path));
