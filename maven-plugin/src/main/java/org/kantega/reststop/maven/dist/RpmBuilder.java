@@ -123,7 +123,7 @@ public class RpmBuilder extends AbstractDistMojo {
             String installDir = trimBothEnds(this.installDir,"/");
             pw.println("Name: " + name);
             pw.println("Version: " + safeVersion());
-            pw.println("Release: 1");
+            pw.println("Release: " + release);
             pw.println("Summary: " + mavenProject.getDescription());
             pw.println("License: Unknown");
             pw.println("Group: Webapps/Java");
@@ -211,7 +211,7 @@ public class RpmBuilder extends AbstractDistMojo {
     }
 
     private String safeVersion() {
-        return mavenProject.getVersion().replace('-', '.');
+        return version.replace('-', '.');
     }
 
 }
