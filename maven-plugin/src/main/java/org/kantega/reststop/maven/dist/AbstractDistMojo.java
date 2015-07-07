@@ -86,6 +86,12 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     @Parameter(defaultValue = "${project.artifactId}")
     protected String name;
 
+    @Parameter(defaultValue = "${project.version}")
+    protected String version;
+
+    @Parameter(defaultValue = "1")
+    protected String release;
+
     @Parameter(defaultValue = "/")
     protected String contextPath;
 
