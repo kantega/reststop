@@ -76,7 +76,7 @@ This Development Console shows you all the plugins, classes and source dirs that
 
 Go to root of your Reststop project and run:
 
-        mvn reststop:create-plugin -Dname=api -Dpackage=org.company.helloworld.api
+        mvn reststop:create-plugin -Dname=myplugin -Dpackage=org.company.helloworld.myplugin
 
 This automatically creates a new plugin, with maven module and Reststops configuration.
 
