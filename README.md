@@ -26,8 +26,10 @@ whatever framework you prefer.
 
 ## Getting Started
 
-The easiest way to understand Reststop, is to see it in action. In this section we will
-be using a Maven plugin to create a small project, and make some small changes to understand
+The easiest way to understand Reststop, is to see it in action. Either take the [intro tutorial](https://github.com/kantega/reststop/wiki/Intro%20Tutorial) or just follow 
+the simple instructions below:
+
+In this section we will be using a Maven plugin to create a small project, and make some small changes to understand
 how things work. Let's start:
 
 Create Reststop project:
