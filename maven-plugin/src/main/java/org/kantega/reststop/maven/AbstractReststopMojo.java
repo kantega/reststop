@@ -84,6 +84,9 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
     protected MavenProject mavenProject;
 
     @Parameter
+    protected List<Plugin> basePlugins;
+
+    @Parameter
     protected List<Plugin> plugins;
 
 
@@ -371,6 +374,9 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
         if(this.plugins != null) {
             plugins.addAll(this.plugins);
+        }
+        if(this.basePlugins != null) {
+            plugins.addAll(this.basePlugins);
         }
 
 
