@@ -86,8 +86,12 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
 
             customizeContext(context);
 
-            tempDirectory.mkdirs();
-            context.setTempDirectory(tempDirectory);
+
+            File jettyTmpDir = new File(tempDirectory, war.getName());
+            jettyTmpDir.mkdirs();
+            context.setTempDirectory(jettyTmpDir);
+            boolean deleteTempDirectory= tempDirectory.exists() && war.lastModified() > tempDirectory.lastModified();
+            context.setPersistTempDirectory(!deleteTempDirectory);
             context.setThrowUnavailableOnStartupException(true);
 
             HandlerCollection handlers = new HandlerCollection();
