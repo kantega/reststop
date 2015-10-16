@@ -20,7 +20,6 @@ import org.apache.velocity.app.VelocityEngine;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
 import org.kantega.reststop.api.Reststop;
-import org.kantega.reststop.classloaderutils.PluginInfo;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -35,7 +34,7 @@ public class RedeployFilter implements Filter {
 
     private final DevelopmentClassLoaderProvider provider;
     private final Reststop reststop;
-    private volatile boolean testing = false;
+    private volatile boolean checkingRedeploy = false;
 
     private final Object runTestsMonitor = new Object();
     private final VelocityEngine velocityEngine;
@@ -58,83 +57,83 @@ public class RedeployFilter implements Filter {
         HttpServletRequest req = (HttpServletRequest) servletRequest;
         HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
-        if(testing || req.getServletPath().startsWith("/assets")) {
+
+        if (checkingRedeploy || req.getServletPath().startsWith("/assets")) {
             filterChain.doFilter(req, resp);
             return;
         }
+        try {
+            checkingRedeploy = true;
 
 
-        List<DevelopmentClassloader> staleClassLoaders = new ArrayList<>();
+            List<DevelopmentClassloader> staleClassLoaders = new ArrayList<>();
 
+            synchronized (this) {
+                staleClassLoaders.addAll(provider.findStaleClassLoaders());
 
-        synchronized (this) {
-            staleClassLoaders.addAll(provider.findStaleClassLoaders());
-
-            if(staleClassLoaders.isEmpty()) {
-                filterChain.doFilter(servletRequest, servletResponse);
-                return;
-            }
-
-            for (DevelopmentClassloader classloader : staleClassLoaders) {
-                try {
-
-                    classloader.compileSources();
-                    classloader.copySourceResorces();
-                    classloader.compileJavaTests();
-                    classloader.copyTestResources();
-
-
-                } catch (JavaCompilationException e) {
-                    new ErrorReporter(velocityEngine, classloader.getBasedir()).addCompilationException(e).render(req, resp);
+                if (staleClassLoaders.isEmpty()) {
+                    filterChain.doFilter(servletRequest, servletResponse);
                     return;
-                }
+                } else {
 
-            }
+                    for (DevelopmentClassloader classloader : staleClassLoaders) {
+                        try {
 
-            List<DevelopmentClassloader> newClassLoaders = new ArrayList<>();
-
-
-            for (DevelopmentClassloader classloader : staleClassLoaders) {
-
-                try {
-                    newClassLoaders.add(provider.redeploy(classloader.getPluginInfo().getPluginId(), classloader));
-                } catch (Exception e) {
-                    classloader.setFailed(true);
-                    new ErrorReporter(velocityEngine, classloader.getBasedir()).pluginLoadFailed(e, classloader).render(req, resp);
-                    return;
-                }
-
-
-            }
-
-            if(shouldRunTests) {
-                Map<String, DevelopmentClassloader> testLoaders = new LinkedHashMap<>();
-
-                for (DevelopmentClassloader classloader : newClassLoaders) {
-                    testLoaders.put(classloader.getPluginInfo().getPluginId(), classloader);
-                }
-
-                for (DevelopmentClassloader classloader : provider.getClassloaders().values()) {
-
-                    if (!testLoaders.containsKey(classloader.getPluginInfo().getPluginId())) {
-                        boolean stale = classloader.isStaleTests();
-                        if (stale) {
+                            classloader.compileSources();
+                            classloader.copySourceResorces();
                             classloader.compileJavaTests();
                             classloader.copyTestResources();
-                        }
-                        if (stale || classloader.hasFailingTests()) {
-                            testLoaders.put(classloader.getPluginInfo().getPluginId(), classloader);
+
+
+                        } catch (JavaCompilationException e) {
+                            new ErrorReporter(velocityEngine, classloader.getBasedir()).addCompilationException(e).render(req, resp);
+                            return;
                         }
 
                     }
-                }
 
-                for (DevelopmentClassloader classloader : testLoaders.values()) {
-                    try {
-                        synchronized (runTestsMonitor) {
-                            if (!this.testing) {
-                                try {
-                                    this.testing = true;
+                    List<DevelopmentClassloader> newClassLoaders = new ArrayList<>();
+
+
+                    for (DevelopmentClassloader classloader : staleClassLoaders) {
+
+                        try {
+                            newClassLoaders.add(provider.redeploy(classloader.getPluginInfo().getPluginId(), classloader));
+                        } catch (Exception e) {
+                            classloader.setFailed(true);
+                            new ErrorReporter(velocityEngine, classloader.getBasedir()).pluginLoadFailed(e, classloader).render(req, resp);
+                            return;
+                        }
+
+
+                    }
+
+                    if (shouldRunTests) {
+                        Map<String, DevelopmentClassloader> testLoaders = new LinkedHashMap<>();
+
+                        for (DevelopmentClassloader classloader : newClassLoaders) {
+                            testLoaders.put(classloader.getPluginInfo().getPluginId(), classloader);
+                        }
+
+                        for (DevelopmentClassloader classloader : provider.getClassloaders().values()) {
+
+                            if (!testLoaders.containsKey(classloader.getPluginInfo().getPluginId())) {
+                                boolean stale = classloader.isStaleTests();
+                                if (stale) {
+                                    classloader.compileJavaTests();
+                                    classloader.copyTestResources();
+                                }
+                                if (stale || classloader.hasFailingTests()) {
+                                    testLoaders.put(classloader.getPluginInfo().getPluginId(), classloader);
+                                }
+
+                            }
+                        }
+
+                        for (DevelopmentClassloader classloader : testLoaders.values()) {
+                            try {
+                                synchronized (runTestsMonitor) {
+
                                     List<Class> testClasses = classloader.getTestClasses();
                                     if (testClasses.size() > 0) {
                                         Class[] objects = testClasses.toArray(new Class[testClasses.size()]);
@@ -154,27 +153,29 @@ public class RedeployFilter implements Filter {
                                             Thread.currentThread().setContextClassLoader(loader);
                                         }
                                     }
-                                } finally {
-                                    this.testing = false;
                                 }
+
+
+                            } catch (TestFailureException e) {
+                                new ErrorReporter(velocityEngine, classloader.getBasedir()).addTestFailulreException(e).render(req, resp);
+                                return;
                             }
+
                         }
-
-
-                    } catch (TestFailureException e) {
-                        new ErrorReporter(velocityEngine, classloader.getBasedir()).addTestFailulreException(e).render(req, resp);
-                        return;
                     }
 
                 }
-            }
 
+            }
+            if (!staleClassLoaders.isEmpty()) {
+                reststop.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
+            } else {
+                filterChain.doFilter(servletRequest, servletResponse);
+            }
+        } finally {
+            checkingRedeploy = false;
         }
-        if(! staleClassLoaders.isEmpty() ) {
-            reststop.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
-        } else {
-            filterChain.doFilter(servletRequest, servletResponse);
-        }
+
     }
 
     @Override
