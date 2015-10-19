@@ -193,7 +193,7 @@ public class DevelopmentClassloader extends PluginClassLoader{
             return false;
         }
         File target = new File(basedir, "target/classes");
-        return !target.exists() || newest(sourceDir) > newest(target);
+        return !target.exists() || newest(sourceDir) > created ||  newest(target) > created;
     }
 
     public boolean isStaleTests() {
