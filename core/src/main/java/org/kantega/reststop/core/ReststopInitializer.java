@@ -36,6 +36,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.net.*;
 import java.util.*;
 import java.util.logging.Logger;
@@ -164,12 +166,25 @@ public class ReststopInitializer implements ServletContainerInitializer{
                                             }
                                             Map<ServiceKey, List<Object>> forClassLoader = servicesByClassLoader.get(classLoader);
 
-                                            ServiceKey<?> serviceKey = ServiceKey.by(field.getType());
 
-                                            if(!forClassLoader.containsKey(serviceKey)) {
-                                                forClassLoader.put(serviceKey, new ArrayList<>());
+                                            Class<?> type = field.getType();
+                                            if(type == Collection.class) {
+                                                ParameterizedType parameterizedType = (ParameterizedType) field.getGenericType();
+
+                                                ServiceKey<?> serviceKey = ServiceKey.by((Class<?>) parameterizedType.getActualTypeArguments()[0]);
+
+                                                if (!forClassLoader.containsKey(serviceKey)) {
+                                                    forClassLoader.put(serviceKey, new ArrayList<>());
+                                                }
+                                                forClassLoader.get(serviceKey).addAll((Collection<?>) service);
+                                            } else {
+                                                ServiceKey<?> serviceKey = ServiceKey.by(type);
+
+                                                if (!forClassLoader.containsKey(serviceKey)) {
+                                                    forClassLoader.put(serviceKey, new ArrayList<>());
+                                                }
+                                                forClassLoader.get(serviceKey).add(service);
                                             }
-                                            forClassLoader.get(serviceKey).add(service);
 
                                         }
                                     } catch (IllegalAccessException e) {
@@ -223,13 +238,14 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         public <T> Collection<T> getMultiple(ServiceKey<T> serviceKey) {
             synchronized (servicesByClassLoader) {
+                List<T> collection = new ArrayList<>();
                 for (Map<ServiceKey, List<Object>> forClassLoader : servicesByClassLoader.values()) {
                     List<T> impl = (List<T>) forClassLoader.get(serviceKey);
                     if(impl != null) {
-                        return impl;
+                        collection.addAll(impl);
                     }
                 }
-                return null;
+                return collection;
 
             }
         }

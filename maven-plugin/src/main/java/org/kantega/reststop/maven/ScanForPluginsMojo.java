@@ -126,7 +126,12 @@ public class ScanForPluginsMojo extends AbstractMojo {
                                 for (Field field : clazz.getDeclaredFields()) {
                                     for (Annotation annotation : field.getDeclaredAnnotations()) {
                                         if (annotation.annotationType() == exportClass) {
-                                            exports.add(field.getType().getName());
+                                            if(field.getType() == Collection.class) {
+                                                ParameterizedType genericType = (ParameterizedType) field.getGenericType();
+                                                exports.add(genericType.getActualTypeArguments()[0].getTypeName());
+                                            } else {
+                                                exports.add(field.getType().getName());
+                                            }
                                         }
                                     }
 
