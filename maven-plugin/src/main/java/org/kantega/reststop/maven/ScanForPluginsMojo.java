@@ -29,9 +29,7 @@ import org.apache.maven.project.MavenProject;
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.charset.Charset;
@@ -125,7 +123,7 @@ public class ScanForPluginsMojo extends AbstractMojo {
                             if (!clazz.isInterface() && !Modifier.isAbstract(clazz.getModifiers()) && apiClass.isAssignableFrom(clazz)) {
                                 pluginClassNames.add(clazz.getName());
 
-                                for(Field field : clazz.getDeclaredFields()) {
+                                for (Field field : clazz.getDeclaredFields()) {
                                     for (Annotation annotation : field.getDeclaredAnnotations()) {
                                         if (annotation.annotationType() == exportClass) {
                                             exports.add(field.getType().getName());
@@ -135,13 +133,27 @@ public class ScanForPluginsMojo extends AbstractMojo {
                                 }
 
                                 Constructor<?>[] constructors = clazz.getDeclaredConstructors();
-                                if(constructors.length > 1) {
+                                if (constructors.length > 1) {
                                     throw new IOException("Plugin class " + clazz.getName() + " cannot have more than one constructor");
                                 }
 
-                                if(constructors.length == 1) {
-                                    for(Class paramType : constructors[0].getParameterTypes()) {
-                                        imports.add(paramType.getName());
+                                if (constructors.length == 1) {
+
+                                    Constructor<?> constructor = constructors[0];
+                                    Class<?>[] parameterTypes = constructor.getParameterTypes();
+                                    for (int i = 0; i < parameterTypes.length; i++) {
+                                        Class<?> paramType = parameterTypes[i];
+                                        if (paramType == Collection.class) {
+                                            Type[] genericParameterTypes = constructor.getGenericParameterTypes();
+                                            ParameterizedType parameterizedType = (ParameterizedType) genericParameterTypes[i];
+                                            Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+                                            if(actualTypeArguments != null && actualTypeArguments.length == 1) {
+                                                imports.add(actualTypeArguments[0].getTypeName());
+                                            }
+
+                                        } else {
+                                            imports.add(paramType.getName());
+                                        }
                                     }
                                 }
                             }
@@ -149,9 +161,10 @@ public class ScanForPluginsMojo extends AbstractMojo {
                             throw new RuntimeException(e);
                         }
                     }
+
                     return FileVisitResult.CONTINUE;
-                }
-            });
+            }
+        });
 
             getLog().info("Plugin classes: " + pluginClassNames);
 

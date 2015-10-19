@@ -129,7 +129,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 .withClassLoaderProvider(reststop)
                 .withClassLoaderProviders(findClassLoaderProviders(servletContext, globalConfigFile))
                 .withClassLoader(getClass().getClassLoader())
-                .withPluginLoader(new ConstructorInjectionPluginLoader())
+                .withPluginLoader(new ReststopPluginLoader(exportsServiceLocator))
                 .withService(ServiceKey.by(Reststop.class), reststop)
                 .withService(ServiceKey.by(ServletContext.class), servletContext)
                 .withService(ServiceKey.by(ReststopPluginManager.class), reststopPluginManager)
@@ -142,8 +142,8 @@ public class ReststopInitializer implements ServletContainerInitializer{
         return manager;
     }
 
-    private static class PluginExportsServiceLocator implements ServiceLocator {
-        private final Map<ClassLoader, Map<ServiceKey, Object>> servicesByClassLoader = new IdentityHashMap<>();
+    public static class PluginExportsServiceLocator implements ServiceLocator {
+        private final Map<ClassLoader, Map<ServiceKey, List<Object>>> servicesByClassLoader = new IdentityHashMap<>();
 
 
         private void setPluginManager(PluginManager<ReststopPlugin> pluginManager) {
@@ -160,11 +160,17 @@ public class ReststopInitializer implements ServletContainerInitializer{
                                         Object service = field.get(plugin);
                                         if(service != null) {
                                             if(!servicesByClassLoader.containsKey(classLoader)) {
-                                                servicesByClassLoader.put(classLoader, new HashMap<ServiceKey, Object>());
+                                                servicesByClassLoader.put(classLoader, new HashMap<ServiceKey, List<Object>>());
                                             }
-                                            Map<ServiceKey, Object> forClassLoader = servicesByClassLoader.get(classLoader);
+                                            Map<ServiceKey, List<Object>> forClassLoader = servicesByClassLoader.get(classLoader);
 
-                                            forClassLoader.put(ServiceKey.by(field.getType()), service);
+                                            ServiceKey<?> serviceKey = ServiceKey.by(field.getType());
+
+                                            if(!forClassLoader.containsKey(serviceKey)) {
+                                                forClassLoader.put(serviceKey, new ArrayList<>());
+                                            }
+                                            forClassLoader.get(serviceKey).add(service);
+
                                         }
                                     } catch (IllegalAccessException e) {
                                         throw new RuntimeException(e);
@@ -192,7 +198,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         public Set<ServiceKey> keySet() {
             synchronized (servicesByClassLoader) {
                 Set<ServiceKey> keys = new HashSet<>();
-                for (Map<ServiceKey, Object> forClassloader : servicesByClassLoader.values()) {
+                for (Map<ServiceKey, List<Object>> forClassloader : servicesByClassLoader.values()) {
                     keys.addAll(forClassloader.keySet());
                 }
                 return keys;
@@ -203,10 +209,24 @@ public class ReststopInitializer implements ServletContainerInitializer{
         @Override
         public <T> T get(ServiceKey<T> serviceKey) {
             synchronized (servicesByClassLoader) {
-                for (Map<ServiceKey, Object> forClassLoader : servicesByClassLoader.values()) {
-                    Object impl = forClassLoader.get(serviceKey);
+                for (Map<ServiceKey, List<Object>> forClassLoader : servicesByClassLoader.values()) {
+                    List<Object> impl = forClassLoader.get(serviceKey);
                     if(impl != null) {
-                        return serviceKey.getType().cast(impl);
+                        return serviceKey.getType().cast(impl.get(0));
+                    }
+                }
+                return null;
+
+            }
+        }
+
+
+        public <T> Collection<T> getMultiple(ServiceKey<T> serviceKey) {
+            synchronized (servicesByClassLoader) {
+                for (Map<ServiceKey, List<Object>> forClassLoader : servicesByClassLoader.values()) {
+                    List<T> impl = (List<T>) forClassLoader.get(serviceKey);
+                    if(impl != null) {
+                        return impl;
                     }
                 }
                 return null;
