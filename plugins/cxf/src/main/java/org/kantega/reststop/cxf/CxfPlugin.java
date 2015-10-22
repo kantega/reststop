@@ -34,10 +34,8 @@ import java.util.*;
  *
  */
 @Plugin
-public class CxfReststopPlugin implements EndpointDeployer {
+public class CxfPlugin implements EndpointDeployer {
 
-
-    private final ReststopPluginManager pluginManager;
 
     private final Collection<EndpointCustomizer> customizers;
     @Export
@@ -46,30 +44,20 @@ public class CxfReststopPlugin implements EndpointDeployer {
     private final EndpointConfigurationBuilder endpointConfigurationBuilder;
     @Export
     private final EndpointDeployer deployer = this;
-    @Export
-    private final PluginListener listener;
+
     private List<Endpoint> endpoints = new ArrayList<>();
 
     public static ThreadLocal<ClassLoader> pluginClassLoader = new ThreadLocal<>();
 
 
 
-    public CxfReststopPlugin(@Config(defaultValue = "/ws/*") String mountPoint,
-                             ServletBuilder servletBuilder,
-                             final ReststopPluginManager pluginManager,
-                             Collection<EndpointCustomizer> endpointCustomizers) throws ServletException {
-        this.pluginManager = pluginManager;
+    public CxfPlugin(@Config(defaultValue = "/ws/*") String mountPoint,
+                     ServletBuilder servletBuilder,
+                     Collection<EndpointCustomizer> endpointCustomizers) throws ServletException {
         this.customizers = endpointCustomizers;
 
         CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet();
         cxfNonSpringServlet.init(servletBuilder.servletConfig("cxf", new Properties()));
-
-        listener = new PluginListener() {
-            @Override
-            public void pluginManagerStarted() {
-                System.out.println("Would have deployed with customizers: " + pluginManager.findExports(EndpointCustomizer.class).size());
-            }
-        };
 
         cxfServlet = servletBuilder.servlet(cxfNonSpringServlet, mountPoint);
 
@@ -77,7 +65,7 @@ public class CxfReststopPlugin implements EndpointDeployer {
     }
 
 
-    private void deployEndpoints(Collection<EndpointCustomizer> customizers, Collection<EndpointConfiguration> endpoints) {
+    private void deployEndpoints(Collection<EndpointCustomizer> customizers, Collection<PluginExport<EndpointConfiguration>> endpoints) {
         for (Endpoint endpoint : this.endpoints) {
             endpoint.stop();
         }
@@ -86,16 +74,17 @@ public class CxfReststopPlugin implements EndpointDeployer {
         for (Definition def : wsdlManager.getDefinitions().values()) {
             wsdlManager.removeDefinition(def);
         }
-        for (EndpointConfiguration config : endpoints) {
+        for (PluginExport<EndpointConfiguration> export : endpoints) {
 
+            EndpointConfiguration config = export.getExport();
             try {
-                pluginClassLoader.set(config.getClassLoader());
+                pluginClassLoader.set(export.getClassLoader());
                 Endpoint endpoint = Endpoint.create(config.getImplementor());
                 endpoint.publish(config.getPath());
                 for (EndpointCustomizer cxfPluginPlugin : customizers) {
                     cxfPluginPlugin.customizeEndpoint(endpoint);
                 }
-                CxfReststopPlugin.this.endpoints.add(endpoint);
+                CxfPlugin.this.endpoints.add(endpoint);
 
             } finally {
                 pluginClassLoader.remove();
@@ -105,23 +94,21 @@ public class CxfReststopPlugin implements EndpointDeployer {
     }
 
     @Override
-    public void deploy(Collection<EndpointConfiguration> endpoints) {
+    public void deploy(Collection<PluginExport<EndpointConfiguration>> endpoints) {
         deployEndpoints(customizers, endpoints);
     }
 
     private class DefaultEndpointConfigurationBuilder implements EndpointConfigurationBuilder {
 
         @Override
-        public Build service(Class clazz, Object service) {
-            return new DefaultBuild(clazz.getClassLoader(), service);
+        public Build service(Object service) {
+            return new DefaultBuild(service);
         }
         private class DefaultBuild implements Build {
-            private final ClassLoader classLoader;
             private final Object service;
             private String path;
 
-            public DefaultBuild(ClassLoader classLoader, Object service) {
-                this.classLoader = classLoader;
+            public DefaultBuild(Object service) {
                 this.service = service;
             }
 
@@ -137,11 +124,6 @@ public class CxfReststopPlugin implements EndpointDeployer {
                     @Override
                     public Object getImplementor() {
                         return service;
-                    }
-
-                    @Override
-                    public ClassLoader getClassLoader() {
-                        return classLoader;
                     }
 
                     @Override

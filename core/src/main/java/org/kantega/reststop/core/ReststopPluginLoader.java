@@ -22,6 +22,7 @@ import org.kantega.jexmec.ctor.ClassLocator;
 import org.kantega.jexmec.ctor.ConstructorInjectionPluginLoader;
 import org.kantega.jexmec.ctor.InvalidPluginException;
 import org.kantega.reststop.api.Config;
+import org.kantega.reststop.api.PluginExport;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 
 import java.lang.reflect.*;
@@ -77,27 +78,38 @@ public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<Objec
 
         Object[] params = new Object[constructor.getParameterTypes().length];
         for (int i = 0; i < constructor.getParameterTypes().length; i++) {
-            Class<?> paramClass = constructor.getParameterTypes()[i];
-
-            if(constructor.getParameters()[i].isAnnotationPresent(Config.class)) {
-                params[i] = getConfigProperty(constructor.getParameters()[i], classLoader);
-            } else if(paramClass == Collection.class) {
-                ParameterizedType parameterizedType = (ParameterizedType) constructor.getGenericParameterTypes()[i];
-                if(parameterizedType != null) {
-                    Class type = (Class) parameterizedType.getActualTypeArguments()[0];
-                    Collection multiple = reststopServiceLocator.getMultiple(ServiceKey.by(type));
-                    params[i] = multiple;
-
-                }
-            } else {
-                if (!serviceLocator.keySet().contains(ServiceKey.by(paramClass))) {
-                    throw new InvalidPluginException("Plugin  class " + constructor.getDeclaringClass() + " has an illegal constructor. Parameter " + i + " of type " + paramClass.getName() + " could not be resolved to an application service", constructor.getDeclaringClass());
-                }
-                params[i] = serviceLocator.get(ServiceKey.by(paramClass));
-            }
+            params[i] = findInjectableService(constructor, i, serviceLocator, classLoader);
 
         }
         return params;
+    }
+
+    private Object findInjectableService(Constructor constructor, int i, ServiceLocator serviceLocator, ClassLoader classLoader) {
+        Class<?> paramClass = constructor.getParameterTypes()[i];
+
+        if(constructor.getParameters()[i].isAnnotationPresent(Config.class)) {
+            return getConfigProperty(constructor.getParameters()[i], classLoader);
+        }
+
+        if(paramClass == Collection.class) {
+            ParameterizedType parameterizedType = (ParameterizedType) constructor.getGenericParameterTypes()[i];
+            if(parameterizedType.getActualTypeArguments()[0] instanceof ParameterizedType) {
+                ParameterizedType nestedParameterizedType = (ParameterizedType) parameterizedType.getActualTypeArguments()[0];
+                if (nestedParameterizedType.getRawType() == PluginExport.class) {
+                    Class type = (Class) nestedParameterizedType.getActualTypeArguments()[0];
+                    return reststopServiceLocator.getPluginExports(ServiceKey.by(type));
+                }
+                throw new IllegalArgumentException("Unknown nested parameterized raw type " + nestedParameterizedType.getRawType() + " for constructor in " + constructor.getDeclaringClass());
+            } else {
+                Class type = (Class) parameterizedType.getActualTypeArguments()[0];
+                Collection multiple = reststopServiceLocator.getMultiple(ServiceKey.by(type));
+                return multiple;
+            }
+        }
+        if (!serviceLocator.keySet().contains(ServiceKey.by(paramClass))) {
+            throw new InvalidPluginException("Plugin  class " + constructor.getDeclaringClass() + " has an illegal constructor. Parameter " + i + " of type " + paramClass.getName() + " could not be resolved to an application service", constructor.getDeclaringClass());
+        }
+        return serviceLocator.get(ServiceKey.by(paramClass));
     }
 
     private Object getConfigProperty(Parameter param, ClassLoader loader) {

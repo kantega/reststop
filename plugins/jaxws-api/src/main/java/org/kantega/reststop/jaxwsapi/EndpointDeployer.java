@@ -16,11 +16,13 @@
 
 package org.kantega.reststop.jaxwsapi;
 
+import org.kantega.reststop.api.PluginExport;
+
 import java.util.Collection;
 
 /**
  *
  */
 public interface EndpointDeployer {
-    void deploy(Collection<EndpointConfiguration> endpoints);
+    void deploy(Collection<PluginExport<EndpointConfiguration>> endpoints);
 }

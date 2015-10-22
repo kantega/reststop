@@ -277,11 +277,11 @@ public class ReststopInitializer implements ServletContainerInitializer{
             }
         }
 
-        public <T> Collection<PluginExport<T>> getPluginExports(Class<T> type) {
+        public <T> Collection<PluginExport<T>> getPluginExports(ServiceKey<T> serviceKey) {
             synchronized (servicesByClassLoader) {
                 Collection<PluginExport<T>>  collection = new ArrayList<>();
 
-                ServiceKey<T> serviceKey = ServiceKey.by(type);
+
 
                 for (Map<ServiceKey, List<PluginExport>> forClassLoader : servicesByClassLoader.values()) {
                     List<PluginExport> impl =  forClassLoader.get(serviceKey);
@@ -910,7 +910,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         @Override
         public <T> Collection<PluginExport<T>> findPluginExports(Class<T> type) {
-            return exportsServiceLocator.getPluginExports(type);
+            return exportsServiceLocator.getPluginExports(ServiceKey.by(type));
         }
 
         private void assertStarted() {

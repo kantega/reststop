@@ -39,7 +39,7 @@ public class ContextClassLoaderResourceResolver implements ResourceResolver{
         if(!resourceType.isAssignableFrom(URL.class)) {
             return null;
         }
-        ClassLoader classLoader = CxfReststopPlugin.pluginClassLoader.get();
+        ClassLoader classLoader = CxfPlugin.pluginClassLoader.get();
         if(classLoader == null) {
             return null;
         }
@@ -51,7 +51,7 @@ public class ContextClassLoaderResourceResolver implements ResourceResolver{
     }
 
     public InputStream getAsStream(String name) {
-        ClassLoader classLoader = CxfReststopPlugin.pluginClassLoader.get();
+        ClassLoader classLoader = CxfPlugin.pluginClassLoader.get();
         if(classLoader == null) {
             return null;
         }

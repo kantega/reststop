@@ -24,5 +24,4 @@ public interface EndpointConfiguration {
 
     String getPath();
 
-    ClassLoader getClassLoader();
 }

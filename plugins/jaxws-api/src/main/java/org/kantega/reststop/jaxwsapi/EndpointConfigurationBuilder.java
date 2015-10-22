@@ -20,7 +20,7 @@ package org.kantega.reststop.jaxwsapi;
  *
  */
 public interface EndpointConfigurationBuilder {
-    Build service(Class clazz, Object service);
+    Build service(Object service);
 
 
 

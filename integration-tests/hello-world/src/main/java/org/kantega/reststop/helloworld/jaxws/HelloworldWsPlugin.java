@@ -30,7 +30,7 @@ public class HelloworldWsPlugin  {
     private final EndpointConfiguration helloEndpoint;
 
     public HelloworldWsPlugin(EndpointConfigurationBuilder builder) {
-        helloEndpoint = builder.service(getClass(), new HelloService()).path("/hello-1.0").build();
+        helloEndpoint = builder.service(new HelloService()).path("/hello-1.0").build();
     }
 
     @PreDestroy
