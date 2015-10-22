@@ -24,7 +24,7 @@ import java.net.URLDecoder;
 import java.util.*;
 
 /**
- * Adds WebJarsFilter with webjars resources, and exports a map of all <artifactId>:<version>, for resource in filter,
+ * Adds WebJarsFilter with webjars resources, and exports a map of all &lt;artifactId&gt;:&lt;version&gt;, for resource in filter,
  * making it easy to reference webjars in html files.
  */
 public class WebjarsReststopPlugin extends DefaultReststopPlugin {
