@@ -388,6 +388,33 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
 
         @Override
+        public Filter resourceServlet(String path, URL url) {
+            return servlet(new HttpServlet() {
+                @Override
+                protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+                    String mediaType = servletContext.getMimeType(path);
+                    if(mediaType == null) {
+                        mediaType = "text/html";
+                    }
+                    if(mediaType.equals("text/html")) {
+                        resp.setCharacterEncoding("utf-8");
+                    }
+                    resp.setContentType(mediaType);
+
+                    OutputStream output = resp.getOutputStream();
+
+                    try (InputStream input = url.openStream()){
+                        byte[] buffer = new byte[1024];
+                        int n;
+                        while (-1 != (n = input.read(buffer))) {
+                            output.write(buffer, 0, n);
+                        }
+                    }
+                }
+            }, path);
+        }
+
+        @Override
         public Filter servlet(HttpServlet servlet, String path) {
             if(servlet == null ) {
                 throw new IllegalArgumentException("Servlet parameter cannot be null");
@@ -396,6 +423,17 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 throw new IllegalArgumentException("Path for servlet " +servlet + " cannot be null");
             }
             return filter(new ServletWrapperFilter(servlet, path), path, FilterPhase.USER);
+        }
+
+
+        @Override
+        public Filter redirectServlet(String path, String location) {
+            return servlet(new HttpServlet() {
+                @Override
+                protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+                    resp.sendRedirect(location);
+                }
+            }, path);
         }
 
         @Override

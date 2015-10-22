@@ -21,6 +21,7 @@ import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServlet;
+import java.net.URL;
 import java.util.Properties;
 
 /**
@@ -34,7 +35,8 @@ public interface ServletBuilder {
     FilterConfig filterConfig(String name, Properties properties);
 
     Filter servlet(HttpServlet servlet, String path);
-
     Filter filter(Filter filter, String mapping, FilterPhase phase);
 
+    Filter resourceServlet(String path, URL url);
+    Filter redirectServlet(String path, String location);
 }

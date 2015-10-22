@@ -50,12 +50,7 @@ public class DevelopmentConsolePlugin {
         this.velocityEngine = velocityEngine;
 
         devConsole = servletBuilder.filter(new DevelopentConsole(), "/dev/", FilterPhase.PRE_UNMARSHAL);
-        redirect = servletBuilder.servlet(new HttpServlet() {
-            @Override
-            protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-                resp.sendRedirect("dev/");
-            }
-        }, "/dev");
+        redirect = servletBuilder.redirectServlet("/dev", "dev/");
     }
 
     public class DevelopentConsole implements Filter {
