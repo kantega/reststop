@@ -19,7 +19,7 @@ package org.kantega.reststop.development;
 import org.apache.velocity.app.VelocityEngine;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
-import org.kantega.reststop.api.Reststop;
+import org.kantega.reststop.core.Reststop;
 import org.kantega.reststop.api.ServletBuilder;
 
 import javax.servlet.*;

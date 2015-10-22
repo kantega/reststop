@@ -33,6 +33,11 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
         </dependency>

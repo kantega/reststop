@@ -21,6 +21,7 @@ import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.kantega.reststop.api.*;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
+import org.kantega.reststop.core.Reststop;
 import org.kantega.reststop.development.velocity.SectionDirective;
 import org.w3c.dom.Document;
 
