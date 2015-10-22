@@ -17,20 +17,30 @@
 package org.kantega.reststop.jerseymetrics;
 
 import com.codahale.metrics.MetricRegistry;
-import org.kantega.reststop.jaxrsapi.DefaultJaxRsPlugin;
+import org.kantega.reststop.api.Export;
+import org.kantega.reststop.api.Plugin;
+import org.kantega.reststop.jaxrsapi.ApplicationBuilder;
+
+import javax.ws.rs.core.Application;
 
 /**
  *
  */
-public class JerseyMetricsPlugin extends DefaultJaxRsPlugin{
+@Plugin
+public class JerseyMetricsPlugin {
 
 
     public static MetricRegistry metricRegistry;
 
-    public JerseyMetricsPlugin(MetricRegistry metricRegistry) {
+    @Export
+    private final Application metricApp;
+
+    public JerseyMetricsPlugin(MetricRegistry metricRegistry,
+                               ApplicationBuilder applicationBuilder) {
         this.metricRegistry = metricRegistry;
-        addJaxRsContainerClass(TimerFeature.class);
-        addJaxRsContainerClass(AroundWriteMeter.class);
+        metricApp = applicationBuilder.application()
+                .resource(TimerFeature.class)
+                .resource(AroundWriteMeter.class).build();
     }
 
     public static MetricRegistry getMetricRegistry() {

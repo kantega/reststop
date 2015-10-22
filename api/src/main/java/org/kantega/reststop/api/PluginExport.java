@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.jaxwsapi;
-
-import org.kantega.reststop.api.ReststopPlugin;
-
-import java.util.Collection;
+package org.kantega.reststop.api;
 
 /**
  *
  */
-public interface JaxWsPlugin extends ReststopPlugin {
+public interface PluginExport<T> {
 
-    Collection<EndpointConfiguration> getEndpointConfigurations();
+    T getExport();
+    ClassLoader getClassLoader();
+    Object getPlugin();
 }

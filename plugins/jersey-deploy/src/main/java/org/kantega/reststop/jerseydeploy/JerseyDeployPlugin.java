@@ -14,16 +14,21 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.custom.api;
+package org.kantega.reststop.jerseydeploy;
 
-import org.kantega.reststop.api.ReststopPlugin;
+import org.kantega.reststop.api.Plugin;
+import org.kantega.reststop.jaxrsapi.ApplicationDeployer;
 
+import javax.ws.rs.core.Application;
 import java.util.Collection;
 
 /**
  *
  */
-public interface CustomAppPlugin extends ReststopPlugin {
+@Plugin
+public class JerseyDeployPlugin {
 
-    Collection<String> getGreetings();
+    public JerseyDeployPlugin(ApplicationDeployer deployer, Collection<Application> applications) {
+        deployer.deploy(applications);
+    }
 }

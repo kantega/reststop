@@ -24,8 +24,10 @@ import org.kantega.reststop.classloaderutils.PluginInfo;
 import org.kantega.reststop.development.velocity.SectionDirective;
 import org.w3c.dom.Document;
 
+import javax.servlet.Filter;
 import javax.servlet.ServletContext;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -34,16 +36,22 @@ import static org.kantega.reststop.classloaderutils.PluginInfo.configure;
 /**
  *
  */
-public class DevelopmentPlugin extends DefaultReststopPlugin {
+@Plugin
+public class DevelopmentPlugin  {
 
-    @Config(defaultValue = "true")
-    private String runTestsOnRedeploy;
+    @Export
+    private final Collection<Filter> filters  = new ArrayList<>();
 
     @Export
     private VelocityEngine velocityEngine;
+
     private volatile boolean providerStarted = false;
 
-    public DevelopmentPlugin(final Reststop reststop, ServletContext servletContext) {
+    @Export
+    private Collection<PluginListener> listeners = new ArrayList<>();
+
+    public DevelopmentPlugin(@Config(defaultValue = "true") String runTestsOnRedeploy,
+                             final Reststop reststop, ServletContext servletContext) {
 
         Document pluginsXml = (Document) servletContext.getAttribute("pluginsXml");
 
@@ -57,13 +65,12 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
                     PluginInfo origInfo = ((PluginClassLoader)getClass().getClassLoader()).getPluginInfo();
                     final DevelopmentClassloader devloader = createClassLoader(origInfo, pluginParentClassLoader);
 
-                    addPluginListener(new PluginListener() {
+                    listeners.add(new PluginListener() {
                         @Override
                         public void pluginManagerStarted() {
                             reststop.changePluginClassLoaders().remove(getClass().getClassLoader()).add(devloader).commit();
                         }
                     });
-
                     return;
                 }
             }
@@ -97,20 +104,20 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
         
 
         if(!loadedByDevelopmentClassLoader()) {
-            addPluginListener(new PluginListener() {
+            listeners.add(new PluginListener() {
                 @Override
                 public void pluginManagerStarted() {
                     provider.start(reststop);
                 }
             });
         } else {
-            addPluginListener(new PluginListener() {
+            listeners.add(new PluginListener() {
                 @Override
-                public void pluginsUpdated(Collection<ReststopPlugin> plugins) {
-                    if(!providerStarted) {
+                public void pluginsUpdated(Collection<Object> plugins) {
+                    if (!providerStarted) {
                         providerStarted = true;
-                        for (ReststopPlugin plugin : plugins) {
-                            if(plugin == DevelopmentPlugin.this) {
+                        for (Object plugin : plugins) {
+                            if (plugin == DevelopmentPlugin.this) {
                                 provider.start(reststop);
                             }
                         }
@@ -122,8 +129,8 @@ public class DevelopmentPlugin extends DefaultReststopPlugin {
 
 
 
-        addServletFilter(reststop.createFilter(new DevelopmentAssetsFilter(), "/dev/assets/*", FilterPhase.PRE_UNMARSHAL));
-        addServletFilter(reststop.createFilter(new RedeployFilter(provider, reststop, velocityEngine, "true".equals(runTestsOnRedeploy)), "/*", FilterPhase.PRE_UNMARSHAL));
+        filters.add(reststop.createFilter(new DevelopmentAssetsFilter(), "/dev/assets/*", FilterPhase.PRE_UNMARSHAL));
+        filters.add(reststop.createFilter(new RedeployFilter(provider, reststop, velocityEngine, "true".equals(runTestsOnRedeploy)), "/*", FilterPhase.PRE_UNMARSHAL));
 
     }
 

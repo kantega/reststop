@@ -16,17 +16,25 @@
 
 package org.kantega.reststop.helloworld.jaxws;
 
-import org.kantega.reststop.helloworld.jaxws.HelloService;
-import org.kantega.reststop.jaxwsapi.DefaultJaxWsPlugin;
+import org.kantega.reststop.api.Export;
+import org.kantega.reststop.api.Plugin;
 import org.kantega.reststop.jaxwsapi.EndpointConfiguration;
 import org.kantega.reststop.jaxwsapi.EndpointConfigurationBuilder;
 
-/**
- *
- */
-public class HelloworldWsPlugin extends DefaultJaxWsPlugin {
+import javax.annotation.PreDestroy;
+
+@Plugin
+public class HelloworldWsPlugin  {
+
+    @Export
+    private final EndpointConfiguration helloEndpoint;
 
     public HelloworldWsPlugin(EndpointConfigurationBuilder builder) {
-        addEndpointConfiguration(builder.service(new HelloService()).path("/hello-1.0"));
+        helloEndpoint = builder.service(getClass(), new HelloService()).path("/hello-1.0").build();
+    }
+
+    @PreDestroy
+    public void preDestroy() {
+        System.out.println("About to destroy");
     }
 }

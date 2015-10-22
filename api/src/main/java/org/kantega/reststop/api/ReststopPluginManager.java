@@ -25,11 +25,14 @@ import java.util.List;
  */
 public interface ReststopPluginManager {
 
-    Collection<ReststopPlugin> getPlugins();
+    Collection<Object> getPlugins();
 
-    <T extends ReststopPlugin> Collection<T> getPlugins(Class<T> pluginClass);
+    <T> Collection<T> getPlugins(Class<T> pluginClass);
 
-    ClassLoader getClassLoader(ReststopPlugin plugin);
+    ClassLoader getClassLoader(Object plugin);
 
     Collection<ClassLoader> getPluginClassLoaders();
+
+    <T> Collection<T> findExports(Class<T> type);
+    <T> Collection<PluginExport<T>> findPluginExports(Class<T> type);
 }

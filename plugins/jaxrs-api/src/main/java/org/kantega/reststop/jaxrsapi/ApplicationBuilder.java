@@ -14,18 +14,23 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.cxf.api;
+package org.kantega.reststop.jaxrsapi;
 
-import org.kantega.reststop.api.DefaultReststopPlugin;
 
-import javax.xml.ws.Endpoint;
+import javax.ws.rs.core.Application;
 
 /**
  *
  */
-public class DefaultCxfPluginPlugin extends DefaultReststopPlugin implements CxfPluginPlugin {
-    @Override
-    public void customizeEndpoint(Endpoint endpoint) {
+public interface ApplicationBuilder {
+    Build application();
 
+    interface Build {
+
+        Build singleton(Object resource);
+
+        Build resource(Class resource);
+
+        Application build();
     }
 }

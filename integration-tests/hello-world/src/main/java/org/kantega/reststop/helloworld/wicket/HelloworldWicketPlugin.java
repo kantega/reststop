@@ -17,15 +17,10 @@
 package org.kantega.reststop.helloworld.wicket;
 
 import org.apache.wicket.protocol.http.WebApplication;
-import org.kantega.reststop.api.DefaultReststopPlugin;
-import org.kantega.reststop.helloworld.jaxrs.HelloWorldRootResource;
-import org.kantega.reststop.helloworld.jaxrs.HelloworldResource;
-import org.kantega.reststop.jaxrsapi.DefaultJaxRsPlugin;
+import org.kantega.reststop.api.Plugin;
 
-/**
- *
- */
-public class HelloworldWicketPlugin extends DefaultReststopPlugin {
+@Plugin
+public class HelloworldWicketPlugin {
 
     public HelloworldWicketPlugin(WebApplication webApplication) {
         webApplication.mountPage("/hello", HelloPage.class);

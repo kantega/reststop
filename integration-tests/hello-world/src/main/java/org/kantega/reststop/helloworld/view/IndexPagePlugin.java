@@ -17,10 +17,11 @@
 package org.kantega.reststop.helloworld.view;
 
 import org.apache.wicket.util.io.IOUtils;
-import org.kantega.reststop.api.DefaultReststopPlugin;
 import org.kantega.reststop.api.Export;
+import org.kantega.reststop.api.Plugin;
 import org.kantega.reststop.api.Reststop;
 
+import javax.servlet.Filter;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -31,15 +32,19 @@ import java.io.IOException;
 /**
  *
  */
-public class IndexPagePlugin extends DefaultReststopPlugin {
+@Plugin
+public class IndexPagePlugin  {
 
     @Export
     private final DataSource dataSource;
 
+    @Export
+    private final Filter indexServlet;
+
     public IndexPagePlugin(Reststop reststop) {
 
         dataSource = null;
-        addServletFilter(reststop.createServletFilter(new IndexPage(), "/"));
+        indexServlet = reststop.createServletFilter(new IndexPage(), "/");
     }
 
     private class IndexPage extends HttpServlet {

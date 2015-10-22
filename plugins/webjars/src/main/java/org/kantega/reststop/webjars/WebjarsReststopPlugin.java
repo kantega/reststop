@@ -18,6 +18,7 @@ package org.kantega.reststop.webjars;
 
 import org.kantega.reststop.api.*;
 
+import javax.servlet.Filter;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -27,23 +28,22 @@ import java.util.*;
  * Adds WebJarsFilter with webjars resources, and exports a map of all <artifactId>:<version>, for resource in filter,
  * making it easy to reference webjars in html files.
  */
-public class WebjarsReststopPlugin extends DefaultReststopPlugin {
+@Plugin
+public class WebjarsReststopPlugin {
 
     @Export
     private final WebjarsVersions v;
+
+    @Export
+    private final Filter webjarsFilter;
 
     private Map<String, String> versions;
 
     public WebjarsReststopPlugin(final Reststop reststop, final ReststopPluginManager reststopPluginManager) {
 
-        addServletFilter(reststop.createFilter(new WebJarsFilter(reststopPluginManager), "/webjars/*", FilterPhase.USER));
+        webjarsFilter = reststop.createFilter(new WebJarsFilter(reststopPluginManager), "/webjars/*", FilterPhase.USER);
 
-        v = new WebjarsVersions() {
-            @Override
-            public Map<String, String> getVersions() {
-                return getVersionsForWebJars(reststopPluginManager);
-            }
-        };
+        v = () -> getVersionsForWebJars(reststopPluginManager);
     }
 
     private synchronized Map<String, String> getVersionsForWebJars(ReststopPluginManager reststopPluginManager) {

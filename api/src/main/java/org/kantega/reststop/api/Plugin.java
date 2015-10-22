@@ -16,21 +16,16 @@
 
 package org.kantega.reststop.api;
 
-import javax.servlet.Filter;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 /**
  *
  */
-public interface ReststopPlugin {
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface Plugin {
 
-    Collection<Filter> getServletFilters();
-
-    Collection<PluginListener> getPluginListeners();
-
-    void destroy();
-
-    void init();
 }

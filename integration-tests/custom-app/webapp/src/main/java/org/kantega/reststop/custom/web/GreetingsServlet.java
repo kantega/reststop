@@ -16,9 +16,9 @@
 
 package org.kantega.reststop.custom.web;
 
-import org.kantega.jexmec.PluginManager;
-import org.kantega.reststop.api.ReststopPlugin;
-import org.kantega.reststop.custom.api.CustomAppPlugin;
+import org.kantega.reststop.api.PluginExport;
+import org.kantega.reststop.api.ReststopPluginManager;
+import org.kantega.reststop.custom.api.GreetingSource;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -36,25 +36,19 @@ public class GreetingsServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
-        PluginManager<ReststopPlugin> manager = (PluginManager<ReststopPlugin>) request.getServletContext ().getAttribute("reststopPluginManager");
+        ReststopPluginManager manager = (ReststopPluginManager) request.getServletContext ().getAttribute("reststopPluginManager");
 
         List<String> greetings = new ArrayList<>();
 
-        for (CustomAppPlugin customAppPlugin : manager.getPlugins(CustomAppPlugin.class)) {
-            greetings.addAll(customAppPlugin.getGreetings());
+        for (GreetingSource source : manager.findExports(GreetingSource.class)) {
+            greetings.add(source.getGreeting());
         }
 
         request.setAttribute("greetings", greetings);
 
-        request.setAttribute("appPlugins", manager.getPlugins(CustomAppPlugin.class));
-        Collection<ReststopPlugin> all = manager.getPlugins();
-        List<ReststopPlugin> reststopPlugins = new ArrayList<>();
-        for (ReststopPlugin plugin : all) {
-            if(!(plugin instanceof CustomAppPlugin)) {
-                reststopPlugins.add(plugin);
-            }
-        }
-        request.setAttribute("reststopPlugins", reststopPlugins);
+        Collection<Object> all = manager.getPlugins();
+
+        request.setAttribute("reststopPlugins", all);
 
         request.getRequestDispatcher("/WEB-INF/jsp/greetings.jsp").forward(request, response);
     }

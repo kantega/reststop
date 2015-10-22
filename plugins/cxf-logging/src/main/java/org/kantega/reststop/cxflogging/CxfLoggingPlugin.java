@@ -20,17 +20,24 @@ import org.apache.cxf.annotations.SchemaValidation;
 import org.apache.cxf.interceptor.LoggingInInterceptor;
 import org.apache.cxf.jaxws22.EndpointImpl;
 import org.apache.cxf.message.Message;
-import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
-import org.kantega.reststop.cxf.api.DefaultCxfPluginPlugin;
+import org.kantega.reststop.api.Export;
+import org.kantega.reststop.api.Plugin;
+import org.kantega.reststop.cxflib.api.EndpointCustomizer;
 
 import javax.xml.ws.Endpoint;
 
 /**
  *
  */
-public class CxfLoggingPlugin extends DefaultCxfPluginPlugin {
+@Plugin
+public class CxfLoggingPlugin implements EndpointCustomizer {
 
+    @Export
+    private final EndpointCustomizer endpointCustomizer;
 
+    public CxfLoggingPlugin() {
+        endpointCustomizer = this;
+    }
 
     @Override
     public void customizeEndpoint(Endpoint endpoint) {

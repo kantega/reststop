@@ -19,65 +19,66 @@ package org.kantega.reststop.cxf;
 import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
 import org.apache.cxf.wsdl.WSDLManager;
 import org.kantega.reststop.api.*;
+import org.kantega.reststop.cxflib.api.EndpointCustomizer;
 import org.kantega.reststop.jaxwsapi.EndpointConfiguration;
 import org.kantega.reststop.jaxwsapi.EndpointConfigurationBuilder;
-import org.kantega.reststop.jaxwsapi.JaxWsPlugin;
-import org.kantega.reststop.cxf.api.CxfPluginPlugin;
+import org.kantega.reststop.jaxwsapi.EndpointDeployer;
 
-import javax.servlet.*;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
-import javax.servlet.http.HttpServletResponse;
+import javax.servlet.Filter;
+import javax.servlet.ServletException;
 import javax.wsdl.Definition;
 import javax.xml.ws.Endpoint;
-import java.io.IOException;
 import java.util.*;
 
 /**
  *
  */
-public class CxfReststopPlugin extends DefaultReststopPlugin {
+@Plugin
+public class CxfReststopPlugin implements EndpointDeployer {
 
-
-    @Export
-    private final EndpointConfigurationBuilder endpointConfigurationBuilder;
 
     private final ReststopPluginManager pluginManager;
+
+    private final Collection<EndpointCustomizer> customizers;
+    @Export
+    private final Filter cxfServlet;
+    @Export
+    private final EndpointConfigurationBuilder endpointConfigurationBuilder;
+    @Export
+    private final EndpointDeployer deployer = this;
+    @Export
+    private final PluginListener listener;
     private List<Endpoint> endpoints = new ArrayList<>();
 
     public static ThreadLocal<ClassLoader> pluginClassLoader = new ThreadLocal<>();
 
-    @Config(defaultValue = "/ws/*")
-    private String mountPoint;
 
-    public CxfReststopPlugin(Reststop reststop,
-                             final ReststopPluginManager pluginManager) throws ServletException {
+
+    public CxfReststopPlugin(@Config(defaultValue = "/ws/*") String mountPoint,
+                             Reststop reststop,
+                             final ReststopPluginManager pluginManager,
+                             Collection<EndpointCustomizer> endpointCustomizers) throws ServletException {
         this.pluginManager = pluginManager;
+        this.customizers = endpointCustomizers;
 
         CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet();
         cxfNonSpringServlet.init(reststop.createServletConfig("cxf", new Properties()));
 
-
-        addServletFilter(reststop.createServletFilter(cxfNonSpringServlet, mountPoint));
-
-        addPluginListener(new PluginListener() {
-            @Override
-            public void pluginsUpdated(Collection<ReststopPlugin> plugins) {
-                deployEndpoints();
-            }
-
+        listener = new PluginListener() {
             @Override
             public void pluginManagerStarted() {
-                deployEndpoints();
+                System.out.println("Would have deployed with customizers: " + pluginManager.findExports(EndpointCustomizer.class).size());
             }
-        });
+        };
+
+        cxfServlet = reststop.createServletFilter(cxfNonSpringServlet, mountPoint);
 
         endpointConfigurationBuilder = new DefaultEndpointConfigurationBuilder();
     }
 
 
-    private void deployEndpoints() {
-        for (Endpoint endpoint : endpoints) {
+    private void deployEndpoints(Collection<EndpointCustomizer> customizers, Collection<EndpointConfiguration> endpoints) {
+        for (Endpoint endpoint : this.endpoints) {
             endpoint.stop();
         }
 
@@ -85,19 +86,17 @@ public class CxfReststopPlugin extends DefaultReststopPlugin {
         for (Definition def : wsdlManager.getDefinitions().values()) {
             wsdlManager.removeDefinition(def);
         }
-        for (JaxWsPlugin plugin : pluginManager.getPlugins(JaxWsPlugin.class)) {
+        for (EndpointConfiguration config : endpoints) {
 
             try {
-                pluginClassLoader.set(pluginManager.getClassLoader(plugin));
-
-                for (EndpointConfiguration config : plugin.getEndpointConfigurations()) {
-                    Endpoint endpoint = Endpoint.create(config.getImplementor());
-                    endpoint.publish(config.getPath());
-                    for (CxfPluginPlugin cxfPluginPlugin : pluginManager.getPlugins(CxfPluginPlugin.class)) {
-                        cxfPluginPlugin.customizeEndpoint(endpoint);
-                    }
-                    CxfReststopPlugin.this.endpoints.add(endpoint);
+                pluginClassLoader.set(config.getClassLoader());
+                Endpoint endpoint = Endpoint.create(config.getImplementor());
+                endpoint.publish(config.getPath());
+                for (EndpointCustomizer cxfPluginPlugin : customizers) {
+                    cxfPluginPlugin.customizeEndpoint(endpoint);
                 }
+                CxfReststopPlugin.this.endpoints.add(endpoint);
+
             } finally {
                 pluginClassLoader.remove();
             }
@@ -105,17 +104,24 @@ public class CxfReststopPlugin extends DefaultReststopPlugin {
 
     }
 
+    @Override
+    public void deploy(Collection<EndpointConfiguration> endpoints) {
+        deployEndpoints(customizers, endpoints);
+    }
+
     private class DefaultEndpointConfigurationBuilder implements EndpointConfigurationBuilder {
 
         @Override
-        public Build service(Object service) {
-            return new DefaultBuild(service);
+        public Build service(Class clazz, Object service) {
+            return new DefaultBuild(clazz.getClassLoader(), service);
         }
         private class DefaultBuild implements Build {
+            private final ClassLoader classLoader;
             private final Object service;
             private String path;
 
-            public DefaultBuild(Object service) {
+            public DefaultBuild(ClassLoader classLoader, Object service) {
+                this.classLoader = classLoader;
                 this.service = service;
             }
 
@@ -131,6 +137,11 @@ public class CxfReststopPlugin extends DefaultReststopPlugin {
                     @Override
                     public Object getImplementor() {
                         return service;
+                    }
+
+                    @Override
+                    public ClassLoader getClassLoader() {
+                        return classLoader;
                     }
 
                     @Override

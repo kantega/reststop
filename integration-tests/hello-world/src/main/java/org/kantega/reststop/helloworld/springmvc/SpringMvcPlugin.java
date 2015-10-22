@@ -16,18 +16,25 @@
 
 package org.kantega.reststop.helloworld.springmvc;
 
-import org.kantega.reststop.api.DefaultReststopPlugin;
+import org.kantega.reststop.api.Export;
+import org.kantega.reststop.api.Plugin;
 import org.kantega.reststop.api.Reststop;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
+import javax.servlet.Filter;
 import javax.servlet.ServletException;
 import java.util.Properties;
 
 /**
  *
  */
-public class SpringMvcPlugin extends DefaultReststopPlugin {
+@Plugin
+public class SpringMvcPlugin {
+
+    @Export
+    private final Filter springServlet;
+
     public SpringMvcPlugin(Reststop reststop) throws ServletException {
 
         AnnotationConfigWebApplicationContext context = new AnnotationConfigWebApplicationContext();
@@ -39,6 +46,6 @@ public class SpringMvcPlugin extends DefaultReststopPlugin {
         Properties properties = new Properties();
         String filterPath = "/spring/*";
         servlet.init(reststop.createServletConfig("spring", properties));
-        addServletFilter(reststop.createServletFilter(servlet, filterPath));
+        springServlet = reststop.createServletFilter(servlet, filterPath);
     }
 }
