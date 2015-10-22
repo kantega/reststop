@@ -45,12 +45,12 @@ public class DevelopmentConsolePlugin {
     @Export
     private final Filter redirect;
 
-    public DevelopmentConsolePlugin(Reststop reststop, ReststopPluginManager pluginManager, VelocityEngine velocityEngine) {
+    public DevelopmentConsolePlugin(ServletBuilder servletBuilder, ReststopPluginManager pluginManager, VelocityEngine velocityEngine) {
         this.pluginManager = pluginManager;
         this.velocityEngine = velocityEngine;
 
-        devConsole = reststop.createFilter(new DevelopentConsole(), "/dev/", FilterPhase.PRE_UNMARSHAL);
-        redirect = reststop.createServletFilter(new HttpServlet() {
+        devConsole = servletBuilder.filter(new DevelopentConsole(), "/dev/", FilterPhase.PRE_UNMARSHAL);
+        redirect = servletBuilder.servlet(new HttpServlet() {
             @Override
             protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
                 resp.sendRedirect("dev/");

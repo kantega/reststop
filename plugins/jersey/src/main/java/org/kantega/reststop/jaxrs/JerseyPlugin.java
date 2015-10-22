@@ -49,16 +49,15 @@ public class JerseyPlugin implements ApplicationDeployer, ApplicationBuilder {
 
     @Export final ApplicationBuilder applicationBuilder = this;
     private ServletContainer filter;
-    private Set<Integer> currentPlugins = new HashSet<>();
 
-    public JerseyPlugin(final Reststop reststop, final ReststopPluginManager pluginManager) throws ServletException {
+    public JerseyPlugin(final ServletBuilder reststop, final ReststopPluginManager pluginManager) throws ServletException {
 
 
         filter = addJerseyFilter(new ReststopApplication(Collections.emptyList()));
 
-        filter.init(reststop.createFilterConfig("jersey", new Properties()));
+        filter.init(reststop.filterConfig("jersey", new Properties()));
 
-        jerseyFilter = reststop.createFilter(filter, "/*", FilterPhase.USER);
+        jerseyFilter = reststop.filter(filter, "/*", FilterPhase.USER);
     }
 
     private ServletContainer addJerseyFilter(Application application) {

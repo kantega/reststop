@@ -26,16 +26,15 @@ import java.util.Properties;
 /**
  *
  */
-public interface Reststop {
+public interface ServletBuilder {
 
-    ClassLoader getPluginParentClassLoader();
-    PluginClassLoaderChange changePluginClassLoaders();
+    FilterChain newFilterChain(FilterChain filterChain);
 
+    ServletConfig servletConfig(String name, Properties properties);
+    FilterConfig filterConfig(String name, Properties properties);
 
-    interface PluginClassLoaderChange {
-        PluginClassLoaderChange add(ClassLoader classLoader);
-        PluginClassLoaderChange remove(ClassLoader classLoader);
-        void commit();
+    Filter servlet(HttpServlet servlet, String path);
 
-    }
+    Filter filter(Filter filter, String mapping, FilterPhase phase);
+
 }

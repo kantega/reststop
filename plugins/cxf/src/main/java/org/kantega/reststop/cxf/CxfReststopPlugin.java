@@ -55,14 +55,14 @@ public class CxfReststopPlugin implements EndpointDeployer {
 
 
     public CxfReststopPlugin(@Config(defaultValue = "/ws/*") String mountPoint,
-                             Reststop reststop,
+                             ServletBuilder servletBuilder,
                              final ReststopPluginManager pluginManager,
                              Collection<EndpointCustomizer> endpointCustomizers) throws ServletException {
         this.pluginManager = pluginManager;
         this.customizers = endpointCustomizers;
 
         CXFNonSpringServlet cxfNonSpringServlet = new CXFNonSpringServlet();
-        cxfNonSpringServlet.init(reststop.createServletConfig("cxf", new Properties()));
+        cxfNonSpringServlet.init(servletBuilder.servletConfig("cxf", new Properties()));
 
         listener = new PluginListener() {
             @Override
@@ -71,7 +71,7 @@ public class CxfReststopPlugin implements EndpointDeployer {
             }
         };
 
-        cxfServlet = reststop.createServletFilter(cxfNonSpringServlet, mountPoint);
+        cxfServlet = servletBuilder.servlet(cxfNonSpringServlet, mountPoint);
 
         endpointConfigurationBuilder = new DefaultEndpointConfigurationBuilder();
     }

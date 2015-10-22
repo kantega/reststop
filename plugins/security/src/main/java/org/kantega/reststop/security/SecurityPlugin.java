@@ -20,6 +20,7 @@ import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.kantega.reststop.api.Export;
 import org.kantega.reststop.api.FilterPhase;
 import org.kantega.reststop.api.Reststop;
+import org.kantega.reststop.api.ServletBuilder;
 import org.kantega.reststop.jaxrsapi.ApplicationBuilder;
 
 import javax.servlet.Filter;
@@ -35,8 +36,8 @@ public class SecurityPlugin  {
     @Export
     private final Filter basicAuthFilter;
 
-    public SecurityPlugin(Reststop reststop, ApplicationBuilder applicationBuilder) {
-        basicAuthFilter = reststop.createFilter(new BasicAuthFilter(), "/*", FilterPhase.AUTHENTICATION);
+    public SecurityPlugin(ServletBuilder servletBuilder, ApplicationBuilder applicationBuilder) {
+        basicAuthFilter = servletBuilder.filter(new BasicAuthFilter(), "/*", FilterPhase.AUTHENTICATION);
         securityApp = applicationBuilder.application().resource(RolesAllowedDynamicFeature.class).build();
     }
 }

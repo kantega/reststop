@@ -16,10 +16,7 @@
 
 package org.kantega.reststop.statistics;
 
-import org.kantega.reststop.api.Export;
-import org.kantega.reststop.api.FilterPhase;
-import org.kantega.reststop.api.Plugin;
-import org.kantega.reststop.api.Reststop;
+import org.kantega.reststop.api.*;
 
 import javax.servlet.Filter;
 
@@ -32,8 +29,8 @@ public class StatisticsPlugin {
     @Export
     private final Filter statsFilter;
 
-    public StatisticsPlugin(Reststop reststop) {
+    public StatisticsPlugin(ServletBuilder servletBuilder) {
 
-        statsFilter = reststop.createFilter(new StatisticsFilter(),"/*", FilterPhase.USER);
+        statsFilter = servletBuilder.filter(new StatisticsFilter(),"/*", FilterPhase.USER);
     }
 }

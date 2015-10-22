@@ -51,7 +51,7 @@ public class DevelopmentPlugin  {
     private Collection<PluginListener> listeners = new ArrayList<>();
 
     public DevelopmentPlugin(@Config(defaultValue = "true") String runTestsOnRedeploy,
-                             final Reststop reststop, ServletContext servletContext) {
+                             Reststop reststop, final ServletBuilder servletBuilder, ServletContext servletContext) {
 
         Document pluginsXml = (Document) servletContext.getAttribute("pluginsXml");
 
@@ -129,8 +129,8 @@ public class DevelopmentPlugin  {
 
 
 
-        filters.add(reststop.createFilter(new DevelopmentAssetsFilter(), "/dev/assets/*", FilterPhase.PRE_UNMARSHAL));
-        filters.add(reststop.createFilter(new RedeployFilter(provider, reststop, velocityEngine, "true".equals(runTestsOnRedeploy)), "/*", FilterPhase.PRE_UNMARSHAL));
+        filters.add(servletBuilder.filter(new DevelopmentAssetsFilter(), "/dev/assets/*", FilterPhase.PRE_UNMARSHAL));
+        filters.add(servletBuilder.filter(new RedeployFilter(provider, reststop, servletBuilder, velocityEngine, "true".equals(runTestsOnRedeploy)), "/*", FilterPhase.PRE_UNMARSHAL));
 
     }
 

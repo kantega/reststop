@@ -19,7 +19,7 @@ package org.kantega.reststop.helloworld.view;
 import org.apache.wicket.util.io.IOUtils;
 import org.kantega.reststop.api.Export;
 import org.kantega.reststop.api.Plugin;
-import org.kantega.reststop.api.Reststop;
+import org.kantega.reststop.api.ServletBuilder;
 
 import javax.servlet.Filter;
 import javax.servlet.ServletException;
@@ -41,10 +41,10 @@ public class IndexPagePlugin  {
     @Export
     private final Filter indexServlet;
 
-    public IndexPagePlugin(Reststop reststop) {
+    public IndexPagePlugin(ServletBuilder servletBuilder) {
 
         dataSource = null;
-        indexServlet = reststop.createServletFilter(new IndexPage(), "/");
+        indexServlet = servletBuilder.servlet(new IndexPage(), "/");
     }
 
     private class IndexPage extends HttpServlet {

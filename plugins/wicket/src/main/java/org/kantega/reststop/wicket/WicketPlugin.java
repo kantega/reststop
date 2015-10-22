@@ -37,7 +37,7 @@ public class WicketPlugin  {
     @Export
     private final Filter wicketFilter;
 
-    public WicketPlugin(Reststop reststop) throws ServletException {
+    public WicketPlugin(ServletBuilder servletBuilder) throws ServletException {
 
             wicketApplication = new WicketApplication();
 
@@ -47,9 +47,9 @@ public class WicketPlugin  {
             String filterPath = "/wicket/*";
             properties.setProperty(WicketFilter.FILTER_MAPPING_PARAM, filterPath);
 
-            filter.init(reststop.createFilterConfig("wicket", properties));
+            filter.init(servletBuilder.filterConfig("wicket", properties));
 
-            wicketFilter = reststop.createFilter(filter, filterPath, FilterPhase.USER);
+            wicketFilter = servletBuilder.filter(filter, filterPath, FilterPhase.USER);
 
     }
 

@@ -53,22 +53,22 @@ public class MetricsReststopPlugin {
     @Export
     private final Filter healthCheckServlet;
 
-    public MetricsReststopPlugin(Reststop reststop, ServletContext servletContext) throws ServletException {
+    public MetricsReststopPlugin(ServletBuilder servletBuilder, ServletContext servletContext) throws ServletException {
 
         metricRegistry = initMetricsRegistry();
         MetricsServlet metricsServlet = new MetricsServlet(metricRegistry);
         metricsServlet.init(new EmptyServletConfig(createProxy(servletContext)));
 
-        this.metricsServlet = reststop.createServletFilter(
+        this.metricsServlet = servletBuilder.servlet(
                 metricsServlet,
                 "/metrics/*");
 
 
         healthCheckRegistry = initHealthCheckRegistry();
         HealthCheckServlet healthCheckServlet = new HealthCheckServlet(healthCheckRegistry);
-        healthCheckServlet.init(reststop.createServletConfig("healthcheck", new Properties()));
+        healthCheckServlet.init(servletBuilder.servletConfig("healthcheck", new Properties()));
 
-        this.healthCheckServlet = reststop.createServletFilter(
+        this.healthCheckServlet = servletBuilder.servlet(
                 healthCheckServlet,
                 "/healthchecks/*");
 

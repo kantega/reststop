@@ -17,7 +17,6 @@
 package org.kantega.reststop.core;
 
 import org.kantega.jexmec.*;
-import org.kantega.jexmec.ctor.ConstructorInjectionPluginLoader;
 import org.kantega.jexmec.manager.DefaultPluginManager;
 import org.kantega.reststop.api.*;
 import org.kantega.reststop.classloaderutils.*;
@@ -124,7 +123,8 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
     private DefaultPluginManager<Object> buildPluginManager(ServletContext servletContext, DefaultReststopPluginManager reststopPluginManager, File globalConfigFile) throws ServletException {
 
-        DefaultReststop reststop = new DefaultReststop(servletContext);
+        DefaultReststop reststop = new DefaultReststop();
+        DefaultServletBuilder servletBuilder = new DefaultServletBuilder(servletContext);
 
         final PluginExportsServiceLocator exportsServiceLocator = new PluginExportsServiceLocator();
         DefaultPluginManager<Object> manager = buildFor(Object.class)
@@ -133,6 +133,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 .withClassLoader(getClass().getClassLoader())
                 .withPluginLoader(new ReststopPluginLoader(exportsServiceLocator))
                 .withService(ServiceKey.by(Reststop.class), reststop)
+                .withService(ServiceKey.by(ServletBuilder.class), servletBuilder)
                 .withService(ServiceKey.by(ServletContext.class), servletContext)
                 .withService(ServiceKey.by(ReststopPluginManager.class), reststopPluginManager)
                 .withServiceLocator(exportsServiceLocator)
@@ -141,8 +142,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         exportsServiceLocator.setPluginManager(manager);
         reststopPluginManager.setExportsServiceLocator(exportsServiceLocator);
-
-        reststop.setManager(reststopPluginManager);
+        servletBuilder.setManager(reststopPluginManager);
         return manager;
     }
 
@@ -363,43 +363,21 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
 
 
-
-
-    private static class DefaultReststop implements Reststop, ClassLoaderProvider {
+    private static class DefaultServletBuilder implements ServletBuilder {
         private final ServletContext servletContext;
-        private Registry registry;
-        private ClassLoader parentClassLoader;
         private ReststopPluginManager manager;
 
-        public DefaultReststop(ServletContext servletContext) {
-
+        private DefaultServletBuilder(ServletContext servletContext) {
             this.servletContext = servletContext;
         }
 
-        @Override
-        public void start(Registry registry, ClassLoader parentClassLoader) {
 
-            this.registry = registry;
-            this.parentClassLoader = parentClassLoader;
+        public void setManager(ReststopPluginManager manager) {
+            this.manager = manager;
         }
 
         @Override
-        public void stop() {
-
-        }
-
-        @Override
-        public ClassLoader getPluginParentClassLoader() {
-            return parentClassLoader;
-        }
-
-        @Override
-        public PluginClassLoaderChange changePluginClassLoaders() {
-            return new DefaultClassLoaderChange(registry);
-        }
-
-        @Override
-        public Filter createFilter(Filter filter, String mapping, FilterPhase phase) {
+        public Filter filter(Filter filter, String mapping, FilterPhase phase) {
             if(filter == null ) {
                 throw new IllegalArgumentException("Filter cannot be null");
             }
@@ -410,73 +388,30 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
 
         @Override
-        public Filter createServletFilter(HttpServlet servlet, String path) {
+        public Filter servlet(HttpServlet servlet, String path) {
             if(servlet == null ) {
                 throw new IllegalArgumentException("Servlet parameter cannot be null");
             }
             if(path == null) {
                 throw new IllegalArgumentException("Path for servlet " +servlet + " cannot be null");
             }
-            return createFilter(new ServletWrapperFilter(servlet, path), path, FilterPhase.USER);
-        }
-
-        public void setManager(ReststopPluginManager manager) {
-            this.manager = manager;
+            return filter(new ServletWrapperFilter(servlet, path), path, FilterPhase.USER);
         }
 
         @Override
-        public ServletConfig createServletConfig(String name, Properties properties) {
+        public ServletConfig servletConfig(String name, Properties properties) {
             return new PropertiesWebConfig(name, properties, servletContext);
         }
 
         @Override
-        public FilterConfig createFilterConfig(String name, Properties properties) {
+        public FilterConfig filterConfig(String name, Properties properties) {
             return new PropertiesWebConfig(name, properties, servletContext);
         }
-
         @Override
         public FilterChain newFilterChain(FilterChain filterChain) {
 
             PluginFilterChain orig = (PluginFilterChain) filterChain;
             return buildFilterChain(orig.getRequest(), orig.getFilterChain(), manager);
-        }
-
-        private static class DefaultClassLoaderChange implements PluginClassLoaderChange {
-            private final Registry registry;
-            private final List<ClassLoader> adds = new ArrayList<>();
-            private final List<ClassLoader> removes = new ArrayList<>();
-
-            public DefaultClassLoaderChange(Registry registry) {
-                this.registry = registry;
-            }
-
-            @Override
-            public PluginClassLoaderChange add(ClassLoader classLoader) {
-                adds.add(classLoader);
-                return this;
-            }
-
-            @Override
-            public PluginClassLoaderChange remove(ClassLoader classLoader) {
-                removes.add(classLoader);
-                return this;
-            }
-
-            @Override
-            public void commit() {
-                log.info("About to commit class loader change:");
-                log.info(" Removing : " + removes);
-                for (ClassLoader add : adds) {
-                    log.info("Adding " + add);
-                    if(add instanceof URLClassLoader) {
-                        URLClassLoader ucl = (URLClassLoader) add;
-                        for (URL url : ucl.getURLs()) {
-                            log.info("\t url: " + url.toString());
-                        }
-                    }
-                }
-                registry.replace(removes, adds);
-            }
         }
 
         private static class PropertiesWebConfig implements ServletConfig, FilterConfig  {
@@ -562,6 +497,80 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
             }
         }
+    }
+
+
+    private static class DefaultReststop implements Reststop, ClassLoaderProvider {
+        private Registry registry;
+        private ClassLoader parentClassLoader;
+
+        public DefaultReststop() {
+
+        }
+
+        @Override
+        public void start(Registry registry, ClassLoader parentClassLoader) {
+
+            this.registry = registry;
+            this.parentClassLoader = parentClassLoader;
+        }
+
+        @Override
+        public void stop() {
+
+        }
+
+        @Override
+        public ClassLoader getPluginParentClassLoader() {
+            return parentClassLoader;
+        }
+
+        @Override
+        public PluginClassLoaderChange changePluginClassLoaders() {
+            return new DefaultClassLoaderChange(registry);
+        }
+
+
+
+        private static class DefaultClassLoaderChange implements PluginClassLoaderChange {
+            private final Registry registry;
+            private final List<ClassLoader> adds = new ArrayList<>();
+            private final List<ClassLoader> removes = new ArrayList<>();
+
+            public DefaultClassLoaderChange(Registry registry) {
+                this.registry = registry;
+            }
+
+            @Override
+            public PluginClassLoaderChange add(ClassLoader classLoader) {
+                adds.add(classLoader);
+                return this;
+            }
+
+            @Override
+            public PluginClassLoaderChange remove(ClassLoader classLoader) {
+                removes.add(classLoader);
+                return this;
+            }
+
+            @Override
+            public void commit() {
+                log.info("About to commit class loader change:");
+                log.info(" Removing : " + removes);
+                for (ClassLoader add : adds) {
+                    log.info("Adding " + add);
+                    if(add instanceof URLClassLoader) {
+                        URLClassLoader ucl = (URLClassLoader) add;
+                        for (URL url : ucl.getURLs()) {
+                            log.info("\t url: " + url.toString());
+                        }
+                    }
+                }
+                registry.replace(removes, adds);
+            }
+        }
+
+
     }
 
     private static class MappingWrappedFilter implements Filter {

@@ -39,9 +39,9 @@ public class WebjarsReststopPlugin {
 
     private Map<String, String> versions;
 
-    public WebjarsReststopPlugin(final Reststop reststop, final ReststopPluginManager reststopPluginManager) {
+    public WebjarsReststopPlugin(final ServletBuilder servletBuilder, final ReststopPluginManager reststopPluginManager) {
 
-        webjarsFilter = reststop.createFilter(new WebJarsFilter(reststopPluginManager), "/webjars/*", FilterPhase.USER);
+        webjarsFilter = servletBuilder.filter(new WebJarsFilter(reststopPluginManager), "/webjars/*", FilterPhase.USER);
 
         v = () -> getVersionsForWebJars(reststopPluginManager);
     }
