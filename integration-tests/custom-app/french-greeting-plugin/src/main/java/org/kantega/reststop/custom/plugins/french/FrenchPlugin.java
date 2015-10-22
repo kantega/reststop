@@ -16,14 +16,21 @@
 
 package org.kantega.reststop.custom.plugins.french;
 
-import org.kantega.reststop.custom.api.DefaultCustomAppPlugin;
+import org.kantega.reststop.api.Export;
+import org.kantega.reststop.api.Plugin;
+import org.kantega.reststop.custom.api.GreetingSource;
 
 /**
  *
  */
-public class FrenchPlugin extends DefaultCustomAppPlugin  {
+@Plugin
+public class FrenchPlugin   {
+
+
+    @Export
+    private final GreetingSource french;
 
     public FrenchPlugin() {
-        addGreeting("Bonjour tout le monde");
+        french = () -> "Bonjour tout le monde";
     }
 }

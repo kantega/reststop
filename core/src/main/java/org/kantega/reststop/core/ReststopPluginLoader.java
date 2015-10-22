@@ -21,19 +21,20 @@ import org.kantega.jexmec.ServiceLocator;
 import org.kantega.jexmec.ctor.ClassLocator;
 import org.kantega.jexmec.ctor.ConstructorInjectionPluginLoader;
 import org.kantega.jexmec.ctor.InvalidPluginException;
-import org.kantega.reststop.api.ReststopPlugin;
+import org.kantega.reststop.api.Config;
+import org.kantega.reststop.api.PluginExport;
+import org.kantega.reststop.classloaderutils.PluginClassLoader;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Properties;
 
 /**
  *
  */
-public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<ReststopPlugin> {
+public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<Object> {
     private final ReststopInitializer.PluginExportsServiceLocator reststopServiceLocator;
 
     public ReststopPluginLoader(ReststopInitializer.PluginExportsServiceLocator reststopServiceLocator) {
@@ -42,26 +43,24 @@ public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<Rests
     }
 
     @Override
-    public List<ReststopPlugin> loadPlugins(Class<ReststopPlugin> pluginClass, ClassLoader classLoader, ServiceLocator serviceLocator) {
-        ClassLocator<Class<ReststopPlugin>> classLocator = createPluginClassLocator(pluginClass);
-        final List<ReststopPlugin> plugins = new ArrayList<>();
+    public List<Object> loadPlugins(Class<Object> pluginClass, ClassLoader classLoader, ServiceLocator serviceLocator) {
+        ClassLocator<Class<Object>> classLocator = new ClassLocator<>("META-INF/services/ReststopPlugin/simple.txt");
 
-        final List<Class<ReststopPlugin>> pluginClasses = classLocator.locateClasses(classLoader);
+        final List<Object> plugins = new ArrayList<>();
+
+        final List<Class<Object>> pluginClasses = classLocator.locateClasses(classLoader);
 
 
         for (Class clazz : pluginClasses) {
-            if (!pluginClass.isAssignableFrom(clazz)) {
-                throw new InvalidPluginException("Plugin class " + clazz.getName() + " is not an instance of " + pluginClass.getName(), clazz);
-            }
             if (clazz.getDeclaredConstructors().length != 1) {
                 throw new InvalidPluginException("Plugin class " + clazz.getName() + " must have exactly one constructor", clazz);
             }
             final Constructor constructor = clazz.getDeclaredConstructors()[0];
-            final Object[] params = getConstructorParameters(constructor, serviceLocator);
+            final Object[] params = getConstructorParameters(constructor, serviceLocator, classLoader);
 
             try {
 
-                final ReststopPlugin plugin = pluginClass.cast(constructor.newInstance(params));
+                final Object plugin = pluginClass.cast(constructor.newInstance(params));
                 plugins.add(plugin);
             } catch (InstantiationException e) {
                 final String msg = "Plugin class " + clazz.getName() + " is an " + (clazz.isInterface() ? "interface" : "abstract class");
@@ -75,28 +74,90 @@ public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<Rests
         return plugins;
     }
 
-    private Object[] getConstructorParameters(Constructor constructor, ServiceLocator serviceLocator) {
+    private Object[] getConstructorParameters(Constructor constructor, ServiceLocator serviceLocator, ClassLoader classLoader) {
 
         Object[] params = new Object[constructor.getParameterTypes().length];
         for (int i = 0; i < constructor.getParameterTypes().length; i++) {
-            Class<?> paramClass = constructor.getParameterTypes()[i];
-
-            if(paramClass == Collection.class) {
-                ParameterizedType parameterizedType = (ParameterizedType) constructor.getGenericParameterTypes()[i];
-                if(parameterizedType != null) {
-                    Class type = (Class) parameterizedType.getActualTypeArguments()[0];
-                    Collection multiple = reststopServiceLocator.getMultiple(ServiceKey.by(type));
-                    params[i] = multiple;
-
-                }
-            } else {
-                if (!serviceLocator.keySet().contains(ServiceKey.by(paramClass))) {
-                    throw new InvalidPluginException("Plugin  class " + constructor.getDeclaringClass() + " has an illegal constructor. Parameter " + i + " of type " + paramClass.getName() + " could not be resolved to an application service", constructor.getDeclaringClass());
-                }
-                params[i] = serviceLocator.get(ServiceKey.by(paramClass));
-            }
+            params[i] = findInjectableService(constructor, i, serviceLocator, classLoader);
 
         }
         return params;
+    }
+
+    private Object findInjectableService(Constructor constructor, int i, ServiceLocator serviceLocator, ClassLoader classLoader) {
+        Class<?> paramClass = constructor.getParameterTypes()[i];
+
+        if(constructor.getParameters()[i].isAnnotationPresent(Config.class)) {
+            return getConfigProperty(constructor.getParameters()[i], classLoader);
+        }
+
+        if(paramClass == Collection.class) {
+            ParameterizedType parameterizedType = (ParameterizedType) constructor.getGenericParameterTypes()[i];
+            if(parameterizedType.getActualTypeArguments()[0] instanceof ParameterizedType) {
+                ParameterizedType nestedParameterizedType = (ParameterizedType) parameterizedType.getActualTypeArguments()[0];
+                if (nestedParameterizedType.getRawType() == PluginExport.class) {
+                    Class type = (Class) nestedParameterizedType.getActualTypeArguments()[0];
+                    return reststopServiceLocator.getPluginExports(ServiceKey.by(type));
+                }
+                throw new IllegalArgumentException("Unknown nested parameterized raw type " + nestedParameterizedType.getRawType() + " for constructor in " + constructor.getDeclaringClass());
+            } else {
+                Class type = (Class) parameterizedType.getActualTypeArguments()[0];
+                Collection multiple = reststopServiceLocator.getMultiple(ServiceKey.by(type));
+                return multiple;
+            }
+        }
+        if (!serviceLocator.keySet().contains(ServiceKey.by(paramClass))) {
+            throw new InvalidPluginException("Plugin  class " + constructor.getDeclaringClass() + " has an illegal constructor. Parameter " + i + " of type " + paramClass.getName() + " could not be resolved to an application service", constructor.getDeclaringClass());
+        }
+        return serviceLocator.get(ServiceKey.by(paramClass));
+    }
+
+    private Object getConfigProperty(Parameter param, ClassLoader loader) {
+
+        PluginClassLoader pluginClassLoader = (PluginClassLoader) loader;
+        Properties properties = pluginClassLoader.getPluginInfo().getConfig();
+
+        Config config = param.getAnnotation(Config.class);
+
+        String name = config.property();
+
+        if( name == null || name.trim().isEmpty())  {
+            name = param.getName();
+        }
+        String defaultValue = config.defaultValue().isEmpty() ? null : config.defaultValue();
+
+        String value = properties.getProperty(name, defaultValue);
+
+        if( (value == null || value.trim().isEmpty()) && config.required()) {
+            throw new IllegalArgumentException("Configuration missing for required @Config parameter '" +param.getName() +"' in class " + param.getDeclaringExecutable().getDeclaringClass().getName());
+        }
+        Object convertedValue = convertValue(param, value, param.getType());
+
+        return convertedValue;
+
+
+    }
+
+    private Object convertValue(Parameter parameter, String value, Class<?> type) {
+        if(type == String.class) {
+            return value;
+        } else if(type == byte.class || type == Byte.class) {
+            return Byte.parseByte(value);
+        } else if(type == short.class || type == Short.class) {
+            return Short.parseShort(value);
+        } else if(type == int.class || type == Integer.class) {
+            return Integer.parseInt(value);
+        } else if(type == long.class || type == Long.class) {
+            return Long.parseLong(value);
+        } else if(type == float.class || type == Float.class) {
+            return Float.parseFloat(value);
+        } else if(type == double.class || type == Double.class) {
+            return Double.parseDouble(value);
+        } else if(type == boolean.class || type == Boolean.class) {
+            return Boolean.parseBoolean(value);
+        } else if(type == char.class || type == Character.class) {
+            return value.charAt(0);
+        }
+        throw new IllegalArgumentException("Could not convert @Config for unknown type " + parameter.getType().getName() + " of parameter '" +parameter.getName() +"' in class " + parameter.getDeclaringExecutable().getDeclaringClass().getName());
     }
 }

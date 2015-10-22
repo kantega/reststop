@@ -16,42 +16,27 @@
 
 package org.kantega.reststop.helloworld.view;
 
-import org.apache.wicket.util.io.IOUtils;
-import org.kantega.reststop.api.DefaultReststopPlugin;
 import org.kantega.reststop.api.Export;
-import org.kantega.reststop.api.Reststop;
+import org.kantega.reststop.api.Plugin;
+import org.kantega.reststop.api.ServletBuilder;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.sql.DataSource;
-import java.io.IOException;
+import javax.servlet.Filter;
 
 /**
  *
  */
-public class IndexPagePlugin extends DefaultReststopPlugin {
+@Plugin
+public class IndexPagePlugin  {
 
     @Export
-    private final DataSource dataSource;
+    private final Filter indexServlet;
 
-    public IndexPagePlugin(Reststop reststop) {
+    @Export
+    private final Filter cssServlet;
 
-        dataSource = null;
-        addServletFilter(reststop.createServletFilter(new IndexPage(), "/"));
-    }
-
-    private class IndexPage extends HttpServlet {
-
-        @Override
-        protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
-            response.setContentType("text/html");
-            response.setCharacterEncoding("utf-8");
-
-            IOUtils.copy(getClass().getResourceAsStream("index.html"), response.getOutputStream());
-        }
+    public IndexPagePlugin(ServletBuilder servletBuilder) {
+        indexServlet = servletBuilder.resourceServlet("/", getClass().getResource("index.html"));
+        cssServlet = servletBuilder.resourceServlet("/ws.css", getClass().getResource("ws.css"));
     }
 }
 

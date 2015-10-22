@@ -16,9 +16,6 @@
 
 package org.kantega.reststop.jaxrs;
 
-import org.kantega.reststop.api.ReststopPlugin;
-import org.kantega.reststop.jaxrsapi.JaxRsPlugin;
-
 import javax.ws.rs.core.Application;
 import java.util.*;
 
@@ -27,27 +24,22 @@ import java.util.*;
  */
 public class ReststopApplication extends Application {
 
-    private final Collection<ReststopPlugin> plugins;
+    private final Collection<Application> applications;
 
-    public ReststopApplication(Collection<ReststopPlugin> plugins) {
-        this.plugins = plugins;
+    public ReststopApplication(Collection<Application> applications) {
+        this.applications = applications;
     }
 
     public ReststopApplication() {
-        plugins = null;
+        applications = null;
     }
 
     @Override
     public Set<Object> getSingletons() {
         Set<Object> singletons = new HashSet<>();
-        if(plugins != null) {
-            for(ReststopPlugin plugin : plugins) {
-                if(plugin instanceof JaxRsPlugin) {
-                    JaxRsPlugin jaxRsPlugin = JaxRsPlugin.class.cast(plugin);
-                    for (Application application : jaxRsPlugin.getJaxRsApplications()) {
-                        singletons.addAll(application.getSingletons());
-                    }
-                }
+        if(applications != null) {
+            for(Application application: applications) {
+                singletons.addAll(application.getSingletons());
             }
         }
         return singletons;
@@ -56,14 +48,9 @@ public class ReststopApplication extends Application {
     @Override
     public Set<Class<?>> getClasses() {
         Set<Class<?>> classes = new HashSet<>();
-        if(plugins != null) {
-            for(ReststopPlugin plugin : plugins) {
-                if(plugin instanceof JaxRsPlugin) {
-                    JaxRsPlugin jaxRsPlugin = JaxRsPlugin.class.cast(plugin);
-                    for (Application application : jaxRsPlugin.getJaxRsApplications()) {
-                        classes.addAll(application.getClasses());
-                    }
-                }
+        if(applications != null) {
+            for (Application application : applications) {
+                classes.addAll(application.getClasses());
             }
         }
         return classes;
@@ -71,15 +58,10 @@ public class ReststopApplication extends Application {
 
     @Override
     public Map<String, Object> getProperties() {
-        Map<String, Object> props = new HashMap<String, Object>();
-        if(plugins != null) {
-            for(ReststopPlugin plugin : plugins) {
-                if(plugin instanceof JaxRsPlugin) {
-                    JaxRsPlugin jaxRsPlugin = JaxRsPlugin.class.cast(plugin);
-                    for (Application application : jaxRsPlugin.getJaxRsApplications()) {
-                        props.putAll(application.getProperties());
-                    }
-                }
+        Map<String, Object> props = new HashMap<>();
+        if(applications != null) {
+            for(Application application: applications) {
+                props.putAll(application.getProperties());
             }
         }
         return props;

@@ -1,18 +1,23 @@
 package org.kantega.reststop.maven;
 
 import org.kantega.reststop.api.Config;
-import org.kantega.reststop.jaxrsapi.DefaultJaxRsPlugin;
+import org.kantega.reststop.api.Plugin;
+import org.kantega.reststop.api.Export;
+import org.kantega.reststop.jaxrsapi.ApplicationBuilder;
+
+import javax.ws.rs.core.Application;
+
 
 /**
  *
  */
-public class ExamplePlugin extends DefaultJaxRsPlugin{
+@Plugin
+public class ExamplePlugin {
 
-    @Config
-    private String greeting;
+    @Export final Application helloWorldApp;
 
-    public ExamplePlugin() {
-        addJaxRsSingletonResource(new HelloworldResource(greeting));
+    public ExamplePlugin(@Config String greeting, ApplicationBuilder appBuilder) {
+        helloWorldApp = appBuilder.application().singleton(new HelloworldResource(greeting)).build();
     }
 
 }

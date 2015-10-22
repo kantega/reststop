@@ -16,14 +16,20 @@
 
 package org.kantega.reststop.custom.plugins.german;
 
-import org.kantega.reststop.custom.api.DefaultCustomAppPlugin;
+import org.kantega.reststop.api.Export;
+import org.kantega.reststop.api.Plugin;
+import org.kantega.reststop.custom.api.GreetingSource;
 
 /**
  *
  */
-public class GermanPlugin extends DefaultCustomAppPlugin  {
+@Plugin
+public class GermanPlugin {
+
+    @Export
+    private final GreetingSource german;
 
     public GermanPlugin() {
-        addGreeting("Hallo Welt");
+        german = () -> "Hallo Welt";
     }
 }

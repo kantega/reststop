@@ -19,7 +19,8 @@ package org.kantega.reststop.development;
 import org.apache.velocity.app.VelocityEngine;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
-import org.kantega.reststop.api.Reststop;
+import org.kantega.reststop.core.Reststop;
+import org.kantega.reststop.api.ServletBuilder;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -37,12 +38,14 @@ public class RedeployFilter implements Filter {
     private volatile boolean checkingRedeploy = false;
 
     private final Object runTestsMonitor = new Object();
+    private final ServletBuilder servletBuilder;
     private final VelocityEngine velocityEngine;
     private final boolean shouldRunTests;
 
-    public RedeployFilter(DevelopmentClassLoaderProvider provider, Reststop reststop, VelocityEngine velocityEngine, boolean shouldRunTests) {
+    public RedeployFilter(DevelopmentClassLoaderProvider provider, Reststop reststop, ServletBuilder servletBuilder, VelocityEngine velocityEngine, boolean shouldRunTests) {
         this.provider = provider;
         this.reststop = reststop;
+        this.servletBuilder = servletBuilder;
         this.velocityEngine = velocityEngine;
         this.shouldRunTests = shouldRunTests;
     }
@@ -168,7 +171,7 @@ public class RedeployFilter implements Filter {
 
             }
             if (!staleClassLoaders.isEmpty()) {
-                reststop.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
+                servletBuilder.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
             } else {
                 filterChain.doFilter(servletRequest, servletResponse);
             }

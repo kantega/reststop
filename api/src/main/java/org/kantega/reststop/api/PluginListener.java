@@ -24,5 +24,5 @@ import java.util.Collection;
 public abstract class PluginListener {
     public void pluginManagerStarted() {}
 
-    public void pluginsUpdated(Collection<ReststopPlugin> plugins) {};
+    public void pluginsUpdated(Collection<Object> plugins) {};
 }

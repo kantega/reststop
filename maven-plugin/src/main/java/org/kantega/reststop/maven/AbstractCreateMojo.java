@@ -33,13 +33,13 @@ import java.util.Map;
 
 public abstract class AbstractCreateMojo extends AbstractMojo {
 
-    protected File createPluginClass(String prefixName, File sourceDir, Class<?> extendsClass, String pack) throws MojoExecutionException {
+    protected File createPluginClass(String prefixName, File sourceDir, String pack) throws MojoExecutionException {
         JCodeModel cm = new JCodeModel();
         JPackage jPackage = cm._package(pack);
         JDefinedClass dc;
         String className = removeSpecialCharactersAndCapitalize(prefixName) + "Plugin";
         try {
-            dc = jPackage._class(className)._extends(extendsClass);
+            dc = jPackage._class(className);
         } catch (JClassAlreadyExistsException e) {
             throw new MojoExecutionException(String.format("Generating source for %s failed, Java Class seem to already exist", className),e);
         }

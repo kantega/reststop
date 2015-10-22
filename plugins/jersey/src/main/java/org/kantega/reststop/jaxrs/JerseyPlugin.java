@@ -21,9 +21,12 @@ import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.servlet.ServletProperties;
 import org.kantega.reststop.api.*;
-import org.kantega.reststop.jaxrsapi.JaxRsPlugin;
+import org.kantega.reststop.jaxrsapi.ApplicationBuilder;
+import org.kantega.reststop.jaxrsapi.ApplicationDeployer;
 
-import javax.servlet.*;
+import javax.servlet.Filter;
+import javax.servlet.FilterChain;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Application;
@@ -34,55 +37,27 @@ import java.util.*;
 /**
  *
  */
-public class JerseyPlugin extends DefaultReststopPlugin {
+@Plugin
+public class JerseyPlugin implements ApplicationDeployer, ApplicationBuilder {
 
 
+    @Export
+    private final Filter jerseyFilter;
+
+    @Export
+    private final ApplicationDeployer applicationDeployer = this;
+
+    @Export final ApplicationBuilder applicationBuilder = this;
     private ServletContainer filter;
-    private Set<Integer> currentPlugins = new HashSet<>();
 
-    public JerseyPlugin(final Reststop reststop, final ReststopPluginManager pluginManager) throws ServletException {
+    public JerseyPlugin(final ServletBuilder reststop, final ReststopPluginManager pluginManager) throws ServletException {
 
 
-        addPluginListener(new PluginListener() {
-            @Override
-            public void pluginsUpdated(Collection<ReststopPlugin> plugins) {
-                reloadFromPlugins(plugins);
-            }
+        filter = addJerseyFilter(new ReststopApplication(Collections.emptyList()));
 
-            @Override
-            public void pluginManagerStarted() {
-                reloadFromPlugins(pluginManager.getPlugins());
-            }
+        filter.init(reststop.filterConfig("jersey", new Properties()));
 
-            private void reloadFromPlugins(Collection<ReststopPlugin> plugins) {
-                synchronized (JerseyPlugin.this) {
-                    Set<Integer> newJaxRsPlugins = new HashSet<>();
-                    for (ReststopPlugin plugin : plugins) {
-                        if(plugin instanceof JaxRsPlugin) {
-                            newJaxRsPlugins.add(System.identityHashCode(plugin));
-                        }
-                    }
-
-                    if(!newJaxRsPlugins.equals(currentPlugins)) {
-                        currentPlugins = newJaxRsPlugins;
-                        try {
-                            if (filter == null) {
-                                filter = addJerseyFilter(new ReststopApplication(plugins));
-                                filter.init(reststop.createFilterConfig("jersey", new Properties()));
-
-                                addServletFilter(reststop.createFilter(filter, "/*", FilterPhase.USER));
-                            } else {
-                                filter.reload(getResourceConfig(new ReststopApplication(plugins)));
-                            }
-                        } catch (ServletException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-
-                }
-
-            }
-        });
+        jerseyFilter = reststop.filter(filter, "/*", FilterPhase.USER);
     }
 
     private ServletContainer addJerseyFilter(Application application) {
@@ -100,6 +75,12 @@ public class JerseyPlugin extends DefaultReststopPlugin {
         };
     }
 
+    private void redeploy(Collection<Application> applications) {
+        synchronized (JerseyPlugin.this) {
+            filter.reload(getResourceConfig(new ReststopApplication(applications)));
+        }
+
+    }
 
     private ResourceConfig getResourceConfig(Application application) {
         ResourceConfig resourceConfig = ResourceConfig.forApplication(application);
@@ -107,7 +88,51 @@ public class JerseyPlugin extends DefaultReststopPlugin {
         Map<String, Object> props = new HashMap<>(resourceConfig.getProperties());
         props.put(ServletProperties.FILTER_FORWARD_ON_404, "true");
         resourceConfig.setProperties(props);
-
         return resourceConfig;
+    }
+
+    @Override
+    public void deploy(Collection<Application> applications) {
+        redeploy(applications);
+    }
+
+    @Override
+    public Build application() {
+        return new Build() {
+            private Set<Object> singletons = new HashSet<>();
+            private Set<Class<?>> classes = new HashSet<>();
+
+            @Override
+            public Build singleton(Object resource) {
+                singletons.add(resource);
+                return this;
+            }
+
+            @Override
+            public Build resource(Class resource) {
+                classes.add(resource);
+                return this;
+            }
+
+            @Override
+            public Application build() {
+                return new Application() {
+                    @Override
+                    public Set<Class<?>> getClasses() {
+                        return classes;
+                    }
+
+                    @Override
+                    public Set<Object> getSingletons() {
+                        return singletons;
+                    }
+
+                    @Override
+                    public Map<String, Object> getProperties() {
+                        return Collections.emptyMap();
+                    }
+                };
+            }
+        };
     }
 }

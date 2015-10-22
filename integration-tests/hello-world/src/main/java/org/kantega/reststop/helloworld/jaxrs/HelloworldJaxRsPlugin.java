@@ -17,51 +17,40 @@
 package org.kantega.reststop.helloworld.jaxrs;
 
 import org.kantega.reststop.api.Config;
-import org.kantega.reststop.jaxrsapi.DefaultJaxRsPlugin;
+import org.kantega.reststop.api.Export;
+import org.kantega.reststop.api.Plugin;
+import org.kantega.reststop.jaxrsapi.ApplicationBuilder;
+
+import javax.ws.rs.core.Application;
 
 /**
  *
  */
-public class HelloworldJaxRsPlugin extends DefaultJaxRsPlugin {
+@Plugin
+public class HelloworldJaxRsPlugin  {
 
 
-    @Config(defaultValue = "-1")
-    private byte minusOneByte;
+    @Export
+    private final Application helloApp;
 
-    @Config(defaultValue = "4")
-    private short fourShort;
+    public HelloworldJaxRsPlugin(
+            @Config(defaultValue = "-1") byte minusOneByte,
+            @Config(defaultValue = "4") short fourShort,
+            @Config(defaultValue = "5") short fiveInt,
+            @Config(defaultValue = "6") long sixLong,
+            @Config(defaultValue = "1.0") float oneFloat,
+            @Config(defaultValue = "1.1") double onePointOneDouble,
+            @Config(defaultValue = "true") boolean booleanTrue,
+            @Config(defaultValue = "a") char aChar,
+            @Config(defaultValue = "a") Character aCharacter,
+            @Config(defaultValue = "a") String aString,
+            ApplicationBuilder applicationBuilder) {
 
-    @Config(defaultValue = "5")
-    private short fiveInt;
-
-    @Config(defaultValue = "6")
-    private long sixLong;
-
-    @Config(defaultValue = "1.0")
-    private float oneFloat;
-
-    @Config(defaultValue = "1.1")
-    private double onePointOneDouble;
-
-    @Config(defaultValue = "true")
-    private boolean booleanTrue;
-
-
-    @Config(defaultValue = "a")
-    private char aChar;
-
-    @Config(defaultValue = "a")
-    private Character aCharacter;
-
-    @Config(defaultValue = "a")
-    private String aString;
-
-
-    public HelloworldJaxRsPlugin() {
-        addJaxRsSingletonResource(new HelloWorldRootResource());
-        addJaxRsSingletonResource(new HelloworldResource());
-
-        addJaxRsContainerClass(ValidationMessageFeature.class);
+        helloApp = applicationBuilder.application()
+                .singleton(new HelloWorldRootResource())
+                .singleton(new HelloworldResource())
+                .resource(ValidationMessageFeature.class)
+                .build();
     }
 
 }

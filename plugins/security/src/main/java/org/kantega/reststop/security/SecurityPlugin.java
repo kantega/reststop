@@ -17,16 +17,26 @@
 package org.kantega.reststop.security;
 
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
+import org.kantega.reststop.api.Export;
 import org.kantega.reststop.api.FilterPhase;
-import org.kantega.reststop.api.Reststop;
-import org.kantega.reststop.jaxrsapi.DefaultJaxRsPlugin;
+import org.kantega.reststop.api.ServletBuilder;
+import org.kantega.reststop.jaxrsapi.ApplicationBuilder;
+
+import javax.servlet.Filter;
+import javax.ws.rs.core.Application;
 
 /**
  *
  */
-public class SecurityPlugin extends DefaultJaxRsPlugin {
-    public SecurityPlugin(Reststop reststop) {
-        addServletFilter(reststop.createFilter(new BasicAuthFilter(), "/*", FilterPhase.AUTHENTICATION));
-        addJaxRsContainerClass(RolesAllowedDynamicFeature.class);
+public class SecurityPlugin  {
+    @Export
+    private final Application securityApp;
+
+    @Export
+    private final Filter basicAuthFilter;
+
+    public SecurityPlugin(ServletBuilder servletBuilder, ApplicationBuilder applicationBuilder) {
+        basicAuthFilter = servletBuilder.filter(new BasicAuthFilter(), "/*", FilterPhase.AUTHENTICATION);
+        securityApp = applicationBuilder.application().resource(RolesAllowedDynamicFeature.class).build();
     }
 }

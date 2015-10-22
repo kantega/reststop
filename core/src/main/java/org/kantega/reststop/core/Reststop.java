@@ -14,30 +14,16 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.api;
-
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.FilterConfig;
-import javax.servlet.ServletConfig;
-import javax.servlet.http.HttpServlet;
-import java.util.Properties;
+package org.kantega.reststop.core;
 
 /**
  *
  */
 public interface Reststop {
-    Filter createFilter(Filter filter, String mapping, FilterPhase phase);
 
     ClassLoader getPluginParentClassLoader();
     PluginClassLoaderChange changePluginClassLoaders();
 
-    FilterChain newFilterChain(FilterChain filterChain);
-
-    ServletConfig createServletConfig(String name, Properties properties);
-    FilterConfig createFilterConfig(String name, Properties properties);
-
-    Filter createServletFilter(HttpServlet servlet, String path);
 
     interface PluginClassLoaderChange {
         PluginClassLoaderChange add(ClassLoader classLoader);

@@ -16,8 +16,7 @@
 
 package org.kantega.reststop.development;
 
-import org.kantega.reststop.api.Reststop;
-import org.kantega.reststop.api.ReststopPlugin;
+import org.kantega.reststop.core.Reststop;
 import org.kantega.reststop.classloaderutils.*;
 
 import javax.tools.Diagnostic;
@@ -117,7 +116,12 @@ public class DevelopmentClassLoaderProvider {
         if (delegates.isEmpty()) {
             return parentClassLoader;
         } else {
-            return new ResourceHidingClassLoader(new DelegateClassLoader(parentClassLoader, delegates), ReststopPlugin.class);
+            return new ResourceHidingClassLoader(new DelegateClassLoader(parentClassLoader, delegates), Object.class) {
+                @Override
+                protected boolean isLocalResource(String name) {
+                    return name.startsWith("META-INF/services/ReststopPlugin/");
+                }
+            };
         }
     }
 

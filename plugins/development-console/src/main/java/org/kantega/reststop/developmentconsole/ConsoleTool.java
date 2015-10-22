@@ -17,23 +17,20 @@
 package org.kantega.reststop.developmentconsole;
 
 import org.kantega.reststop.api.Export;
-import org.kantega.reststop.api.ReststopPlugin;
 import org.kantega.reststop.classloaderutils.DelegateClassLoader;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
 
 import java.lang.reflect.Field;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 /**
  *
  */
 public class ConsoleTool {
 
-    public Map<Class, Object> getExports(ReststopPlugin plugin) throws IllegalAccessException {
+    public Map<Class, Object> getExports(Object plugin) throws IllegalAccessException {
 
         Map<Class, Object> exports = new HashMap<>();
 

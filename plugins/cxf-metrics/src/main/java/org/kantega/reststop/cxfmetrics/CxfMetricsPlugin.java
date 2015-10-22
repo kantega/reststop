@@ -17,20 +17,14 @@
 package org.kantega.reststop.cxfmetrics;
 
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Timer;
-import org.apache.cxf.annotations.SchemaValidation;
 import org.apache.cxf.interceptor.Fault;
-import org.apache.cxf.interceptor.Interceptor;
-import org.apache.cxf.interceptor.LoggingInInterceptor;
 import org.apache.cxf.jaxws22.EndpointImpl;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.AbstractPhaseInterceptor;
 import org.apache.cxf.phase.Phase;
-import org.apache.cxf.phase.PhaseInterceptor;
-import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
-import org.kantega.reststop.api.ReststopPluginManager;
-import org.kantega.reststop.cxf.api.DefaultCxfPluginPlugin;
-import org.kantega.reststop.metrics.MetricsReststopPlugin;
+import org.kantega.reststop.api.Export;
+import org.kantega.reststop.api.Plugin;
+import org.kantega.reststop.cxflib.api.EndpointCustomizer;
 
 import javax.xml.namespace.QName;
 import javax.xml.ws.Endpoint;
@@ -41,10 +35,14 @@ import static com.codahale.metrics.MetricRegistry.name;
 /**
  *
  */
-public class CxfMetricsPlugin extends DefaultCxfPluginPlugin {
+@Plugin
+public class CxfMetricsPlugin implements EndpointCustomizer {
 
 
     private final MetricRegistry metricRegistry;
+
+    @Export
+    private final EndpointCustomizer endpointCustomizer = this;
 
     public CxfMetricsPlugin(MetricRegistry metricRegistry) {
 

@@ -23,4 +23,5 @@ public interface EndpointConfiguration {
     Object getImplementor();
 
     String getPath();
+
 }

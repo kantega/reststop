@@ -28,7 +28,6 @@ import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
-import org.kantega.reststop.api.DefaultReststopPlugin;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -125,7 +124,7 @@ public class CreatePluginMojo extends AbstractCreateMojo {
             File sourceDir = new File(pluginDir, "src/main/java");
             sourceDir.mkdirs();
 
-            File pluginClassFile = createPluginClass(pluginName, sourceDir, DefaultReststopPlugin.class, pack);
+            File pluginClassFile = createPluginClass(pluginName, sourceDir, pack);
             pomAddModule(new File(pluginsDir, "pom.xml"), pluginName);
             pomAddPluginToReststop(new File(webappDir, "pom.xml"), groupId, rootArtifactId + "-" + pluginName, "${project.version}");
 

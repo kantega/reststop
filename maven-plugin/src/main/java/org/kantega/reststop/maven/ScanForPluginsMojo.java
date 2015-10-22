@@ -97,11 +97,11 @@ public class ScanForPluginsMojo extends AbstractMojo {
 
             final URLClassLoader loader = new URLClassLoader(files.toArray(new URL[files.size()]));
 
-            final Class<?> apiClass;
             final Class<?> exportClass;
+            final Class<? extends Annotation> pluginClass;
             try {
-                apiClass = loader.loadClass("org.kantega.reststop.api.ReststopPlugin");
                 exportClass = loader.loadClass("org.kantega.reststop.api.Export");
+                pluginClass = (Class<? extends Annotation>) loader.loadClass("org.kantega.reststop.api.Plugin");
             } catch (ClassNotFoundException e) {
                 throw new MojoExecutionException(e.getMessage(), e);
             }
@@ -120,7 +120,7 @@ public class ScanForPluginsMojo extends AbstractMojo {
                         try {
                             Class<?> clazz = loader.loadClass(className);
 
-                            if (!clazz.isInterface() && !Modifier.isAbstract(clazz.getModifiers()) && apiClass.isAssignableFrom(clazz)) {
+                            if (isPluginAnnotated(clazz, pluginClass)) {
                                 pluginClassNames.add(clazz.getName());
 
                                 for (Field field : clazz.getDeclaredFields()) {
@@ -181,6 +181,10 @@ public class ScanForPluginsMojo extends AbstractMojo {
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
+    }
+
+    private boolean isPluginAnnotated(Class<?> clazz, Class<? extends Annotation> pluginClass) {
+        return clazz.isAnnotationPresent(pluginClass);
     }
 
 }

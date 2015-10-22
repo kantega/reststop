@@ -17,13 +17,13 @@
 package org.kantega.reststop.core;
 
 import org.kantega.jexmec.*;
-import org.kantega.jexmec.ctor.ConstructorInjectionPluginLoader;
 import org.kantega.jexmec.manager.DefaultPluginManager;
 import org.kantega.reststop.api.*;
 import org.kantega.reststop.classloaderutils.*;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
+import javax.annotation.PreDestroy;
 import javax.servlet.*;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -35,12 +35,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.reflect.Field;
-import java.lang.reflect.ParameterizedType;
-import java.lang.reflect.Type;
+import java.lang.reflect.*;
 import java.net.*;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static org.kantega.jexmec.manager.DefaultPluginManager.buildFor;
 import static org.kantega.reststop.classloaderutils.PluginInfo.configure;
@@ -60,13 +59,13 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         DefaultReststopPluginManager reststopPluginManager = new DefaultReststopPluginManager();
 
-        final DefaultPluginManager<ReststopPlugin> manager = buildPluginManager(servletContext, reststopPluginManager, globalConfigFile);
+        final DefaultPluginManager manager = buildPluginManager(servletContext, reststopPluginManager, globalConfigFile);
 
         reststopPluginManager.setManager(manager);
 
         servletContext.setAttribute("reststopPluginManager", manager);
 
-        manager.addPluginManagerListener(new PluginLifecyleListener(manager));
+        manager.addPluginManagerListener(new PluginLifecyleListener(reststopPluginManager));
 
         manager.start();
 
@@ -105,9 +104,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
     }
 
     private static class ShutdownListener implements ServletContextListener {
-        private final DefaultPluginManager<ReststopPlugin> manager;
+        private final DefaultPluginManager<Object> manager;
 
-        public ShutdownListener(DefaultPluginManager<ReststopPlugin> manager) {
+        public ShutdownListener(DefaultPluginManager<Object> manager) {
             this.manager = manager;
         }
 
@@ -122,38 +121,65 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
     }
 
-    private DefaultPluginManager<ReststopPlugin> buildPluginManager(ServletContext servletContext, DefaultReststopPluginManager reststopPluginManager, File globalConfigFile) throws ServletException {
+    private DefaultPluginManager<Object> buildPluginManager(ServletContext servletContext, DefaultReststopPluginManager reststopPluginManager, File globalConfigFile) throws ServletException {
 
-        DefaultReststop reststop = new DefaultReststop(servletContext);
+        DefaultReststop reststop = new DefaultReststop();
+        DefaultServletBuilder servletBuilder = new DefaultServletBuilder(servletContext);
 
         final PluginExportsServiceLocator exportsServiceLocator = new PluginExportsServiceLocator();
-        DefaultPluginManager<ReststopPlugin> manager = buildFor(ReststopPlugin.class)
+        DefaultPluginManager<Object> manager = buildFor(Object.class)
                 .withClassLoaderProvider(reststop)
                 .withClassLoaderProviders(findClassLoaderProviders(servletContext, globalConfigFile))
                 .withClassLoader(getClass().getClassLoader())
                 .withPluginLoader(new ReststopPluginLoader(exportsServiceLocator))
                 .withService(ServiceKey.by(Reststop.class), reststop)
+                .withService(ServiceKey.by(ServletBuilder.class), servletBuilder)
                 .withService(ServiceKey.by(ServletContext.class), servletContext)
                 .withService(ServiceKey.by(ReststopPluginManager.class), reststopPluginManager)
                 .withServiceLocator(exportsServiceLocator)
+                .withConcretePluginClassAllowed()
                 .build();
 
         exportsServiceLocator.setPluginManager(manager);
-
-        reststop.setManager(reststopPluginManager);
+        reststopPluginManager.setExportsServiceLocator(exportsServiceLocator);
+        servletBuilder.setManager(reststopPluginManager);
         return manager;
     }
 
+    private static class Exreg<T> implements PluginExport<T> {
+        private final ClassLoader classLoader;
+        private final Object plugin;
+        private final T export;
+
+        public Exreg(ClassLoader classLoader, Object plugin, T export) {
+            this.classLoader = classLoader;
+            this.plugin = plugin;
+            this.export = export;
+        }
+
+        public Object getPlugin() {
+            return plugin;
+        }
+
+        public T getExport() {
+            return export;
+        }
+
+        @Override
+        public ClassLoader getClassLoader() {
+            return classLoader;
+        }
+    }
     public static class PluginExportsServiceLocator implements ServiceLocator {
-        private final Map<ClassLoader, Map<ServiceKey, List<Object>>> servicesByClassLoader = new IdentityHashMap<>();
+        private final Map<ClassLoader, Map<ServiceKey, List<PluginExport>>> servicesByClassLoader = new IdentityHashMap<>();
 
 
-        private void setPluginManager(PluginManager<ReststopPlugin> pluginManager) {
-            pluginManager.addPluginManagerListener(new PluginManagerListener<ReststopPlugin>() {
+        private void setPluginManager(PluginManager<Object> pluginManager) {
+            pluginManager.addPluginManagerListener(new PluginManagerListener<Object>() {
                 @Override
-                public  void beforeActivation(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader, PluginLoader<ReststopPlugin> pluginLoader, Collection<ReststopPlugin> plugins) {
+                public  void beforeActivation(PluginManager<Object> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader, PluginLoader<Object> pluginLoader, Collection<Object> plugins) {
                     synchronized (servicesByClassLoader) {
-                        for (ReststopPlugin plugin : plugins) {
+                        for (Object plugin : plugins) {
 
                             for(Field field : plugin.getClass().getDeclaredFields()) {
                                 if(field.getAnnotation(Export.class) != null ) {
@@ -162,9 +188,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
                                         Object service = field.get(plugin);
                                         if(service != null) {
                                             if(!servicesByClassLoader.containsKey(classLoader)) {
-                                                servicesByClassLoader.put(classLoader, new HashMap<ServiceKey, List<Object>>());
+                                                servicesByClassLoader.put(classLoader, new HashMap<>());
                                             }
-                                            Map<ServiceKey, List<Object>> forClassLoader = servicesByClassLoader.get(classLoader);
+                                            Map<ServiceKey, List<PluginExport>> forClassLoader = servicesByClassLoader.get(classLoader);
 
 
                                             Class<?> type = field.getType();
@@ -176,14 +202,15 @@ public class ReststopInitializer implements ServletContainerInitializer{
                                                 if (!forClassLoader.containsKey(serviceKey)) {
                                                     forClassLoader.put(serviceKey, new ArrayList<>());
                                                 }
-                                                forClassLoader.get(serviceKey).addAll((Collection<?>) service);
+                                                Collection<?> collection = (Collection<?>) service;
+                                                collection.forEach( (s) -> forClassLoader.get(serviceKey).add(new Exreg(classLoader, plugin, s)));
                                             } else {
                                                 ServiceKey<?> serviceKey = ServiceKey.by(type);
 
                                                 if (!forClassLoader.containsKey(serviceKey)) {
                                                     forClassLoader.put(serviceKey, new ArrayList<>());
                                                 }
-                                                forClassLoader.get(serviceKey).add(service);
+                                                forClassLoader.get(serviceKey).add(new Exreg(classLoader, plugin, service));
                                             }
 
                                         }
@@ -200,7 +227,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 }
 
                 @Override
-                public  void beforeClassLoaderRemoved(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
+                public  void beforeClassLoaderRemoved(PluginManager<Object> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
                     synchronized (servicesByClassLoader) {
                         servicesByClassLoader.remove(classLoader);
                     }
@@ -213,7 +240,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         public Set<ServiceKey> keySet() {
             synchronized (servicesByClassLoader) {
                 Set<ServiceKey> keys = new HashSet<>();
-                for (Map<ServiceKey, List<Object>> forClassloader : servicesByClassLoader.values()) {
+                for (Map<ServiceKey, List<PluginExport>> forClassloader : servicesByClassLoader.values()) {
                     keys.addAll(forClassloader.keySet());
                 }
                 return keys;
@@ -224,10 +251,10 @@ public class ReststopInitializer implements ServletContainerInitializer{
         @Override
         public <T> T get(ServiceKey<T> serviceKey) {
             synchronized (servicesByClassLoader) {
-                for (Map<ServiceKey, List<Object>> forClassLoader : servicesByClassLoader.values()) {
-                    List<Object> impl = forClassLoader.get(serviceKey);
+                for (Map<ServiceKey, List<PluginExport>> forClassLoader : servicesByClassLoader.values()) {
+                    List<PluginExport> impl = forClassLoader.get(serviceKey);
                     if(impl != null) {
-                        return serviceKey.getType().cast(impl.get(0));
+                        return serviceKey.getType().cast(impl.get(0).getExport());
                     }
                 }
                 return null;
@@ -239,10 +266,10 @@ public class ReststopInitializer implements ServletContainerInitializer{
         public <T> Collection<T> getMultiple(ServiceKey<T> serviceKey) {
             synchronized (servicesByClassLoader) {
                 List<T> collection = new ArrayList<>();
-                for (Map<ServiceKey, List<Object>> forClassLoader : servicesByClassLoader.values()) {
-                    List<T> impl = (List<T>) forClassLoader.get(serviceKey);
+                for (Map<ServiceKey, List<PluginExport>> forClassLoader : servicesByClassLoader.values()) {
+                    List<PluginExport> impl = forClassLoader.get(serviceKey);
                     if(impl != null) {
-                        collection.addAll(impl);
+                        impl.forEach( (er) -> collection.add(((T) er.getExport())));
                     }
                 }
                 return collection;
@@ -250,6 +277,21 @@ public class ReststopInitializer implements ServletContainerInitializer{
             }
         }
 
+        public <T> Collection<PluginExport<T>> getPluginExports(ServiceKey<T> serviceKey) {
+            synchronized (servicesByClassLoader) {
+                Collection<PluginExport<T>>  collection = new ArrayList<>();
+
+
+
+                for (Map<ServiceKey, List<PluginExport>> forClassLoader : servicesByClassLoader.values()) {
+                    List<PluginExport> impl =  forClassLoader.get(serviceKey);
+                    if(impl != null) {
+                        impl.forEach((pe) -> collection.add(pe));
+                    }
+                }
+                return collection;
+            }
+        }
     }
 
     private ClassLoaderProvider[] findClassLoaderProviders(ServletContext servletContext, File globalConfigFile) throws ServletException {
@@ -321,43 +363,21 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
 
 
-
-
-    private static class DefaultReststop implements Reststop, ClassLoaderProvider {
+    private static class DefaultServletBuilder implements ServletBuilder {
         private final ServletContext servletContext;
-        private Registry registry;
-        private ClassLoader parentClassLoader;
         private ReststopPluginManager manager;
 
-        public DefaultReststop(ServletContext servletContext) {
-
+        private DefaultServletBuilder(ServletContext servletContext) {
             this.servletContext = servletContext;
         }
 
-        @Override
-        public void start(Registry registry, ClassLoader parentClassLoader) {
 
-            this.registry = registry;
-            this.parentClassLoader = parentClassLoader;
+        public void setManager(ReststopPluginManager manager) {
+            this.manager = manager;
         }
 
         @Override
-        public void stop() {
-
-        }
-
-        @Override
-        public ClassLoader getPluginParentClassLoader() {
-            return parentClassLoader;
-        }
-
-        @Override
-        public PluginClassLoaderChange changePluginClassLoaders() {
-            return new DefaultClassLoaderChange(registry);
-        }
-
-        @Override
-        public Filter createFilter(Filter filter, String mapping, FilterPhase phase) {
+        public Filter filter(Filter filter, String mapping, FilterPhase phase) {
             if(filter == null ) {
                 throw new IllegalArgumentException("Filter cannot be null");
             }
@@ -368,73 +388,68 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
 
         @Override
-        public Filter createServletFilter(HttpServlet servlet, String path) {
+        public Filter resourceServlet(String path, URL url) {
+            return servlet(new HttpServlet() {
+                @Override
+                protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+                    String mediaType = servletContext.getMimeType(path);
+                    if(mediaType == null) {
+                        mediaType = "text/html";
+                    }
+                    if(mediaType.equals("text/html")) {
+                        resp.setCharacterEncoding("utf-8");
+                    }
+                    resp.setContentType(mediaType);
+
+                    OutputStream output = resp.getOutputStream();
+
+                    try (InputStream input = url.openStream()){
+                        byte[] buffer = new byte[1024];
+                        int n;
+                        while (-1 != (n = input.read(buffer))) {
+                            output.write(buffer, 0, n);
+                        }
+                    }
+                }
+            }, path);
+        }
+
+        @Override
+        public Filter servlet(HttpServlet servlet, String path) {
             if(servlet == null ) {
                 throw new IllegalArgumentException("Servlet parameter cannot be null");
             }
             if(path == null) {
                 throw new IllegalArgumentException("Path for servlet " +servlet + " cannot be null");
             }
-            return createFilter(new ServletWrapperFilter(servlet, path), path, FilterPhase.USER);
+            return filter(new ServletWrapperFilter(servlet, path), path, FilterPhase.USER);
         }
 
-        public void setManager(ReststopPluginManager manager) {
-            this.manager = manager;
+
+        @Override
+        public Filter redirectServlet(String path, String location) {
+            return servlet(new HttpServlet() {
+                @Override
+                protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+                    resp.sendRedirect(location);
+                }
+            }, path);
         }
 
         @Override
-        public ServletConfig createServletConfig(String name, Properties properties) {
+        public ServletConfig servletConfig(String name, Properties properties) {
             return new PropertiesWebConfig(name, properties, servletContext);
         }
 
         @Override
-        public FilterConfig createFilterConfig(String name, Properties properties) {
+        public FilterConfig filterConfig(String name, Properties properties) {
             return new PropertiesWebConfig(name, properties, servletContext);
         }
-
         @Override
         public FilterChain newFilterChain(FilterChain filterChain) {
 
             PluginFilterChain orig = (PluginFilterChain) filterChain;
             return buildFilterChain(orig.getRequest(), orig.getFilterChain(), manager);
-        }
-
-        private static class DefaultClassLoaderChange implements PluginClassLoaderChange {
-            private final Registry registry;
-            private final List<ClassLoader> adds = new ArrayList<>();
-            private final List<ClassLoader> removes = new ArrayList<>();
-
-            public DefaultClassLoaderChange(Registry registry) {
-                this.registry = registry;
-            }
-
-            @Override
-            public PluginClassLoaderChange add(ClassLoader classLoader) {
-                adds.add(classLoader);
-                return this;
-            }
-
-            @Override
-            public PluginClassLoaderChange remove(ClassLoader classLoader) {
-                removes.add(classLoader);
-                return this;
-            }
-
-            @Override
-            public void commit() {
-                log.info("About to commit class loader change:");
-                log.info(" Removing : " + removes);
-                for (ClassLoader add : adds) {
-                    log.info("Adding " + add);
-                    if(add instanceof URLClassLoader) {
-                        URLClassLoader ucl = (URLClassLoader) add;
-                        for (URL url : ucl.getURLs()) {
-                            log.info("\t url: " + url.toString());
-                        }
-                    }
-                }
-                registry.replace(removes, adds);
-            }
         }
 
         private static class PropertiesWebConfig implements ServletConfig, FilterConfig  {
@@ -522,6 +537,80 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
     }
 
+
+    private static class DefaultReststop implements Reststop, ClassLoaderProvider {
+        private Registry registry;
+        private ClassLoader parentClassLoader;
+
+        public DefaultReststop() {
+
+        }
+
+        @Override
+        public void start(Registry registry, ClassLoader parentClassLoader) {
+
+            this.registry = registry;
+            this.parentClassLoader = parentClassLoader;
+        }
+
+        @Override
+        public void stop() {
+
+        }
+
+        @Override
+        public ClassLoader getPluginParentClassLoader() {
+            return parentClassLoader;
+        }
+
+        @Override
+        public PluginClassLoaderChange changePluginClassLoaders() {
+            return new DefaultClassLoaderChange(registry);
+        }
+
+
+
+        private static class DefaultClassLoaderChange implements PluginClassLoaderChange {
+            private final Registry registry;
+            private final List<ClassLoader> adds = new ArrayList<>();
+            private final List<ClassLoader> removes = new ArrayList<>();
+
+            public DefaultClassLoaderChange(Registry registry) {
+                this.registry = registry;
+            }
+
+            @Override
+            public PluginClassLoaderChange add(ClassLoader classLoader) {
+                adds.add(classLoader);
+                return this;
+            }
+
+            @Override
+            public PluginClassLoaderChange remove(ClassLoader classLoader) {
+                removes.add(classLoader);
+                return this;
+            }
+
+            @Override
+            public void commit() {
+                log.info("About to commit class loader change:");
+                log.info(" Removing : " + removes);
+                for (ClassLoader add : adds) {
+                    log.info("Adding " + add);
+                    if(add instanceof URLClassLoader) {
+                        URLClassLoader ucl = (URLClassLoader) add;
+                        for (URL url : ucl.getURLs()) {
+                            log.info("\t url: " + url.toString());
+                        }
+                    }
+                }
+                registry.replace(removes, adds);
+            }
+        }
+
+
+    }
+
     private static class MappingWrappedFilter implements Filter {
         private final Filter filter;
         private final String mapping;
@@ -600,17 +689,18 @@ public class ReststopInitializer implements ServletContainerInitializer{
     }
     private static FilterChain buildFilterChain(HttpServletRequest request, FilterChain filterChain, ReststopPluginManager pluginManager) {
         List<ClassLoaderFilter> filters = new ArrayList<>();
-        for(ReststopPlugin plugin : pluginManager.getPlugins()) {
-            for (Filter filter : plugin.getServletFilters()) {
-                if(filter instanceof MappingWrappedFilter) {
-                    MappingWrappedFilter mwf = (MappingWrappedFilter) filter;
-                    if(! mwf.mappingMatchesRequest(request)) {
-                        continue;
-                    }
+
+        for (PluginExport<Filter> pluginExport : pluginManager.findPluginExports(Filter.class)) {
+            Filter filter = pluginExport.getExport();
+            if(filter instanceof MappingWrappedFilter) {
+                MappingWrappedFilter mwf = (MappingWrappedFilter) filter;
+                if(! mwf.mappingMatchesRequest(request)) {
+                    continue;
                 }
-                filters.add(new ClassLoaderFilter(pluginManager.getClassLoader(plugin), filter));
             }
+            filters.add(new ClassLoaderFilter(pluginExport.getClassLoader(), filter));
         }
+
         filters.add(new ClassLoaderFilter(AssetFilter.class.getClassLoader(), new MappingWrappedFilter(new AssetFilter(pluginManager), "/assets/*", FilterPhase.USER)));
 
         Collections.sort(filters, new Comparator<ClassLoaderFilter>() {
@@ -728,7 +818,12 @@ public class ReststopInitializer implements ServletContainerInitializer{
             if (delegates.isEmpty()) {
                 return parentClassLoader;
             } else {
-                return new ResourceHidingClassLoader(new DelegateClassLoader(parentClassLoader, delegates), ReststopPlugin.class);
+                return new ResourceHidingClassLoader(new DelegateClassLoader(parentClassLoader, delegates), Object.class) {
+                    @Override
+                    protected boolean isLocalResource(String name) {
+                        return name.startsWith("META-INF/services/ReststopPlugin/");
+                    }
+                };
             }
         }
 
@@ -823,26 +918,37 @@ public class ReststopInitializer implements ServletContainerInitializer{
     }
 
     private static class DefaultReststopPluginManager implements ReststopPluginManager{
-        private volatile DefaultPluginManager<ReststopPlugin> manager;
+        private volatile DefaultPluginManager manager;
 
         private final IdentityHashMap<ClassLoader, ClassLoader> classLoaders = new IdentityHashMap<>();
+        private PluginExportsServiceLocator exportsServiceLocator;
 
         @Override
-        public Collection<ReststopPlugin> getPlugins() {
+        public Collection<Object> getPlugins() {
             assertStarted();
-            return manager.getPlugins();
+            return (Collection<Object>) manager.getPlugins();
         }
 
         @Override
-        public <T extends ReststopPlugin> Collection<T> getPlugins(Class<T> pluginClass) {
+        public <T> Collection<T> getPlugins(Class<T> pluginClass) {
             assertStarted();
             return manager.getPlugins(pluginClass);
         }
 
         @Override
-        public ClassLoader getClassLoader(ReststopPlugin plugin) {
+        public ClassLoader getClassLoader(Object plugin) {
             assertStarted();
             return manager.getClassLoader(plugin);
+        }
+
+        @Override
+        public <T> Collection<T> findExports(Class<T> type) {
+            return findPluginExports(type).stream().map(PluginExport::getExport).collect(Collectors.toList());
+        }
+
+        @Override
+        public <T> Collection<PluginExport<T>> findPluginExports(Class<T> type) {
+            return exportsServiceLocator.getPluginExports(ServiceKey.by(type));
         }
 
         private void assertStarted() {
@@ -851,14 +957,14 @@ public class ReststopInitializer implements ServletContainerInitializer{
             }
         }
 
-        public void setManager(DefaultPluginManager<ReststopPlugin> manager) {
+        public void setManager(DefaultPluginManager<Object> manager) {
             this.manager = manager;
-            manager.addPluginManagerListener(new PluginManagerListener<ReststopPlugin>() {
+            manager.addPluginManagerListener(new PluginManagerListener<Object>() {
 
                 private ThreadLocal<ClassLoader> classLoader = new ThreadLocal<>();
 
                 @Override
-                public void afterClassLoaderAdded(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
+                public void afterClassLoaderAdded(PluginManager<Object> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
                     Thread.currentThread().setContextClassLoader(this.classLoader.get());
                     this.classLoader.remove();
 
@@ -869,14 +975,14 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 }
 
                 @Override
-                public void beforeClassLoaderRemoved(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
+                public void beforeClassLoaderRemoved(PluginManager<Object> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
                     synchronized (classLoaders) {
                         classLoaders.remove(classLoader);
                     }
                 }
 
                 @Override
-                public void beforeClassLoaderAdded(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
+                public void beforeClassLoaderAdded(PluginManager<Object> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
                    this.classLoader.set(classLoader);
                     Thread.currentThread().setContextClassLoader(classLoader);
                 }
@@ -895,14 +1001,19 @@ public class ReststopInitializer implements ServletContainerInitializer{
             }
             return copy;
         }
+
+        public void setExportsServiceLocator(PluginExportsServiceLocator exportsServiceLocator) {
+            this.exportsServiceLocator = exportsServiceLocator;
+        }
     }
 
-    private static class PluginLifecyleListener extends PluginManagerListener<ReststopPlugin> {
+    private static class PluginLifecyleListener extends PluginManagerListener<Object> {
 
         private boolean pluginManagerStarted;
-        private final PluginManager<ReststopPlugin> manager;
+        private final ReststopPluginManager manager;
 
-        private PluginLifecyleListener(PluginManager<ReststopPlugin> manager) {
+
+        private PluginLifecyleListener(ReststopPluginManager manager) {
             this.manager = manager;
         }
 
@@ -910,57 +1021,69 @@ public class ReststopInitializer implements ServletContainerInitializer{
         public void afterPluginManagerStarted(PluginManager pluginManager) {
             pluginManagerStarted = true;
 
-            Collection<ReststopPlugin> plugins = manager.getPlugins();
-            for(ReststopPlugin plugin : plugins) {
-                ClassLoader loader = Thread.currentThread().getContextClassLoader();
-                Thread.currentThread().setContextClassLoader(manager.getClassLoader(plugin));
-                try {
 
-                    for(PluginListener listener : plugin.getPluginListeners()) {
-                        listener.pluginManagerStarted();
-                    }
+            for(PluginExport<PluginListener> listenerExport : manager.findPluginExports(PluginListener.class)) {
+
+                ClassLoader loader = Thread.currentThread().getContextClassLoader();
+                Thread.currentThread().setContextClassLoader(listenerExport.getClassLoader());
+                try {
+                    listenerExport.getExport().pluginManagerStarted();
                 } finally {
                     Thread.currentThread().setContextClassLoader(loader);
                 }
             }
         }
         @Override
-        public void pluginsUpdated(Collection<ReststopPlugin> plugins) {
+        public void pluginsUpdated(Collection<Object> plugins) {
             if (pluginManagerStarted) {
-                for (ReststopPlugin plugin : manager.getPlugins()) {
-                    for (PluginListener listener : plugin.getPluginListeners()) {
-                        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-                        Thread.currentThread().setContextClassLoader(manager.getClassLoader(plugin));
-                        try {
-                            listener.pluginsUpdated(plugins);
-                        } finally {
-                            Thread.currentThread().setContextClassLoader(loader);
-                        }
+                for(PluginExport<PluginListener> listenerExport : manager.findPluginExports(PluginListener.class)) {
+
+                    ClassLoader loader = Thread.currentThread().getContextClassLoader();
+                    Thread.currentThread().setContextClassLoader(listenerExport.getClassLoader());
+                    try {
+                        listenerExport.getExport().pluginsUpdated(plugins);
+                    } finally {
+                        Thread.currentThread().setContextClassLoader(loader);
                     }
+
                 }
             }
         }
 
         @Override
-        public void beforePassivation(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader, PluginLoader<ReststopPlugin> pluginLoader, Collection<ReststopPlugin> plugins) {
-            for (ReststopPlugin plugin : plugins) {
-                plugin.destroy();
+        public void beforePassivation(PluginManager<Object> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader, PluginLoader<Object> pluginLoader, Collection<Object> plugins) {
+            for (Object plugin : plugins) {
+                //plugin.destroy();
             }
         }
 
         @Override
-        public void beforePluginManagerStopped(PluginManager<ReststopPlugin> pluginManager) {
-            List<ReststopPlugin> plugins = new ArrayList<>(pluginManager.getPlugins());
+        public void beforePluginManagerStopped(PluginManager<Object> pluginManager) {
+            List<Object> plugins = new ArrayList<>(pluginManager.getPlugins());
             Collections.reverse(plugins);
-            for (ReststopPlugin plugin : plugins) {
-                plugin.destroy();
+            for (Object plugin : plugins) {
+                for (Method method : plugin.getClass().getDeclaredMethods()) {
+                    if(method.isAnnotationPresent(PreDestroy.class)) {
+                        if( (method.getModifiers() & Modifier.PUBLIC) == 1 && method.getReturnType() == Void.TYPE && method.getParameters().length == 0) {
+                            try {
+                                method.invoke(plugin);
+                            } catch (IllegalAccessException | InvocationTargetException e) {
+                                throw new RuntimeException(e);
+                            }
+                        } else {
+                            throw new IllegalArgumentException("@PreDestroy annotated method " + method + " must be public void and have zero parameters");
+                        }
+
+                    }
+
+                }
             }
         }
 
         @Override
-        public void afterActivation(PluginManager<ReststopPlugin> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader, PluginLoader<ReststopPlugin> pluginLoader, Collection<ReststopPlugin> plugins) {
-            for (ReststopPlugin plugin : plugins) {
-                plugin.init();
+        public void afterActivation(PluginManager<Object> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader, PluginLoader<Object> pluginLoader, Collection<Object> plugins) {
+            for (Object plugin : plugins) {
+                // plugin.init();
             }
         }
     }

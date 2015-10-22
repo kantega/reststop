@@ -16,17 +16,21 @@
 
 package org.kantega.reststop.statistics;
 
-import org.kantega.reststop.api.DefaultReststopPlugin;
-import org.kantega.reststop.api.FilterPhase;
-import org.kantega.reststop.api.Reststop;
+import org.kantega.reststop.api.*;
+
+import javax.servlet.Filter;
 
 /**
 
  */
-public class StatisticsPlugin  extends DefaultReststopPlugin {
+@Plugin
+public class StatisticsPlugin {
 
-    public StatisticsPlugin(Reststop reststop) {
+    @Export
+    private final Filter statsFilter;
 
-        addServletFilter(reststop.createFilter(new StatisticsFilter(),"/*", FilterPhase.USER));
+    public StatisticsPlugin(ServletBuilder servletBuilder) {
+
+        statsFilter = servletBuilder.filter(new StatisticsFilter(),"/*", FilterPhase.USER);
     }
 }

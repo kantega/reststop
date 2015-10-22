@@ -22,10 +22,7 @@ import com.codahale.metrics.health.jvm.ThreadDeadlockHealthCheck;
 import com.codahale.metrics.jvm.*;
 import com.codahale.metrics.servlets.HealthCheckServlet;
 import com.codahale.metrics.servlets.MetricsServlet;
-import org.kantega.reststop.api.DefaultReststopPlugin;
-import org.kantega.reststop.api.Export;
-import org.kantega.reststop.api.FilterPhase;
-import org.kantega.reststop.api.Reststop;
+import org.kantega.reststop.api.*;
 
 import javax.servlet.*;
 import java.io.IOException;
@@ -41,7 +38,8 @@ import java.util.concurrent.TimeUnit;
 /**
  *
  */
-public class MetricsReststopPlugin extends DefaultReststopPlugin {
+@Plugin
+public class MetricsReststopPlugin {
 
 
     private final HealthCheckRegistry healthCheckRegistry;
@@ -49,25 +47,30 @@ public class MetricsReststopPlugin extends DefaultReststopPlugin {
     @Export
     private final MetricRegistry metricRegistry;
 
-    public MetricsReststopPlugin(Reststop reststop, ServletContext servletContext) throws ServletException {
+    @Export
+    private final Filter metricsServlet;
+
+    @Export
+    private final Filter healthCheckServlet;
+
+    public MetricsReststopPlugin(ServletBuilder servletBuilder, ServletContext servletContext) throws ServletException {
 
         metricRegistry = initMetricsRegistry();
         MetricsServlet metricsServlet = new MetricsServlet(metricRegistry);
         metricsServlet.init(new EmptyServletConfig(createProxy(servletContext)));
 
-        addServletFilter(reststop.createServletFilter(
+        this.metricsServlet = servletBuilder.servlet(
                 metricsServlet,
-                "/metrics/*"));
+                "/metrics/*");
 
 
         healthCheckRegistry = initHealthCheckRegistry();
         HealthCheckServlet healthCheckServlet = new HealthCheckServlet(healthCheckRegistry);
-        healthCheckServlet.init(reststop.createServletConfig("healthcheck", new Properties()));
+        healthCheckServlet.init(servletBuilder.servletConfig("healthcheck", new Properties()));
 
-        addServletFilter(reststop.createServletFilter(
+        this.healthCheckServlet = servletBuilder.servlet(
                 healthCheckServlet,
-                "/healthchecks/*"
-        ));
+                "/healthchecks/*");
 
     }
 

@@ -20,19 +20,24 @@ import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.http.WicketFilter;
 import org.kantega.reststop.api.*;
 
+import javax.servlet.Filter;
 import javax.servlet.ServletException;
 import java.util.Properties;
 
 /**
  *
  */
-public class WicketPlugin extends DefaultReststopPlugin {
+@Plugin
+public class WicketPlugin  {
 
 
     @Export
     private final WebApplication wicketApplication;
 
-    public WicketPlugin(Reststop reststop) throws ServletException {
+    @Export
+    private final Filter wicketFilter;
+
+    public WicketPlugin(ServletBuilder servletBuilder) throws ServletException {
 
             wicketApplication = new WicketApplication();
 
@@ -42,9 +47,9 @@ public class WicketPlugin extends DefaultReststopPlugin {
             String filterPath = "/wicket/*";
             properties.setProperty(WicketFilter.FILTER_MAPPING_PARAM, filterPath);
 
-            filter.init(reststop.createFilterConfig("wicket", properties));
+            filter.init(servletBuilder.filterConfig("wicket", properties));
 
-            addServletFilter(reststop.createFilter(filter, filterPath, FilterPhase.USER));
+            wicketFilter = servletBuilder.filter(filter, filterPath, FilterPhase.USER);
 
     }
 
