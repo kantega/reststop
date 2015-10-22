@@ -41,9 +41,6 @@ public class ExportFieldProcessor extends AbstractProcessor {
                 if (!element.getModifiers().contains(Modifier.FINAL)) {
                     processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "@Export annotated fields must be declared final", element);
                 }
-                if (!element.getModifiers().contains(Modifier.PRIVATE)) {
-                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "@Export annotated fields must be declared private", element);
-                }
             }
         }
         return false;
