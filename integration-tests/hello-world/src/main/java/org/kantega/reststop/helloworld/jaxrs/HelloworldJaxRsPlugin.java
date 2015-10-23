@@ -22,6 +22,7 @@ import org.kantega.reststop.api.Plugin;
 import org.kantega.reststop.jaxrsapi.ApplicationBuilder;
 
 import javax.ws.rs.core.Application;
+import java.util.Properties;
 
 /**
  *
@@ -34,16 +35,17 @@ public class HelloworldJaxRsPlugin  {
     private final Application helloApp;
 
     public HelloworldJaxRsPlugin(
-            @Config(defaultValue = "-1") byte minusOneByte,
-            @Config(defaultValue = "4") short fourShort,
+            @Config byte minusOneByte,
+            @Config short fourShort,
             @Config(defaultValue = "5") short fiveInt,
-            @Config(defaultValue = "6") long sixLong,
-            @Config(defaultValue = "1.0") float oneFloat,
-            @Config(defaultValue = "1.1") double onePointOneDouble,
-            @Config(defaultValue = "true") boolean booleanTrue,
-            @Config(defaultValue = "a") char aChar,
-            @Config(defaultValue = "a") Character aCharacter,
-            @Config(defaultValue = "a") String aString,
+            @Config long sixLong,
+            @Config float oneFloat,
+            @Config double onePointOneDouble,
+            @Config boolean booleanTrue,
+            @Config char aChar,
+            @Config Character aCharacter,
+            @Config String aString,
+            @Config Properties config,
             ApplicationBuilder applicationBuilder) {
 
         helloApp = applicationBuilder.application()

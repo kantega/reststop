@@ -119,6 +119,11 @@ public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<Objec
 
         Config config = param.getAnnotation(Config.class);
 
+        if(param.getType() == Properties.class) {
+            Properties clone = new Properties();
+            clone.putAll(properties);
+            return clone;
+        }
         String name = config.property();
 
         if( name == null || name.trim().isEmpty())  {

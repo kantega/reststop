@@ -54,15 +54,19 @@ public class ConfigFieldProcessor extends AbstractProcessor {
         for (TypeElement annotation : annotations) {
             for(Element element : roundEnv.getElementsAnnotatedWith(annotation)) {
                 TypeMirror type = element.asType();
-                if(! isPrimitive(type) && ! isString(type) ) {
+                if(! isProperties(element) && ! isPrimitive(type) && ! isString(type) ) {
                     processingEnv.getMessager()
                             .printMessage(Diagnostic.Kind.ERROR,
-                                    "@Config annotated field must be a primitive, a boxed primitive or a java.lang.String"
+                                    "@Config annotated parameter must be a primitive, a boxed primitive, a java.lang.String or an Properties object"
                                     , element);
                 }
             }
         }
         return false;
+    }
+
+    private boolean isProperties(Element element) {
+        return processingEnv.getTypeUtils().isSameType(element.asType(), processingEnv.getElementUtils().getTypeElement("java.util.Properties").asType());
     }
 
     private boolean isString(TypeMirror type) {

@@ -99,9 +99,11 @@ public class ScanForPluginsMojo extends AbstractMojo {
 
             final Class<?> exportClass;
             final Class<? extends Annotation> pluginClass;
+            final Class<? extends Annotation> configClass;
             try {
                 exportClass = loader.loadClass("org.kantega.reststop.api.Export");
                 pluginClass = (Class<? extends Annotation>) loader.loadClass("org.kantega.reststop.api.Plugin");
+                configClass = (Class<? extends Annotation>) loader.loadClass("org.kantega.reststop.api.Config");
             } catch (ClassNotFoundException e) {
                 throw new MojoExecutionException(e.getMessage(), e);
             }
@@ -148,16 +150,19 @@ public class ScanForPluginsMojo extends AbstractMojo {
                                     Class<?>[] parameterTypes = constructor.getParameterTypes();
                                     for (int i = 0; i < parameterTypes.length; i++) {
                                         Class<?> paramType = parameterTypes[i];
-                                        if (paramType == Collection.class) {
-                                            Type[] genericParameterTypes = constructor.getGenericParameterTypes();
-                                            ParameterizedType parameterizedType = (ParameterizedType) genericParameterTypes[i];
-                                            Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
-                                            if(actualTypeArguments != null && actualTypeArguments.length == 1) {
-                                                imports.add(actualTypeArguments[0].getTypeName());
-                                            }
+                                        boolean isConfigParam = constructor.getParameters()[i].isAnnotationPresent(configClass);
+                                        if(!isConfigParam) {
+                                            if (paramType == Collection.class) {
+                                                Type[] genericParameterTypes = constructor.getGenericParameterTypes();
+                                                ParameterizedType parameterizedType = (ParameterizedType) genericParameterTypes[i];
+                                                Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
+                                                if (actualTypeArguments != null && actualTypeArguments.length == 1) {
+                                                    imports.add(actualTypeArguments[0].getTypeName());
+                                                }
 
-                                        } else {
-                                            imports.add(paramType.getName());
+                                            } else {
+                                                imports.add(paramType.getName());
+                                            }
                                         }
                                     }
                                 }
