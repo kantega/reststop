@@ -90,7 +90,7 @@ public class DevelopmentPlugin  {
         String applicationName = servletContext.getInitParameter("applicationName");
         File globalConfigFile = new File(pluginConfigurationDirectory, applicationName +".conf");
         configure(infos, globalConfigFile);
-        List<PluginInfo> sortedInfos = PluginInfo.resolveStartupOrder(infos);
+        List<PluginInfo> sortedInfos = PluginInfo.resolveClassloaderOrder(infos);
         for (PluginInfo info : sortedInfos) {
             if(info.isDevelopmentPlugin()) {
                 provider.addExistingClassLoader(info.getPluginId(), createClassLoader(info, reststop.getPluginParentClassLoader()));

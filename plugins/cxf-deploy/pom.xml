@@ -37,7 +37,7 @@
         </dependency>
         <dependency>
             <groupId>org.kantega.reststop</groupId>
-            <artifactId>reststop-cxf-lib-plugin</artifactId>
+            <artifactId>reststop-cxf-plugin</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>

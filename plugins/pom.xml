@@ -35,7 +35,6 @@
         <module>jersey</module>
         <module>jersey-deploy</module>
         <module>jaxws-api</module>
-        <module>cxf-lib</module>
         <module>cxf</module>
         <module>cxf-deploy</module>
         <module>cxf-logging</module>

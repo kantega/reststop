@@ -19,6 +19,7 @@ package org.kantega.reststop.development;
 import org.apache.velocity.app.VelocityEngine;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
+import org.kantega.reststop.classloaderutils.PluginInfo;
 import org.kantega.reststop.core.Reststop;
 import org.kantega.reststop.api.ServletBuilder;
 
@@ -95,21 +96,7 @@ public class RedeployFilter implements Filter {
 
                     }
 
-                    List<DevelopmentClassloader> newClassLoaders = new ArrayList<>();
-
-
-                    for (DevelopmentClassloader classloader : staleClassLoaders) {
-
-                        try {
-                            newClassLoaders.add(provider.redeploy(classloader.getPluginInfo().getPluginId(), classloader));
-                        } catch (Exception e) {
-                            classloader.setFailed(true);
-                            new ErrorReporter(velocityEngine, classloader.getBasedir()).pluginLoadFailed(e, classloader).render(req, resp);
-                            return;
-                        }
-
-
-                    }
+                    Collection<DevelopmentClassloader> newClassLoaders = provider.redeploy(staleClassLoaders);
 
                     if (shouldRunTests) {
                         Map<String, DevelopmentClassloader> testLoaders = new LinkedHashMap<>();
@@ -118,7 +105,7 @@ public class RedeployFilter implements Filter {
                             testLoaders.put(classloader.getPluginInfo().getPluginId(), classloader);
                         }
 
-                        for (DevelopmentClassloader classloader : provider.getClassloaders().values()) {
+                        for (DevelopmentClassloader classloader : newClassLoaders) {
 
                             if (!testLoaders.containsKey(classloader.getPluginInfo().getPluginId())) {
                                 boolean stale = classloader.isStaleTests();

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.cxflib.api;
+package org.kantega.reststop.cxf;
 
 import javax.xml.ws.Endpoint;
 

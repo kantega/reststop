@@ -764,9 +764,11 @@ public class ReststopInitializer implements ServletContainerInitializer{
             Map<String, PluginClassLoader> byDep  = new HashMap<>();
 
 
-            List<PluginInfo> infos = PluginInfo.resolveStartupOrder(pluginInfos);
+            List<PluginInfo> pluginsInClassloaderOrder = PluginInfo.resolveClassloaderOrder(pluginInfos);
 
-            for (PluginInfo info : infos) {
+            List<PluginInfo> toStart = new ArrayList<>();
+
+            for (PluginInfo info : pluginsInClassloaderOrder) {
 
                 if(info.isDirectDeploy()) {
                     PluginClassLoader pluginClassloader = new PluginClassLoader(info, getParentClassLoader(info, parentClassLoader, byDep));
@@ -784,13 +786,22 @@ public class ReststopInitializer implements ServletContainerInitializer{
                         throw new RuntimeException(e);
                     }
 
+                    toStart.add(info);
                     loaders.add(pluginClassloader);
                     byDep.put(info.getGroupIdAndArtifactId(), pluginClassloader);
 
                 }
             }
 
-            registry.add(loaders);
+
+            List<ClassLoader> classLoadersInStartupOrder = new ArrayList<>();
+            List<PluginInfo> pluginsInStartupOrder = PluginInfo.resolveStartupOrder(toStart);
+
+            for (PluginInfo info : pluginsInStartupOrder) {
+                String key = info.getGroupIdAndArtifactId();
+                classLoadersInStartupOrder.add(byDep.get(key));
+            }
+            registry.add(classLoadersInStartupOrder);
         }
 
         private File getPluginFile(Artifact artifact) {

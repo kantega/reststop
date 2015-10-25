@@ -24,7 +24,7 @@ import org.apache.cxf.phase.AbstractPhaseInterceptor;
 import org.apache.cxf.phase.Phase;
 import org.kantega.reststop.api.Export;
 import org.kantega.reststop.api.Plugin;
-import org.kantega.reststop.cxflib.api.EndpointCustomizer;
+import org.kantega.reststop.cxf.EndpointCustomizer;
 
 import javax.xml.namespace.QName;
 import javax.xml.ws.Endpoint;

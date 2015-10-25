@@ -71,7 +71,7 @@ public class PluginInfoTest {
             Collections.shuffle(infos);
         }
 
-        List<PluginInfo> sorted = PluginInfo.resolveStartupOrder(infos);
+        List<PluginInfo> sorted = PluginInfo.resolveClassloaderOrder(infos);
 
         assertThat(a, is(sorted.get(0)));
         assertThat(b, is(sorted.get(1)));
@@ -91,7 +91,7 @@ public class PluginInfoTest {
             Collections.shuffle(infos);
         }
 
-        List<PluginInfo> sorted = PluginInfo.resolveStartupOrder(infos);
+        List<PluginInfo> sorted = PluginInfo.resolveClassloaderOrder(infos);
 
         assertThat(a, is(sorted.get(0)));
     }
@@ -108,6 +108,6 @@ public class PluginInfoTest {
 
 
 
-        PluginInfo.resolveStartupOrder(infos);
+        PluginInfo.resolveClassloaderOrder(infos);
     }
 }

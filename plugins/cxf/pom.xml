@@ -27,6 +27,10 @@
 
     <artifactId>reststop-cxf-plugin</artifactId>
 
+    <properties>
+        <cxf.version>3.0.1</cxf.version>
+    </properties>
+
     <dependencies>
 
         <dependency>
@@ -40,10 +44,20 @@
             <artifactId>javax.servlet-api</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.kantega.reststop</groupId>
-            <artifactId>reststop-cxf-lib-plugin</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-frontend-jaxws</artifactId>
+            <version>${cxf.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.geronimo.specs</groupId>
+                    <artifactId>geronimo-javamail_1.4_spec</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.cxf</groupId>
+            <artifactId>cxf-rt-transports-http</artifactId>
+            <version>${cxf.version}</version>
         </dependency>
 
     </dependencies>
