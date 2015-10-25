@@ -100,10 +100,12 @@ public class ScanForPluginsMojo extends AbstractMojo {
             final Class<?> exportClass;
             final Class<? extends Annotation> pluginClass;
             final Class<? extends Annotation> configClass;
+            final Class<? extends Annotation> pluginExportClass;
             try {
                 exportClass = loader.loadClass("org.kantega.reststop.api.Export");
                 pluginClass = (Class<? extends Annotation>) loader.loadClass("org.kantega.reststop.api.Plugin");
                 configClass = (Class<? extends Annotation>) loader.loadClass("org.kantega.reststop.api.Config");
+                pluginExportClass = (Class<? extends Annotation>) loader.loadClass("org.kantega.reststop.api.PluginExport");
             } catch (ClassNotFoundException e) {
                 throw new MojoExecutionException(e.getMessage(), e);
             }
@@ -157,7 +159,13 @@ public class ScanForPluginsMojo extends AbstractMojo {
                                                 ParameterizedType parameterizedType = (ParameterizedType) genericParameterTypes[i];
                                                 Type[] actualTypeArguments = parameterizedType.getActualTypeArguments();
                                                 if (actualTypeArguments != null && actualTypeArguments.length == 1) {
-                                                    imports.add(actualTypeArguments[0].getTypeName());
+                                                    if(actualTypeArguments[0] instanceof ParameterizedType && ((ParameterizedType) actualTypeArguments[0]).getRawType() == pluginExportClass) {
+                                                        String typeName = ((ParameterizedType) actualTypeArguments[0]).getActualTypeArguments()[0].getTypeName();
+                                                        imports.add(typeName);
+
+                                                    } else {
+                                                        imports.add(actualTypeArguments[0].getTypeName());
+                                                    }
                                                 }
 
                                             } else {
@@ -173,8 +181,8 @@ public class ScanForPluginsMojo extends AbstractMojo {
                     }
 
                     return FileVisitResult.CONTINUE;
-            }
-        });
+                }
+            });
 
             getLog().info("Plugin classes: " + pluginClassNames);
 
