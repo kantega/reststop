@@ -764,9 +764,11 @@ public class ReststopInitializer implements ServletContainerInitializer{
             Map<String, PluginClassLoader> byDep  = new HashMap<>();
 
 
-            List<PluginInfo> infos = PluginInfo.resolveStartupOrder(pluginInfos);
+            List<PluginInfo> pluginsInClassloaderOrder = PluginInfo.resolveClassloaderOrder(pluginInfos);
 
-            for (PluginInfo info : infos) {
+            List<PluginInfo> toStart = new ArrayList<>();
+
+            for (PluginInfo info : pluginsInClassloaderOrder) {
 
                 if(info.isDirectDeploy()) {
                     PluginClassLoader pluginClassloader = new PluginClassLoader(info, getParentClassLoader(info, parentClassLoader, byDep));
@@ -784,13 +786,22 @@ public class ReststopInitializer implements ServletContainerInitializer{
                         throw new RuntimeException(e);
                     }
 
+                    toStart.add(info);
                     loaders.add(pluginClassloader);
                     byDep.put(info.getGroupIdAndArtifactId(), pluginClassloader);
 
                 }
             }
 
-            registry.add(loaders);
+
+            List<ClassLoader> classLoadersInStartupOrder = new ArrayList<>();
+            List<PluginInfo> pluginsInStartupOrder = PluginInfo.resolveStartupOrder(toStart);
+
+            for (PluginInfo info : pluginsInStartupOrder) {
+                String key = info.getGroupIdAndArtifactId();
+                classLoadersInStartupOrder.add(byDep.get(key));
+            }
+            registry.add(classLoadersInStartupOrder);
         }
 
         private File getPluginFile(Artifact artifact) {
@@ -961,13 +972,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
             this.manager = manager;
             manager.addPluginManagerListener(new PluginManagerListener<Object>() {
 
-                private ThreadLocal<ClassLoader> classLoader = new ThreadLocal<>();
 
                 @Override
                 public void afterClassLoaderAdded(PluginManager<Object> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
-                    Thread.currentThread().setContextClassLoader(this.classLoader.get());
-                    this.classLoader.remove();
-
                     synchronized (classLoaders) {
                         classLoaders.put(classLoader, classLoader);
                     }
@@ -983,8 +990,6 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
                 @Override
                 public void beforeClassLoaderAdded(PluginManager<Object> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
-                   this.classLoader.set(classLoader);
-                    Thread.currentThread().setContextClassLoader(classLoader);
                 }
 
 
@@ -1052,16 +1057,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         @Override
         public void beforePassivation(PluginManager<Object> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader, PluginLoader<Object> pluginLoader, Collection<Object> plugins) {
-            for (Object plugin : plugins) {
-                //plugin.destroy();
-            }
-        }
-
-        @Override
-        public void beforePluginManagerStopped(PluginManager<Object> pluginManager) {
-            List<Object> plugins = new ArrayList<>(pluginManager.getPlugins());
-            Collections.reverse(plugins);
-            for (Object plugin : plugins) {
+            List<Object> reversed = new ArrayList<>(plugins);
+            Collections.reverse(reversed);
+            for (Object plugin : reversed) {
                 for (Method method : plugin.getClass().getDeclaredMethods()) {
                     if(method.isAnnotationPresent(PreDestroy.class)) {
                         if( (method.getModifiers() & Modifier.PUBLIC) == 1 && method.getReturnType() == Void.TYPE && method.getParameters().length == 0) {
@@ -1078,6 +1076,11 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
                 }
             }
+        }
+
+        @Override
+        public void beforePluginManagerStopped(PluginManager<Object> pluginManager) {
+
         }
 
         @Override

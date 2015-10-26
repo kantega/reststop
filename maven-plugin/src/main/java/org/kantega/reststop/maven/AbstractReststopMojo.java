@@ -292,7 +292,9 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
     private void validateCircularDependencies(Document document) throws MojoFailureException {
         try {
-            PluginInfo.resolveStartupOrder(PluginInfo.parse(document));
+            List<PluginInfo> infos = PluginInfo.parse(document);
+            PluginInfo.resolveClassloaderOrder(infos);
+            PluginInfo.resolveStartupOrder(infos);
         } catch (CircularDependencyException e) {
             throw new MojoFailureException(e.getMessage(), e);
         }

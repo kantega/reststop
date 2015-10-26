@@ -58,8 +58,10 @@ public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<Objec
             final Constructor constructor = clazz.getDeclaredConstructors()[0];
             final Object[] params = getConstructorParameters(constructor, serviceLocator, classLoader);
 
-            try {
+            ClassLoader current = Thread.currentThread().getContextClassLoader();
 
+            try {
+                Thread.currentThread().setContextClassLoader(classLoader);
                 final Object plugin = pluginClass.cast(constructor.newInstance(params));
                 plugins.add(plugin);
             } catch (InstantiationException e) {
@@ -69,6 +71,8 @@ public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<Objec
                 throw new InvalidPluginException("Plugin class " + clazz.getName() + " or its constructor has an illegal access modifier", e, clazz);
             } catch (InvocationTargetException e) {
                 throw new InvalidPluginException("Plugin class " + clazz.getName() + " threw an exeception during construction ", e, clazz);
+            } finally {
+                Thread.currentThread().setContextClassLoader(current);
             }
         }
         return plugins;

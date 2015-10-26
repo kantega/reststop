@@ -48,8 +48,8 @@ public class DevelopmentClassLoaderProvider {
         ClassLoader parentClassLoader = reststop.getPluginParentClassLoader();
         this.reststop = reststop;
 
-        Reststop.PluginClassLoaderChange change = reststop.changePluginClassLoaders();
 
+        List<PluginInfo> toStart = new ArrayList<>();
 
         for (PluginInfo pluginInfo : this.pluginsInfo.values()) {
 
@@ -63,11 +63,11 @@ public class DevelopmentClassLoaderProvider {
                         compile,
                         runtime,
                         test,
-                        getParentClassLoader(pluginInfo, parentClassLoader));
+                        getParentClassLoader(pluginInfo, parentClassLoader), 1);
 
                 classloaders.put(pluginInfo.getPluginId(), classloader);
                 byDepsId.put(pluginInfo.getGroupIdAndArtifactId(), classloader);
-                change.add(classloader);
+                toStart.add(pluginInfo);
             }
         }
         for(DevelopmentClassloader stale : findStaleClassLoaders()) {
@@ -86,6 +86,14 @@ public class DevelopmentClassLoaderProvider {
                 throw new RuntimeException(message.toString(), e);
             }
             stale.copySourceResorces();
+        }
+
+        Reststop.PluginClassLoaderChange change = reststop.changePluginClassLoaders();
+
+        List<PluginInfo> pluginsInStartupOrder = PluginInfo.resolveStartupOrder(toStart);
+
+        for (PluginInfo pluginInfo : pluginsInStartupOrder) {
+            change.add(byDepsId.get(pluginInfo.getGroupIdAndArtifactId()));
         }
         change.commit();
 
@@ -130,39 +138,86 @@ public class DevelopmentClassLoaderProvider {
         return new HashMap<>(classloaders);
     }
 
-    public synchronized DevelopmentClassloader redeploy(String pluginId, DevelopmentClassloader classloader) {
+    public synchronized Collection<DevelopmentClassloader> redeploy(List<DevelopmentClassloader> staleClassLoaders) {
 
-        PluginInfo info = classloader.getPluginInfo();
-        DevelopmentClassloader newClassLoader = new DevelopmentClassloader(classloader, getParentClassLoader(info, getParentClassLoader(info, reststop.getPluginParentClassLoader())));
+        Map<String, DevelopmentClassloader> newClassLoaders = new HashMap<>();
+        Map<String, DevelopmentClassloader> oldClassLoaders = new HashMap<>();
+        List<PluginInfo> infos = new ArrayList<>();
+        for (DevelopmentClassloader classloader : staleClassLoaders) {
+            oldClassLoaders.put(classloader.getPluginInfo().getGroupIdAndArtifactId(), classloader);
+            DevelopmentClassloader newClassLoader = newClassLoader(classloader);
+            newClassLoader.setFailed(true);
+            newClassLoaders.put(classloader.getPluginInfo().getGroupIdAndArtifactId(), newClassLoader);
+            byDepsId.put(classloader.getPluginInfo().getGroupIdAndArtifactId(), newClassLoader);
+            classloaders.put(classloader.getPluginInfo().getPluginId(), newClassLoader);
+            infos.add(classloader.getPluginInfo());
+        }
 
 
+        // If the development plugin has changed, we need to restart the world
+        // (that is remove all non-dev-plugin classloaders and restart the dev-plugin)
+        if(containsDevelopmentPlugin(infos)) {
+            Reststop.PluginClassLoaderChange change = reststop.changePluginClassLoaders();
 
-        Reststop.PluginClassLoaderChange change = reststop.changePluginClassLoaders();
-        if(pluginId.startsWith("org.kantega.reststop:reststop-development-plugin:")) {
-            for (DevelopmentClassloader developmentClassloader : classloaders.values()) {
-                if(developmentClassloader != classloader) {
-                    change.remove(developmentClassloader);
+            for (DevelopmentClassloader classloader : classloaders.values()) {
+                if(! isDevelopmentClassLoader(classloader.getPluginInfo())) {
+                    change.remove(classloader);
                 }
 
             }
             change.remove(getClass().getClassLoader());
+            change.add(newClassLoaders.get("org.kantega.reststop:reststop-development-plugin"));
+            change.commit();
 
-            change.add(newClassLoader);
         } else {
-            if(!classloader.isFailed()) {
-                change.remove(classloader);
+            {
+                Reststop.PluginClassLoaderChange change = reststop.changePluginClassLoaders();
+                // First remove all classloaders in opposite startup order
+                List<PluginInfo> shutdownOrder = PluginInfo.resolveStartupOrder(infos);
+                Collections.reverse(shutdownOrder);
+                for (PluginInfo pluginInfo : shutdownOrder) {
+                    DevelopmentClassloader oldClassLoader = oldClassLoaders.get(pluginInfo.getGroupIdAndArtifactId());
+                    if(!oldClassLoader.isFailed()) {
+                        change.remove(oldClassLoader);
+                    }
+                }
+                change.commit();
             }
-            change.add(newClassLoader);
+
+            {
+
+                // Then start in startup order
+                List<PluginInfo> startupOrder = PluginInfo.resolveStartupOrder(infos);
+                for (PluginInfo pluginInfo : startupOrder) {
+                    DevelopmentClassloader newClassLoader = newClassLoaders.get(pluginInfo.getGroupIdAndArtifactId());
+                    reststop.changePluginClassLoaders()
+                            .add(newClassLoader)
+                    .commit();
+                    newClassLoader.setFailed(false);
+                }
+            }
+
+
         }
-        change.commit();
-
-        byDepsId.put(info.getGroupIdAndArtifactId(), newClassLoader);
-        classloaders.put(pluginId, newClassLoader);
-
-        return newClassLoader;
-
+        return newClassLoaders.values();
     }
 
+    private boolean containsDevelopmentPlugin(List<PluginInfo> infos) {
+        for (PluginInfo info : infos) {
+            if(isDevelopmentClassLoader(info)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isDevelopmentClassLoader(PluginInfo info) {
+        return info.getPluginId().startsWith("org.kantega.reststop:reststop-development-plugin");
+    }
+
+    public DevelopmentClassloader newClassLoader(DevelopmentClassloader classloader) {
+        return new DevelopmentClassloader(classloader, getParentClassLoader(classloader.getPluginInfo(), getParentClassLoader(classloader.getPluginInfo(), reststop.getPluginParentClassLoader())));
+    }
 
 
     public void addByDepartmentId(PluginInfo info, PluginClassLoader classLoader) {
@@ -195,13 +250,7 @@ public class DevelopmentClassLoaderProvider {
         }
 
 
-        for (PluginInfo info : new ArrayList<>(infos.values())) {
-            Map<String, PluginInfo> deps = new HashMap<>();
-            getChildPlugins(info, deps, new ArrayList<>(getPluginInfos()));
-            for (String id : deps.keySet()) {
-                infos.put(id, deps.get(id));
-            }
-        }
+
 
         // Add plugins we provide services to
         for (PluginInfo info : new ArrayList<>(infos.values())) {
@@ -212,7 +261,15 @@ public class DevelopmentClassLoaderProvider {
             }
         }
 
-        List<PluginInfo> sorted = PluginInfo.resolveStartupOrder(new ArrayList<>(infos.values()));
+        for (PluginInfo info : new ArrayList<>(infos.values())) {
+            Map<String, PluginInfo> deps = new HashMap<>();
+            getChildPlugins(info, deps, new ArrayList<>(getPluginInfos()));
+            for (String id : deps.keySet()) {
+                infos.put(id, deps.get(id));
+            }
+        }
+
+        List<PluginInfo> sorted = PluginInfo.resolveClassloaderOrder(new ArrayList<>(infos.values()));
 
         Collections.sort(sorted, new Comparator<PluginInfo>() {
             @Override

@@ -22,6 +22,7 @@ import org.w3c.dom.NodeList;
 
 import java.io.*;
 import java.util.*;
+import java.util.function.Function;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
@@ -43,7 +44,7 @@ public class PluginInfo extends Artifact {
 
     public List<Artifact> getClassPath(String scope) {
         if (!classpaths.containsKey(scope)) {
-            classpaths.put(scope, new ArrayList<Artifact>());
+            classpaths.put(scope, new ArrayList<>());
         }
 
         return classpaths.get(scope);
@@ -292,7 +293,17 @@ public class PluginInfo extends Artifact {
         return directDeploy;
     }
 
+
+    public static List<PluginInfo> resolveClassloaderOrder(List<PluginInfo> infos) throws CircularDependencyException {
+        return resolveOrder(infos, PluginInfo::getDependsOn);
+
+    }
+
     public static List<PluginInfo> resolveStartupOrder(List<PluginInfo> infos) throws CircularDependencyException {
+        return resolveOrder(infos, PluginInfo::getImportsFrom);
+    }
+
+    public static List<PluginInfo> resolveOrder(List<PluginInfo> infos, Function<PluginInfo, Collection<Artifact>> dependencyFunction) throws CircularDependencyException {
 
         infos = sortByPriority(new ArrayList<>(infos));
 
@@ -307,30 +318,25 @@ public class PluginInfo extends Artifact {
         Set<String> ancestors = new LinkedHashSet<>();
         for (PluginInfo info : infos) {
             if (!Boolean.TRUE.equals(colors.get(info.getGroupIdAndArtifactId())))
-                dfs(info, plugins, colors, ancestors, sorted);
+                dfs(info, plugins, colors, ancestors, sorted, dependencyFunction);
         }
         return sorted;
     }
 
     private static List<PluginInfo> sortByPriority(ArrayList<PluginInfo> pluginInfos) {
-        Collections.sort(pluginInfos, new Comparator<PluginInfo>() {
-            @Override
-            public int compare(PluginInfo o1, PluginInfo o2) {
-                return o1.getPriority() - o2.getPriority();
-            }
-        });
+        Collections.sort(pluginInfos, Comparator.comparing(PluginInfo::getPriority));
         return pluginInfos;
     }
 
-    private static void dfs(PluginInfo info, Map<String, PluginInfo> plugins, Map<String, Boolean> colors, Set<String> ancestors, List<PluginInfo> sorted) {
+    private static void dfs(PluginInfo info, Map<String, PluginInfo> plugins, Map<String, Boolean> colors, Set<String> ancestors, List<PluginInfo> sorted, Function<PluginInfo, Collection<Artifact>> dependencyFunction) {
         detectCircularDependencyChain(info, ancestors);
         ancestors.add(info.getGroupIdAndArtifactId());
 
         colors.put(info.getGroupIdAndArtifactId(), Boolean.FALSE);
-        for (Artifact dep : info.getStartupDeps()) {
+        for (Artifact dep : dependencyFunction.apply(info)) {
             String key = dep.getGroupIdAndArtifactId();
             if (plugins.containsKey(key) && !Boolean.TRUE.equals(colors.get(key))) {
-                dfs(plugins.get(key), plugins, colors, ancestors, sorted);
+                dfs(plugins.get(key), plugins, colors, ancestors, sorted, dependencyFunction);
             }
         }
         colors.put(info.getGroupIdAndArtifactId(), Boolean.TRUE);
@@ -354,17 +360,6 @@ public class PluginInfo extends Artifact {
             chain.append(info.getGroupIdAndArtifactId());
             throw new CircularDependencyException("Detected circular plugin dependency chain: " + chain.toString());
         }
-    }
-
-    private List<Artifact> getStartupDeps() {
-        Map<String, Artifact> deps = new LinkedHashMap<>();
-        for (Artifact artifact : getDependsOn()) {
-            deps.put(artifact.getPluginId(), artifact);
-        }
-        for (Artifact artifact : getImportsFrom()) {
-            deps.put(artifact.getPluginId(), artifact);
-        }
-        return new ArrayList<>(deps.values());
     }
 
     public String getGroupIdAndArtifactId() {

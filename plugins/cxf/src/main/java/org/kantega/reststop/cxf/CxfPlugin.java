@@ -19,16 +19,19 @@ package org.kantega.reststop.cxf;
 import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
 import org.apache.cxf.wsdl.WSDLManager;
 import org.kantega.reststop.api.*;
-import org.kantega.reststop.cxflib.api.EndpointCustomizer;
 import org.kantega.reststop.jaxwsapi.EndpointConfiguration;
 import org.kantega.reststop.jaxwsapi.EndpointConfigurationBuilder;
 import org.kantega.reststop.jaxwsapi.EndpointDeployer;
 
+import javax.annotation.PreDestroy;
 import javax.servlet.Filter;
 import javax.servlet.ServletException;
 import javax.wsdl.Definition;
 import javax.xml.ws.Endpoint;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Properties;
 
 /**
  *
@@ -66,9 +69,7 @@ public class CxfPlugin implements EndpointDeployer {
 
 
     private void deployEndpoints(Collection<EndpointCustomizer> customizers, Collection<PluginExport<EndpointConfiguration>> endpoints) {
-        for (Endpoint endpoint : this.endpoints) {
-            endpoint.stop();
-        }
+        undeployEndpoints();
 
         WSDLManager wsdlManager = WSDLManagerDefinitionCacheCleaner.getWsdlManager();
         for (Definition def : wsdlManager.getDefinitions().values()) {
@@ -91,6 +92,18 @@ public class CxfPlugin implements EndpointDeployer {
             }
         }
 
+    }
+
+    @PreDestroy
+    public void destroy() {
+
+        undeployEndpoints();
+    }
+
+    private void undeployEndpoints() {
+        for (Endpoint endpoint : this.endpoints) {
+            endpoint.stop();
+        }
     }
 
     @Override

@@ -21,6 +21,11 @@ import org.kantega.reststop.api.Plugin;
 import org.kantega.reststop.api.ServletBuilder;
 
 import javax.servlet.Filter;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 /**
  *
@@ -33,10 +38,19 @@ public class IndexPagePlugin  {
 
     @Export
     private final Filter cssServlet;
+    @Export
+    private final Filter helloWorldServlet;
 
     public IndexPagePlugin(ServletBuilder servletBuilder) {
         indexServlet = servletBuilder.resourceServlet("/", getClass().getResource("index.html"));
         cssServlet = servletBuilder.resourceServlet("/ws.css", getClass().getResource("ws.css"));
+
+        helloWorldServlet = servletBuilder.servlet(new HttpServlet() {
+            @Override
+            protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+                resp.getWriter().print("halloOo");
+            }
+        }, "/heiverden");
     }
 }
 

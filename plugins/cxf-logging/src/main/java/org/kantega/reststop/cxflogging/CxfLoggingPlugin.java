@@ -22,7 +22,7 @@ import org.apache.cxf.jaxws22.EndpointImpl;
 import org.apache.cxf.message.Message;
 import org.kantega.reststop.api.Export;
 import org.kantega.reststop.api.Plugin;
-import org.kantega.reststop.cxflib.api.EndpointCustomizer;
+import org.kantega.reststop.cxf.EndpointCustomizer;
 
 import javax.xml.ws.Endpoint;
 

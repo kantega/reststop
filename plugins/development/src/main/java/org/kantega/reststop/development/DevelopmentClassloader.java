@@ -51,6 +51,7 @@ public class DevelopmentClassloader extends PluginClassLoader{
     private final File jarFile;
     private final List<File> compileClasspath;
     private final List<File> runtimeClasspath;
+    private final int version;
     private final List<File> testClasspath;
 
     private final static JavaCompiler compiler;
@@ -69,12 +70,13 @@ public class DevelopmentClassloader extends PluginClassLoader{
     private Set<String> usedUrls = new CopyOnWriteArraySet<>();
     private volatile boolean failed;
 
-    public DevelopmentClassloader(PluginInfo info, File baseDir, File jarFile, List<File> compileClasspath, List<File> runtimeClasspath, List<File> testClasspath, ClassLoader parent) {
+    public DevelopmentClassloader(PluginInfo info, File baseDir, File jarFile, List<File> compileClasspath, List<File> runtimeClasspath, List<File> testClasspath, ClassLoader parent, int version) {
         super(info, new URL[0], parent);
         this.basedir = baseDir;
         this.jarFile = jarFile;
         this.compileClasspath = compileClasspath;
         this.runtimeClasspath = runtimeClasspath;
+        this.version = version;
         this.testClasspath = new ArrayList<>(testClasspath);
         try {
             if(baseDir != null && baseDir.exists()) {
@@ -102,7 +104,7 @@ public class DevelopmentClassloader extends PluginClassLoader{
     }
 
     public DevelopmentClassloader(DevelopmentClassloader other, ClassLoader parentClassLoader) {
-        this(other.getPluginInfo(), other.getBasedir(), other.jarFile, other.compileClasspath, other.runtimeClasspath, other.testClasspath, parentClassLoader);
+        this(other.getPluginInfo(), other.getBasedir(), other.jarFile, other.compileClasspath, other.runtimeClasspath, other.testClasspath, parentClassLoader, other.version +1);
     }
 
     @Override
@@ -435,6 +437,10 @@ public class DevelopmentClassloader extends PluginClassLoader{
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public int getVersion() {
+        return version;
     }
 
     @Override
