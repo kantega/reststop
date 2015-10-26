@@ -14,7 +14,7 @@
 
         <a name="$classloader.key.pluginInfo.pluginId"></a><strong>$classloader.key.pluginInfo.artifactId</strong>
         <span style="margin-left: 1em; font-size: smaller">($classloader.key.pluginInfo.version /  $classloader.key.pluginInfo.groupId
-            / $dateTool.formatTime($classloader.key.creationTime))</span>
+            / $dateTool.formatTime($classloader.key.creationTime) / r$classloader.key.version)</span>
 
         <div class="plugininfo">
             <div class="dependson">

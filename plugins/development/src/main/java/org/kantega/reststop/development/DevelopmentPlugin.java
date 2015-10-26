@@ -155,7 +155,7 @@ public class DevelopmentPlugin  {
         List<File> compile  = info.getClassPathFiles("compile");
         List<File> test  = info.getClassPathFiles("test");
 
-        return new DevelopmentClassloader(info, info.getSourceDirectory(), info.getFile(), compile, runtime, test, pluginParentClassLoader);
+        return new DevelopmentClassloader(info, info.getSourceDirectory(), info.getFile(), compile, runtime, test, pluginParentClassLoader, 1);
     }
 
     private boolean loadedByDevelopmentClassLoader() {

@@ -63,7 +63,7 @@ public class DevelopmentClassLoaderProvider {
                         compile,
                         runtime,
                         test,
-                        getParentClassLoader(pluginInfo, parentClassLoader));
+                        getParentClassLoader(pluginInfo, parentClassLoader), 1);
 
                 classloaders.put(pluginInfo.getPluginId(), classloader);
                 byDepsId.put(pluginInfo.getGroupIdAndArtifactId(), classloader);
@@ -144,8 +144,12 @@ public class DevelopmentClassLoaderProvider {
         Map<String, DevelopmentClassloader> oldClassLoaders = new HashMap<>();
         List<PluginInfo> infos = new ArrayList<>();
         for (DevelopmentClassloader classloader : staleClassLoaders) {
-            newClassLoaders.put(classloader.getPluginInfo().getGroupIdAndArtifactId(), newClassLoader(classloader));
             oldClassLoaders.put(classloader.getPluginInfo().getGroupIdAndArtifactId(), classloader);
+            DevelopmentClassloader newClassLoader = newClassLoader(classloader);
+            newClassLoader.setFailed(true);
+            newClassLoaders.put(classloader.getPluginInfo().getGroupIdAndArtifactId(), newClassLoader);
+            byDepsId.put(classloader.getPluginInfo().getGroupIdAndArtifactId(), newClassLoader);
+            classloaders.put(classloader.getPluginInfo().getPluginId(), newClassLoader);
             infos.add(classloader.getPluginInfo());
         }
 
@@ -166,23 +170,33 @@ public class DevelopmentClassLoaderProvider {
             change.commit();
 
         } else {
-            Reststop.PluginClassLoaderChange change = reststop.changePluginClassLoaders();
-            // First remove all classloaders in opposite startup order
-            List<PluginInfo> shutdownOrder = PluginInfo.resolveStartupOrder(infos);
-            Collections.reverse(shutdownOrder);
-            for (PluginInfo pluginInfo : shutdownOrder) {
-                change.remove(oldClassLoaders.get(pluginInfo.getGroupIdAndArtifactId()));
+            {
+                Reststop.PluginClassLoaderChange change = reststop.changePluginClassLoaders();
+                // First remove all classloaders in opposite startup order
+                List<PluginInfo> shutdownOrder = PluginInfo.resolveStartupOrder(infos);
+                Collections.reverse(shutdownOrder);
+                for (PluginInfo pluginInfo : shutdownOrder) {
+                    DevelopmentClassloader oldClassLoader = oldClassLoaders.get(pluginInfo.getGroupIdAndArtifactId());
+                    if(!oldClassLoader.isFailed()) {
+                        change.remove(oldClassLoader);
+                    }
+                }
+                change.commit();
             }
 
-            // Then start in startup order
-            List<PluginInfo> startupOrder = PluginInfo.resolveStartupOrder(infos);
-            for (PluginInfo pluginInfo : startupOrder) {
-                DevelopmentClassloader newClassLoader = newClassLoaders.get(pluginInfo.getGroupIdAndArtifactId());
-                byDepsId.put(pluginInfo.getGroupIdAndArtifactId(), newClassLoader);
-                classloaders.put(pluginInfo.getPluginId(), newClassLoader);
-                change.add(newClassLoader);
+            {
+
+                // Then start in startup order
+                List<PluginInfo> startupOrder = PluginInfo.resolveStartupOrder(infos);
+                for (PluginInfo pluginInfo : startupOrder) {
+                    DevelopmentClassloader newClassLoader = newClassLoaders.get(pluginInfo.getGroupIdAndArtifactId());
+                    reststop.changePluginClassLoaders()
+                            .add(newClassLoader)
+                    .commit();
+                    newClassLoader.setFailed(false);
+                }
             }
-            change.commit();
+
 
         }
         return newClassLoaders.values();
@@ -236,18 +250,20 @@ public class DevelopmentClassLoaderProvider {
         }
 
 
-        for (PluginInfo info : new ArrayList<>(infos.values())) {
-            Map<String, PluginInfo> deps = new HashMap<>();
-            getChildPlugins(info, deps, new ArrayList<>(getPluginInfos()));
-            for (String id : deps.keySet()) {
-                infos.put(id, deps.get(id));
-            }
-        }
+
 
         // Add plugins we provide services to
         for (PluginInfo info : new ArrayList<>(infos.values())) {
             Map<String, PluginInfo> deps = new HashMap<>();
             getServiceConsumingPlugins(info, deps, new ArrayList<>(getPluginInfos()));
+            for (String id : deps.keySet()) {
+                infos.put(id, deps.get(id));
+            }
+        }
+
+        for (PluginInfo info : new ArrayList<>(infos.values())) {
+            Map<String, PluginInfo> deps = new HashMap<>();
+            getChildPlugins(info, deps, new ArrayList<>(getPluginInfos()));
             for (String id : deps.keySet()) {
                 infos.put(id, deps.get(id));
             }

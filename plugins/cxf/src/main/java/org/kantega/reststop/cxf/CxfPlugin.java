@@ -23,6 +23,7 @@ import org.kantega.reststop.jaxwsapi.EndpointConfiguration;
 import org.kantega.reststop.jaxwsapi.EndpointConfigurationBuilder;
 import org.kantega.reststop.jaxwsapi.EndpointDeployer;
 
+import javax.annotation.PreDestroy;
 import javax.servlet.Filter;
 import javax.servlet.ServletException;
 import javax.wsdl.Definition;
@@ -68,9 +69,7 @@ public class CxfPlugin implements EndpointDeployer {
 
 
     private void deployEndpoints(Collection<EndpointCustomizer> customizers, Collection<PluginExport<EndpointConfiguration>> endpoints) {
-        for (Endpoint endpoint : this.endpoints) {
-            endpoint.stop();
-        }
+        undeployEndpoints();
 
         WSDLManager wsdlManager = WSDLManagerDefinitionCacheCleaner.getWsdlManager();
         for (Definition def : wsdlManager.getDefinitions().values()) {
@@ -93,6 +92,18 @@ public class CxfPlugin implements EndpointDeployer {
             }
         }
 
+    }
+
+    @PreDestroy
+    public void destroy() {
+
+        undeployEndpoints();
+    }
+
+    private void undeployEndpoints() {
+        for (Endpoint endpoint : this.endpoints) {
+            endpoint.stop();
+        }
     }
 
     @Override
