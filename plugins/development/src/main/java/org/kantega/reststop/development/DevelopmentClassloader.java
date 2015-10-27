@@ -362,7 +362,7 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
             outputDirectory.mkdirs();
 
-            List<String> options = asList("-g", "-classpath", cp, "-d", outputDirectory.getAbsolutePath());
+            List<String> options = asList("-g", "-classpath", cp, "-d", outputDirectory.getAbsolutePath(), "-parameters");
 
             JavaCompiler.CompilationTask task = compiler.getTask(null, manager, diagnostics, options, null, fileManager.getJavaFileObjectsFromFiles(sourceFiles));
 
