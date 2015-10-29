@@ -31,7 +31,7 @@ import java.util.function.Predicate;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
-@Mojo(name = "conf-doc", defaultPhase = LifecyclePhase.PACKAGE, requiresDependencyResolution = ResolutionScope.COMPILE)
+@Mojo(name = "conf-doc", defaultPhase = LifecyclePhase.PROCESS_CLASSES, requiresDependencyResolution = ResolutionScope.COMPILE)
 public class ConfDocMojo extends AbstractReststopMojo {
 
 
@@ -77,8 +77,9 @@ public class ConfDocMojo extends AbstractReststopMojo {
 
             out.println("<html>");
             out.print("<head><style>");
-            out.println("table {border-collapse: collapse;border: 1px solid lightgray} td {border: 1px solid gray}");
+            out.println("table {border-collapse: collapse;border: 1px solid lightgray} td {border: 1px solid lightgray}");
             out.println(".value {font-family:monospace}");
+            out.println(".optional {font-style:italic}");
             out.print("</style></head>");
             out.println("<body>");
             out.println("<h1>Configuration</h1>");
@@ -106,9 +107,16 @@ public class ConfDocMojo extends AbstractReststopMojo {
                 out.println("</tr>");
 
                 for (PluginConfig config : entry.getValue()) {
+                    Collections.sort(config.getParams(), Comparator.comparing(PluginConfigParam::isOptional).thenComparing(PluginConfigParam::getParamName));
+
                     for (PluginConfigParam param : config.getParams()) {
                         out.println("<tr>");
-                        out.println("<td>");
+                        out.print("<td");
+                        if(param.isOptional()) {
+                            out.print(" class=optional");
+                        }
+                        out.println(">");
+
                         out.print(param.getParamName());
                         out.println("</td>");
 
@@ -275,8 +283,13 @@ public class ConfDocMojo extends AbstractReststopMojo {
     }
 
     private PluginConfigs readPluginConfigs(File pluginFile, JAXBContext context) throws JAXBException, IOException {
+        String path = "META-INF/services/ReststopPlugin/config-params.xml";
+
+        if(pluginFile.isDirectory()) {
+            return (PluginConfigs) context.createUnmarshaller().unmarshal(new File(pluginFile, path));
+        }
         try (JarFile jarFile = new JarFile(pluginFile)) {
-            ZipEntry entry = jarFile.getEntry("META-INF/services/ReststopPlugin/config-params.xml");
+            ZipEntry entry = jarFile.getEntry(path);
             if (entry != null) {
                 try (InputStream is = jarFile.getInputStream(entry)) {
                     return (PluginConfigs) context.createUnmarshaller().unmarshal(is);

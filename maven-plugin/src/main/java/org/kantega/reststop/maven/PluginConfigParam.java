@@ -101,4 +101,8 @@ public class PluginConfigParam {
     public boolean hasDocumentation() {
         return getDoc() != null && !"".equals(getDoc());
     }
+
+    public boolean isOptional() {
+        return !isRequired() || hasDefaultValue();
+    }
 }
