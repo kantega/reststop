@@ -25,7 +25,17 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -62,6 +72,9 @@ public class ScanForPluginsMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.outputDirectory}/META-INF/services/ReststopPlugin/imports.txt")
     protected File importsTarget;
 
+    @Parameter(defaultValue = "${project.build.outputDirectory}/META-INF/services/ReststopPlugin/config-params.xml")
+    protected File configParamsTarget;
+
     @Parameter(defaultValue = "${project}")
     protected MavenProject mavenProject;
 
@@ -84,6 +97,7 @@ public class ScanForPluginsMojo extends AbstractMojo {
 
             final Set<String> exports = new LinkedHashSet<>();
             final Set<String> imports = new LinkedHashSet<>();
+            final PluginConfigs pluginConfigs = new PluginConfigs();
 
             List<URL> files = new ArrayList<>();
 
@@ -127,6 +141,10 @@ public class ScanForPluginsMojo extends AbstractMojo {
                             if (isPluginAnnotated(clazz, pluginClass)) {
                                 pluginClassNames.add(clazz.getName());
 
+                                PluginConfig pluginConfig = new PluginConfig();
+                                pluginConfig.setClassName(clazz.getName());
+                                pluginConfigs.add(pluginConfig);
+
                                 for (Field field : clazz.getDeclaredFields()) {
                                     for (Annotation annotation : field.getDeclaredAnnotations()) {
                                         if (annotation.annotationType() == exportClass) {
@@ -152,8 +170,11 @@ public class ScanForPluginsMojo extends AbstractMojo {
                                     Class<?>[] parameterTypes = constructor.getParameterTypes();
                                     for (int i = 0; i < parameterTypes.length; i++) {
                                         Class<?> paramType = parameterTypes[i];
-                                        boolean isConfigParam = constructor.getParameters()[i].isAnnotationPresent(configClass);
-                                        if(!isConfigParam) {
+                                        java.lang.reflect.Parameter parameter = constructor.getParameters()[i];
+                                        boolean isConfigParam = parameter.isAnnotationPresent(configClass);
+                                        if(isConfigParam) {
+                                            pluginConfig.addParam(getPluginConfigParam(configClass, parameter));
+                                        } else {
                                             if (paramType == Collection.class) {
                                                 Type[] genericParameterTypes = constructor.getGenericParameterTypes();
                                                 ParameterizedType parameterizedType = (ParameterizedType) genericParameterTypes[i];
@@ -190,10 +211,43 @@ public class ScanForPluginsMojo extends AbstractMojo {
             Files.write(descriptorTarget.toPath(), pluginClassNames, Charset.forName("utf-8"));
             Files.write(exportsTarget.toPath(), exports, Charset.forName("utf-8"));
             Files.write(importsTarget.toPath(), imports, Charset.forName("utf-8"));
+            writeConfigInfos(configParamsTarget, pluginConfigs);
 
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
+    }
+
+    private void writeConfigInfos(File configParamsTarget, PluginConfigs pluginConfigs) {
+        try {
+            JAXBContext.newInstance(PluginConfigs.class).createMarshaller().marshal(pluginConfigs, configParamsTarget);
+        } catch (JAXBException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private PluginConfigParam getPluginConfigParam(Class configClass, java.lang.reflect.Parameter parameter) {
+        try {
+
+
+            Annotation configAnnotation = parameter.getAnnotation(configClass);
+
+            String paramName = (String) configClass.getMethod("property").invoke(configAnnotation);
+            if("".equals(paramName)) {
+                paramName = parameter.getName();
+            }
+
+            boolean required = (boolean) configClass.getMethod("required").invoke(configAnnotation);
+
+            String defaultValue = (String) configClass.getMethod("defaultValue").invoke(configAnnotation);
+
+            String type = parameter.getType().getTypeName();
+
+            return new PluginConfigParam(paramName, type, defaultValue, required);
+        } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     private boolean isPluginAnnotated(Class<?> clazz, Class<? extends Annotation> pluginClass) {
