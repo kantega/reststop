@@ -44,6 +44,7 @@ public abstract class AbstractCreateMojo extends AbstractMojo {
             throw new MojoExecutionException(String.format("Generating source for %s failed, Java Class seem to already exist", className),e);
         }
         dc.constructor(JMod.PUBLIC);
+        dc.annotate(org.kantega.reststop.api.Plugin.class);
         try {
             cm.build(sourceDir);
         } catch (IOException e) {

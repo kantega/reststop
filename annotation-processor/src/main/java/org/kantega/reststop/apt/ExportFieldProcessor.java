@@ -16,6 +16,8 @@
 
 package org.kantega.reststop.apt;
 
+import org.kantega.reststop.api.Plugin;
+
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
@@ -38,8 +40,14 @@ public class ExportFieldProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         for (TypeElement annotation : annotations) {
             for(Element element : roundEnv.getElementsAnnotatedWith(annotation)) {
-                if (!element.getModifiers().contains(Modifier.FINAL)) {
-                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "@Export annotated fields must be declared final", element);
+                Element classElement = element.getEnclosingElement();
+                Plugin plugin = classElement.getAnnotation(Plugin.class);
+                if(plugin == null) {
+                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "When using @Export on fields, your class must be annotated as @Plugin", classElement);
+                } else {
+                    if (!element.getModifiers().contains(Modifier.FINAL)) {
+                        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "@Export annotated fields must be declared final", element);
+                    }
                 }
             }
         }

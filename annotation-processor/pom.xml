@@ -25,6 +25,12 @@
 
     <artifactId>reststop-annotation-processor</artifactId>
 
+    <dependencies>
+        <dependency>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-api</artifactId>
+        </dependency>
+    </dependencies>
     <build>
         <plugins>
             <plugin>

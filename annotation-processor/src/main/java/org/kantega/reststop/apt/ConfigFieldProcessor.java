@@ -16,6 +16,8 @@
 
 package org.kantega.reststop.apt;
 
+import org.kantega.reststop.api.Plugin;
+
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
@@ -53,12 +55,18 @@ public class ConfigFieldProcessor extends AbstractProcessor {
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         for (TypeElement annotation : annotations) {
             for(Element element : roundEnv.getElementsAnnotatedWith(annotation)) {
-                TypeMirror type = element.asType();
-                if(! isProperties(element) && ! isPrimitive(type) && ! isString(type) ) {
-                    processingEnv.getMessager()
-                            .printMessage(Diagnostic.Kind.ERROR,
-                                    "@Config annotated parameter must be a primitive, a boxed primitive, a java.lang.String or an Properties object"
-                                    , element);
+                Element classElement = element.getEnclosingElement().getEnclosingElement();
+                Plugin plugin = classElement.getAnnotation(Plugin.class);
+                if(plugin == null) {
+                    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "When using @Config on constructor parameters, your class must be annotated as @Plugin", classElement);
+                } else {
+                    TypeMirror type = element.asType();
+                    if (!isProperties(element) && !isPrimitive(type) && !isString(type)) {
+                        processingEnv.getMessager()
+                                .printMessage(Diagnostic.Kind.ERROR,
+                                        "@Config annotated parameter must be a primitive, a boxed primitive, a java.lang.String or an Properties object"
+                                        , element);
+                    }
                 }
             }
         }

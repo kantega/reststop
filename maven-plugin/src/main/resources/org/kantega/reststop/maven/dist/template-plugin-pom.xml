@@ -39,6 +39,11 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>org.kantega.reststop</groupId>
+                    <artifactId>reststop-maven-plugin</artifactId>
+                    <version>${reststop.version}</version>
+                </plugin>
+                <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
                     <configuration>
                         <source>1.8</source>
