@@ -54,7 +54,7 @@ public class CxfPlugin implements EndpointDeployer {
 
 
 
-    public CxfPlugin(@Config(defaultValue = "/ws/*") String mountPoint,
+    public CxfPlugin(@Config(defaultValue = "/ws/*", doc = "The path to deploy the CXF servlet") String mountPoint,
                      ServletBuilder servletBuilder,
                      Collection<EndpointCustomizer> endpointCustomizers) throws ServletException {
         this.customizers = endpointCustomizers;

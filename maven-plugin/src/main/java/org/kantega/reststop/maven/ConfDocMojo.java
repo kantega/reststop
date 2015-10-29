@@ -26,6 +26,9 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import java.io.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Predicate;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
@@ -69,37 +72,63 @@ public class ConfDocMojo extends AbstractReststopMojo {
 
                         getLog().info("Found plugin " + plugin.getCoords());
 
+                        out.println("############################");
+                        out.println("# " + plugin.getArtifactId());
+                        out.println("#");
+
                         for (PluginConfig config : configs) {
                             getLog().info("\tFound plugin class " + config.getClassName());
                             if (!config.getParams().isEmpty()) {
-                                out.println("## " + plugin.getArtifactId() + " : "+ config.getClassName());
-                                out.println("#");
-                                out.println("");
 
-                                for (PluginConfigParam param : config.getParams()) {
+                                Predicate<PluginConfigParam> hasDefaultValue = PluginConfigParam::hasDefaultValue;
+
+
+                                config.getParams().stream().filter(hasDefaultValue.negate()).forEach(param -> {
                                     getLog().info("\t\tFound plugin param " + param.getParamName());
-                                    if (hasDefaultValue(param)) {
-                                        out.print("# ");
-                                    }
+                                    out.println();
+                                    document(param, out, "# ");
                                     out.print(param.getParamName());
                                     out.print("=");
-                                    if (hasDefaultValue(param)) {
-                                        out.print(param.getDefaultValue());
-                                    }
-                                    out.println();
                                     out.println();
 
+                                });
+
+                                if(config.getParams().stream().filter(hasDefaultValue).findFirst().isPresent()) {
+                                    out.println();
+                                    out.println("## Parameters with default values: ");
+                                    config.getParams().stream().filter(hasDefaultValue).forEach(param -> {
+                                        getLog().info("\t\tFound plugin param " + param.getParamName());
+                                        out.println("##");
+                                        document(param, out, "## ");
+                                        out.print("## ");
+                                        out.print(param.getParamName());
+                                        out.print("=");
+                                        out.println(param.getDefaultValue());
+                                    });
                                 }
-
                             }
-                            out.println();
-                            out.println();
+
                         }
+
+                        out.println();
+                        out.println();
                     }
+
                 }
             }
         } catch (IOException | JAXBException e) {
             throw new MojoExecutionException(e.getMessage(), e);
+        }
+    }
+
+    private void document(PluginConfigParam param, PrintWriter out, String prefix) {
+        if(param.hasDocumentation()) {
+
+            for (String line : param.getDoc().split("\n")) {
+                out.print(prefix);
+                out.print(line);
+                out.println(":");
+            }
         }
     }
 
@@ -110,10 +139,6 @@ public class ConfDocMojo extends AbstractReststopMojo {
             }
         }
         return false;
-    }
-
-    private boolean hasDefaultValue(PluginConfigParam param) {
-        return param.getDefaultValue() != null && !"".equals(param.getDefaultValue());
     }
 
     private PluginConfigs readPluginConfigs(File pluginFile, JAXBContext context) throws JAXBException, IOException {
@@ -127,5 +152,20 @@ public class ConfDocMojo extends AbstractReststopMojo {
             }
         }
         return null;
+    }
+
+    @Override
+    protected List<Plugin> getPlugins() {
+
+
+
+        List<Plugin> plugins = new ArrayList<>();
+        if(mavenProject.getPackaging().equals("jar")) {
+            Plugin projectPlugin = new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion());
+            projectPlugin.setSourceDirectory(mavenProject.getBasedir());
+            plugins.add(projectPlugin);
+        }
+        plugins.addAll(super.getPlugins());
+        return plugins;
     }
 }

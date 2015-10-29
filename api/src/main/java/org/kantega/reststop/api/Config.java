@@ -37,4 +37,6 @@ public @interface Config {
 
     String defaultValue() default "";
 
+    String doc() default "";
+
 }

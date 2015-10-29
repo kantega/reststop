@@ -19,6 +19,7 @@ package org.kantega.reststop.maven;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
+import javax.xml.bind.annotation.XmlElement;
 
 /**
  *
@@ -34,13 +35,17 @@ public class PluginConfigParam {
     @XmlAttribute(name = "default-value")
     private String defaultValue;
 
+    @XmlElement(name = "doc")
+    private String doc;
+
     @XmlAttribute(name = "required")
     private boolean required;
 
-    public PluginConfigParam(String paramName, String type, String defaultValue, boolean required) {
+    public PluginConfigParam(String paramName, String type, String defaultValue, String doc, boolean required) {
         this.paramName = paramName;
         this.type = type;
         this.defaultValue = defaultValue;
+        this.doc = doc;
         this.required = required;
     }
 
@@ -79,5 +84,21 @@ public class PluginConfigParam {
 
     public String getType() {
         return type;
+    }
+
+    public boolean hasDefaultValue() {
+        return !"".equals(getDefaultValue());
+    }
+
+    public String getDoc() {
+        return doc;
+    }
+
+    public void setDoc(String doc) {
+        this.doc = doc;
+    }
+
+    public boolean hasDocumentation() {
+        return getDoc() != null && !"".equals(getDoc());
     }
 }

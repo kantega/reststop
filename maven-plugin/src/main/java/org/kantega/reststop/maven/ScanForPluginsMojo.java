@@ -241,9 +241,11 @@ public class ScanForPluginsMojo extends AbstractMojo {
 
             String defaultValue = (String) configClass.getMethod("defaultValue").invoke(configAnnotation);
 
+            String doc = (String) configClass.getMethod("doc").invoke(configAnnotation);
+
             String type = parameter.getType().getTypeName();
 
-            return new PluginConfigParam(paramName, type, defaultValue, required);
+            return new PluginConfigParam(paramName, type, defaultValue, doc, required);
         } catch (NoSuchMethodException | InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
