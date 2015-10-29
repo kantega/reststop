@@ -31,7 +31,7 @@ import java.util.function.Predicate;
 import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
-@Mojo(name = "conf-doc", defaultPhase = LifecyclePhase.PROCESS_CLASSES, requiresDependencyResolution = ResolutionScope.COMPILE)
+@Mojo(name = "conf-doc", defaultPhase = LifecyclePhase.PACKAGE, requiresDependencyResolution = ResolutionScope.COMPILE)
 public class ConfDocMojo extends AbstractReststopMojo {
 
 
