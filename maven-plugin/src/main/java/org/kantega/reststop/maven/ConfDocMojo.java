@@ -255,7 +255,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
             PluginConfigs configsForPlugin = readPluginConfigs(pluginFile, context);
 
 
-            if (configs != null && hasProps(configsForPlugin)) {
+            if (configsForPlugin != null && hasProps(configsForPlugin)) {
                 configs.put(plugin.getCoords(), configsForPlugin);
             }
         }
