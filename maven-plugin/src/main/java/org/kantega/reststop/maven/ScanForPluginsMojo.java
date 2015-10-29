@@ -83,6 +83,8 @@ public class ScanForPluginsMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
 
 
+        mavenProject.setContextValue("reststop.scanned", true);
+
         if (!"jar".equals(mavenProject.getPackaging())) {
             return;
         }
