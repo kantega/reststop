@@ -30,6 +30,8 @@ import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyFilter;
+import org.eclipse.aether.graph.DependencyNode;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.*;
 import org.eclipse.aether.util.artifact.JavaScopes;
@@ -257,7 +259,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
                     }
 
 
-                    DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, DependencyFilterUtils.classpathFilter(scope));
+                    DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, new TransitiveFilter(DependencyFilterUtils.classpathFilter(scope)));
 
                     DependencyResult dependencyResult = repoSystem.resolveDependencies(repoSession, dependencyRequest);
 
@@ -489,4 +491,21 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
         }
     }
 
+    private class TransitiveFilter implements DependencyFilter {
+        private final DependencyFilter dependencyFilter;
+
+        public TransitiveFilter(DependencyFilter dependencyFilter) {
+            this.dependencyFilter = dependencyFilter;
+        }
+
+        @Override
+        public boolean accept(DependencyNode node, List<DependencyNode> parents) {
+            for (DependencyNode parent : parents) {
+                if(!dependencyFilter.accept(parent, Collections.emptyList())) {
+                    return false;
+                }
+            }
+            return dependencyFilter.accept(node, parents);
+        }
+    }
 }
