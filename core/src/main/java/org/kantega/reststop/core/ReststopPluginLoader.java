@@ -26,16 +26,17 @@ import org.kantega.reststop.api.PluginExport;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 
 import java.lang.reflect.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  *
  */
 public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<Object> {
     private final ReststopInitializer.PluginExportsServiceLocator reststopServiceLocator;
+
+    private static Pattern sysPropPattern = Pattern.compile(".*\\$\\{(.*)\\}.*");
 
     public ReststopPluginLoader(ReststopInitializer.PluginExportsServiceLocator reststopServiceLocator) {
 
@@ -140,11 +141,35 @@ public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<Objec
         if( (value == null || value.trim().isEmpty()) && config.required()) {
             throw new IllegalArgumentException("Configuration missing for required @Config parameter '" +param.getName() +"' in class " + param.getDeclaringExecutable().getDeclaringClass().getName());
         }
+
+        value = interpolate(properties.getProperty(name, defaultValue));
+
         Object convertedValue = convertValue(param, value, param.getType());
 
         return convertedValue;
 
 
+    }
+
+    private String interpolate(String value) {
+        int start = 0;
+
+        Set<String> props = new HashSet<>();
+
+        Matcher matcher = sysPropPattern.matcher(value);
+        while(matcher.find(start)) {
+            String name = matcher.group(1);
+            props.add(name);
+            start = matcher.end();
+        }
+        for (String prop : props) {
+            String property = System.getProperty(prop);
+            if(property == null) {
+                throw new IllegalArgumentException("Missing system property ${" + prop +"}");
+            }
+            value = value.replace("${" + prop +"}", property);
+        }
+        return value;
     }
 
     private Object convertValue(Parameter parameter, String value, Class<?> type) {
