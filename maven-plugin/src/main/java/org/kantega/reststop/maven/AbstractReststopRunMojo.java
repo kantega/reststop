@@ -16,10 +16,13 @@
 
 package org.kantega.reststop.maven;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.jetty.maven.plugin.JettyWebAppContext;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
@@ -47,8 +50,15 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
     @Parameter(defaultValue =  "${basedir}/src/config")
     private File configDir;
 
+
     @Parameter(defaultValue = "${project.build.directory}/reststop/temp")
     private File tempDirectory;
+
+
+    @Parameter(defaultValue = "${project.build.testOutputDirectory}/reststopPort.txt")
+    private File reststopPortFile;
+
+
 
 
     @Override
@@ -64,12 +74,15 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
     private void startJetty(File war) throws MojoExecutionException {
         try {
 
+
             System.setProperty("reststopPluginDir", mavenProject.getBasedir().getAbsolutePath());
 
             int port = nextAvailablePort(8080);
 
             mavenProject.getProperties().setProperty("reststopPort", Integer.toString(port));
-            System.setProperty("reststopPort", Integer.toString(port));
+            String reststopPort = Integer.toString(port);
+            System.setProperty("reststopPort", reststopPort);
+            FileUtils.writeStringToFile(reststopPortFile, reststopPort);
 
             Server server = new Server(port);
 
@@ -90,7 +103,7 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
             File jettyTmpDir = new File(tempDirectory, war.getName());
             jettyTmpDir.mkdirs();
             context.setTempDirectory(jettyTmpDir);
-            boolean deleteTempDirectory= tempDirectory.exists() && war.lastModified() > tempDirectory.lastModified();
+            boolean deleteTempDirectory= jettyTmpDir.exists() && war.lastModified() > jettyTmpDir.lastModified();
             context.setPersistTempDirectory(!deleteTempDirectory);
             context.setThrowUnavailableOnStartupException(true);
 
