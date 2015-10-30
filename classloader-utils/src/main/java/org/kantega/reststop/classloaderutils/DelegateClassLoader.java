@@ -53,7 +53,7 @@ public class DelegateClassLoader extends ClassLoader {
 
             for (PluginClassLoader delegate : delegates) {
                 try {
-                    Class<?> aClass = delegate.loadClassWithoutParent(name);
+                    Class<?> aClass = delegate.loadClass(name);
                     loadedClasses.putIfAbsent(aClass.getName(), aClass);
                     usedDelegates.add(delegate.getPluginInfo().getPluginId());
                     return aClass;
