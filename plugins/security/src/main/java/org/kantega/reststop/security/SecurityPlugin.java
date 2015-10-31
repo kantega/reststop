@@ -19,6 +19,7 @@ package org.kantega.reststop.security;
 import org.glassfish.jersey.server.filter.RolesAllowedDynamicFeature;
 import org.kantega.reststop.api.Export;
 import org.kantega.reststop.api.FilterPhase;
+import org.kantega.reststop.api.Plugin;
 import org.kantega.reststop.api.ServletBuilder;
 import org.kantega.reststop.jaxrsapi.ApplicationBuilder;
 
@@ -28,6 +29,7 @@ import javax.ws.rs.core.Application;
 /**
  *
  */
+@Plugin
 public class SecurityPlugin  {
     @Export
     private final Application securityApp;

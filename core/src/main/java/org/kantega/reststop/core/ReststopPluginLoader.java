@@ -25,7 +25,11 @@ import org.kantega.reststop.api.Config;
 import org.kantega.reststop.api.PluginExport;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.*;
+import java.net.URL;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -81,19 +85,42 @@ public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<Objec
 
     private Object[] getConstructorParameters(Constructor constructor, ServiceLocator serviceLocator, ClassLoader classLoader) {
 
+        String[] parameterNames = readParameterNames(constructor.getDeclaringClass());
         Object[] params = new Object[constructor.getParameterTypes().length];
         for (int i = 0; i < constructor.getParameterTypes().length; i++) {
-            params[i] = findInjectableService(constructor, i, serviceLocator, classLoader);
+            params[i] = findInjectableService(constructor, i, serviceLocator, classLoader, parameterNames[i]);
 
         }
         return params;
     }
 
-    private Object findInjectableService(Constructor constructor, int i, ServiceLocator serviceLocator, ClassLoader classLoader) {
+    private String[] readParameterNames(Class declaringClass) {
+        try {
+            InputStream in = declaringClass.getResourceAsStream(declaringClass.getSimpleName() + ".parameternames");
+            if(in == null) {
+                return null;
+            }
+            byte[] buffer = new byte[512];
+
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            int r;
+            while((r = in.read(buffer)) != -1) {
+                out.write(buffer, 0, r);
+            }
+            in.close();
+
+            return new String(out.toByteArray()).split(",");
+
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Object findInjectableService(Constructor constructor, int i, ServiceLocator serviceLocator, ClassLoader classLoader, String parameterName) {
         Class<?> paramClass = constructor.getParameterTypes()[i];
 
         if(constructor.getParameters()[i].isAnnotationPresent(Config.class)) {
-            return getConfigProperty(constructor.getParameters()[i], classLoader);
+            return getConfigProperty(constructor.getParameters()[i], parameterName, classLoader);
         }
 
         if(paramClass == Collection.class) {
@@ -112,12 +139,12 @@ public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<Objec
             }
         }
         if (!serviceLocator.keySet().contains(ServiceKey.by(paramClass))) {
-            throw new InvalidPluginException("Plugin  class " + constructor.getDeclaringClass() + " has an illegal constructor. Parameter " + i + " of type " + paramClass.getName() + " could not be resolved to an application service", constructor.getDeclaringClass());
+            throw new InvalidPluginException("Plugin  class " + constructor.getDeclaringClass() + " has an illegal constructor. Parameter '" + parameterName + "' of type " + paramClass.getName() + " could not be resolved to an application service", constructor.getDeclaringClass());
         }
         return serviceLocator.get(ServiceKey.by(paramClass));
     }
 
-    private Object getConfigProperty(Parameter param, ClassLoader loader) {
+    private Object getConfigProperty(Parameter param, String parameterName, ClassLoader loader) {
 
         PluginClassLoader pluginClassLoader = (PluginClassLoader) loader;
         Properties properties = pluginClassLoader.getPluginInfo().getConfig();
@@ -132,7 +159,7 @@ public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<Objec
         String name = config.property();
 
         if( name == null || name.trim().isEmpty())  {
-            name = param.getName();
+            name = parameterName;
         }
         String defaultValue = config.defaultValue().isEmpty() ? null : config.defaultValue();
 

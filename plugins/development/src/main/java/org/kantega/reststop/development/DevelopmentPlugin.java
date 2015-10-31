@@ -44,12 +44,12 @@ public class DevelopmentPlugin  {
     private final Collection<Filter> filters  = new ArrayList<>();
 
     @Export
-    private VelocityEngine velocityEngine;
+    private final Collection<VelocityEngine> velocityEngines = new ArrayList<>();
 
     private volatile boolean providerStarted = false;
 
     @Export
-    private Collection<PluginListener> listeners = new ArrayList<>();
+    private final Collection<PluginListener> listeners = new ArrayList<>();
 
     public DevelopmentPlugin(@Config(defaultValue = "true") String runTestsOnRedeploy,
                              Reststop reststop, final ServletBuilder servletBuilder, ServletContext servletContext) {
@@ -80,7 +80,8 @@ public class DevelopmentPlugin  {
         }
 
 
-        velocityEngine = initVelocityEngine();
+        VelocityEngine velocityEngine = initVelocityEngine();
+        velocityEngines.add(velocityEngine);
 
         final DevelopmentClassLoaderProvider provider = new DevelopmentClassLoaderProvider();
 

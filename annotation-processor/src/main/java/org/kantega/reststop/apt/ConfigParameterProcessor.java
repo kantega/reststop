@@ -33,8 +33,8 @@ import java.util.Set;
  *
  */
 @SupportedAnnotationTypes("org.kantega.reststop.api.Config")
-@SupportedSourceVersion(SourceVersion.RELEASE_7)
-public class ConfigFieldProcessor extends AbstractProcessor {
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
+public class ConfigParameterProcessor extends AbstractProcessor {
 
 
     private Set<TypeMirror> boxes = new HashSet<>();
