@@ -166,7 +166,7 @@ public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<Objec
         String value = properties.getProperty(name, defaultValue);
 
         if( (value == null || value.trim().isEmpty()) && config.required()) {
-            throw new IllegalArgumentException("Configuration missing for required @Config parameter '" +param.getName() +"' in class " + param.getDeclaringExecutable().getDeclaringClass().getName());
+            throw new IllegalArgumentException("Configuration missing for required @Config parameter '" +parameterName +"' in class " + param.getDeclaringExecutable().getDeclaringClass().getName());
         }
 
         value = interpolate(properties.getProperty(name, defaultValue));
