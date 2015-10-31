@@ -231,12 +231,6 @@
                         </goals>
                     </execution>
                     <execution>
-                        <id>scan-plugins</id>
-                        <goals>
-                            <goal>scan-plugins</goal>
-                        </goals>
-                    </execution>
-                    <execution>
                         <id>dist</id>
                         <goals>
                             <goal>dist-rpm</goal>

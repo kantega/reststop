@@ -109,7 +109,6 @@ friction-free web development with the feedback loop of a dynamic language.
     reststop:stop                   Stops application
     reststop:package-plugins        Packages plugins and plugin configuration
     reststop:resolve-plugins        Resolves plugin configuration
-    reststop:scan-plugins           Scan for plugins and create descriptor, export and import info
     reststop:dist                   Build Zip based distribution packages
     reststop:dist-rpm               Build RPM based distribution packages
 

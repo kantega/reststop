@@ -16,23 +16,18 @@
 
 package org.kantega.reststop.apt;
 
-import org.kantega.reststop.api.Plugin;
+import org.kantega.reststop.api.Config;
+import org.kantega.reststop.api.Export;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
-import javax.lang.model.type.PrimitiveType;
-import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
-import javax.tools.Diagnostic;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
-import java.io.IOException;
-import java.io.Writer;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.io.*;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -42,19 +37,45 @@ import java.util.stream.Collectors;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class PluginClassProcessor extends AbstractProcessor {
 
+    Set<String> pluginClasses = new TreeSet<>();
+    private File pluginsDescriptorFile;
 
 
     @Override
+    public synchronized void init(ProcessingEnvironment processingEnv) {
+        super.init(processingEnv);
+        try {
+            FileObject resource = processingEnv.getFiler().getResource(StandardLocation.CLASS_OUTPUT,
+                    "",
+                    "META-INF/services/ReststopPlugin/simple.txt");
+            pluginsDescriptorFile = new File(resource.toUri().getPath());
+            String content = resource.getCharContent(true).toString();
+
+            pluginClasses.addAll(Arrays.asList(content.split("\n")));
+            pluginClasses.remove("");
+
+        } catch (FileNotFoundException e) {
+            //Ignore
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+
         for (TypeElement annotation : annotations) {
-            for(Element element : roundEnv.getElementsAnnotatedWith(annotation)) {
+            for (Element element : roundEnv.getElementsAnnotatedWith(annotation)) {
 
                 List<? extends Element> enclosedElements = element.getEnclosedElements();
 
                 List<String> parameterNames = new ArrayList<>();
 
+                Set<String> imports = new TreeSet<>();
+                Set<String> exports = new TreeSet<>();
+
                 for (Element enclosedElement : enclosedElements) {
-                    if(enclosedElement.getKind() == ElementKind.CONSTRUCTOR) {
+                    if (enclosedElement.getKind() == ElementKind.CONSTRUCTOR) {
 
                         ExecutableElement constructor = (ExecutableElement) enclosedElement;
 
@@ -63,8 +84,31 @@ public class PluginClassProcessor extends AbstractProcessor {
                         for (VariableElement parameter : parameters) {
                             Name simpleName = parameter.getSimpleName();
                             parameterNames.add(simpleName.toString());
+                            if(parameter.getAnnotation(Config.class) == null) {
+                                if(isCollection(parameter.asType())) {
+                                    DeclaredType type  = (DeclaredType) parameter.asType();
+                                    DeclaredType typeArgument = (DeclaredType) type.getTypeArguments().get(0);
+
+                                    if(isPluginExport(typeArgument)) {
+                                        imports.add(typeArgument.getTypeArguments().get(0).toString());
+                                    } else {
+                                        imports.add(typeArgument.toString());
+                                    }
+
+                                } else {
+                                    imports.add(parameter.asType().toString());
+                                }
+                            }
                         }
 
+                    } else if(enclosedElement.getKind() == ElementKind.FIELD) {
+                        if(enclosedElement.getAnnotation(Export.class) != null) {
+                            if (isCollection(enclosedElement.asType())) {
+                                exports.add(((DeclaredType) enclosedElement.asType()).getTypeArguments().get(0).toString());
+                            } else {
+                                exports.add(enclosedElement.asType().toString());
+                            }
+                        }
                     }
                 }
 
@@ -72,22 +116,68 @@ public class PluginClassProcessor extends AbstractProcessor {
                 PackageElement packageElement = (PackageElement) clazzElem.getEnclosingElement();
 
                 try {
-                    FileObject resource = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT,
+                    FileObject parameterNamesFile = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT,
                             packageElement.getQualifiedName(),
                             clazzElem.getSimpleName() + ".parameternames",
                             element);
 
-                    Writer writer = resource.openWriter();
-                    writer.append(parameterNames.stream().collect(Collectors.joining(",")));
-                    writer.close();
+                    try (Writer writer = parameterNamesFile.openWriter()) {
+                        writer.append(parameterNames.stream().collect(Collectors.joining(",")));
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
 
+                try {
+                    FileObject parameterNamesFile = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT,
+                            packageElement.getQualifiedName(),
+                            clazzElem.getSimpleName() + ".imports",
+                            element);
 
+                    try (Writer writer = parameterNamesFile.openWriter()) {
+                        writer.append(imports.stream().collect(Collectors.joining("\n")));
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                try {
+                    FileObject parameterNamesFile = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT,
+                            packageElement.getQualifiedName(),
+                            clazzElem.getSimpleName() + ".exports",
+                            element);
+
+                    try (Writer writer = parameterNamesFile.openWriter()) {
+                        writer.append(exports.stream().collect(Collectors.joining("\n")));
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                pluginClasses.add(clazzElem.getQualifiedName().toString());
+
+
+            }
+            pluginsDescriptorFile.getParentFile().mkdirs();
+            try (Writer writer = new OutputStreamWriter(new FileOutputStream(pluginsDescriptorFile), "utf-8")) {
+                writer.append(pluginClasses.stream().collect(Collectors.joining("\n")));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
         }
         return false;
     }
 
+    private boolean isPluginExport(DeclaredType typeArgument) {
+        return processingEnv.getTypeUtils().isSameType(
+                processingEnv.getTypeUtils().erasure(typeArgument),
+                processingEnv.getTypeUtils().erasure(processingEnv.getElementUtils().getTypeElement("org.kantega.reststop.api.PluginExport").asType()));
+    }
+
+
+    private boolean isCollection(TypeMirror t) {
+        return processingEnv.getTypeUtils().isSameType(
+                processingEnv.getTypeUtils().erasure(t),
+                processingEnv.getTypeUtils().erasure(processingEnv.getElementUtils().getTypeElement("java.util.Collection").asType()));
+    }
 }

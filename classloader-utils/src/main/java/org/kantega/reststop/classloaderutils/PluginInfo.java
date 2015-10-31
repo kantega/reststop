@@ -183,39 +183,53 @@ public class PluginInfo extends Artifact {
 
     private Set<String> getExports() {
         if(exports == null) {
-            exports = readLines("META-INF/services/ReststopPlugin/exports.txt");
+            exports = readLines("exports");
         }
         return exports;
     }
 
     private Set<String> getImports() {
         if(imports == null) {
-            imports = readLines("META-INF/services/ReststopPlugin/imports.txt");
+            imports = readLines("imports");
         }
         return imports;
     }
 
-    private Set<String> readLines(String path) {
+    private Set<String> readLines(String suffix) {
         Set<String> lines = new HashSet<>();
 
         if(this.getFile() == null) {
             return Collections.emptySet();
         }
         try (JarFile jar = new JarFile(this.getFile())) {
-            ZipEntry entry = jar.getEntry(path);
-            if(entry != null) {
-                try ( BufferedReader br = new BufferedReader(new InputStreamReader(jar.getInputStream(entry), "utf-8"))) {
-                    String line;
-                    while( (line = br.readLine()) != null) {
-                        lines.add(line);
+            ZipEntry pluginsEntry = jar.getEntry("META-INF/services/ReststopPlugin/simple.txt");
+
+            if(pluginsEntry != null) {
+                Set<String> classes = readLines(jar.getInputStream(pluginsEntry));
+                for (String classname : classes) {
+                    ZipEntry entry = jar.getEntry(classname.replace('.', '/') + "." + suffix);
+                    if (entry != null) {
+                        InputStream inputStream = jar.getInputStream(entry);
+                        lines.addAll(readLines(inputStream));
                     }
+
                 }
             }
-
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
 
+        return lines;
+    }
+
+    private Set<String> readLines(InputStream inputStream) throws IOException {
+        Set<String> lines = new TreeSet<>();
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(inputStream, "utf-8"))) {
+            String line;
+            while ((line = br.readLine()) != null) {
+                lines.add(line);
+            }
+        }
         return lines;
     }
 

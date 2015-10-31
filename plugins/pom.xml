@@ -69,7 +69,6 @@
                     <execution>
                         <goals>
                             <goal>mark-source-dir</goal>
-                            <goal>scan-plugins</goal>
                         </goals>
                     </execution>
                 </executions>
