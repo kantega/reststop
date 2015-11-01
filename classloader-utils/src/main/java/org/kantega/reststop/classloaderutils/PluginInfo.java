@@ -24,6 +24,7 @@ import java.io.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.jar.JarFile;
+import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
 import static java.util.Arrays.asList;
@@ -37,7 +38,6 @@ public class PluginInfo extends Artifact {
     private File sourceDirectory;
     private boolean directDeploy;
     private List<Artifact> dependsOn = new ArrayList<>();
-    private List<Artifact> importsFrom = new ArrayList<>();
     private Properties config = new Properties();
     private Set<String> imports, exports;
     private Integer priority = null;
@@ -92,13 +92,6 @@ public class PluginInfo extends Artifact {
                 pluginInfo.addDependsOn(depArt);
             }
 
-            NodeList importsFromElems = pluginElement.getElementsByTagName("imports-from");
-            for(int d = 0; d < importsFromElems.getLength(); d++) {
-                Element importElem = (Element) importsFromElems.item(d);
-                Artifact depArt = new Artifact();
-                parseGav(depArt, importElem);
-                pluginInfo.addImportsFrom(depArt);
-            }
 
             NodeList configElems = pluginElement.getElementsByTagName("config");
 
@@ -146,10 +139,6 @@ public class PluginInfo extends Artifact {
             }
         }
         return infos;
-    }
-
-    private void addImportsFrom(Artifact depArt) {
-        importsFrom.add(depArt);
     }
 
     public void addDependsOn(Artifact depArt) {
@@ -314,7 +303,7 @@ public class PluginInfo extends Artifact {
     }
 
     public static List<PluginInfo> resolveStartupOrder(List<PluginInfo> infos) throws CircularDependencyException {
-        return resolveOrder(infos, PluginInfo::getImportsFrom);
+        return resolveOrder(infos, (pi) -> pi.getServiceProviders(infos).stream().map((i)-> (Artifact) i).collect(Collectors.toList()));
     }
 
     public static List<PluginInfo> resolveOrder(List<PluginInfo> infos, Function<PluginInfo, Collection<Artifact>> dependencyFunction) throws CircularDependencyException {
@@ -400,9 +389,6 @@ public class PluginInfo extends Artifact {
         return properties;
     }
 
-    public List<Artifact> getImportsFrom() {
-        return importsFrom;
-    }
 
     public synchronized int getPriority() {
         if(priority == null) {
@@ -451,5 +437,13 @@ public class PluginInfo extends Artifact {
                 }
             }
         }
+    }
+
+    public void setImports(Set<String> imports) {
+        this.imports = imports;
+    }
+
+    public void setExports(Set<String> exports) {
+        this.exports = exports;
     }
 }

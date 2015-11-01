@@ -190,7 +190,7 @@ public class DevelopmentClassloader extends PluginClassLoader{
             return false;
         }
         File target = new File(basedir, "target/classes");
-        return !target.exists() || newest(sourceDir) > created ||  newest(target) > created;
+        return target.exists() && (newest(sourceDir) > created ||  newest(target) > created);
     }
 
     public boolean isStaleTests() {
@@ -327,7 +327,34 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
 
         compileJava(sourceDirectory, outputDirectory, classpath, fileManager);
+
+        refreshImportsAndExports();
     }
+
+    private void refreshImportsAndExports() {
+        File outputDirectory = new File(basedir, "target/classes");
+
+        File pluginsDescriptor = new File(outputDirectory, "META-INF/services/ReststopPlugin/simple.txt");
+
+        if(pluginsDescriptor.exists()) {
+            try {
+                Set<String> imports = new TreeSet<>();
+                Set<String> exports = new TreeSet<>();
+
+                for (String className : Files.readAllLines(pluginsDescriptor.toPath())) {
+                    imports.addAll(new TreeSet<>(Files.readAllLines(new File(outputDirectory, className.replace('.','/') +".imports").toPath())));
+                    exports.addAll(new TreeSet<>(Files.readAllLines(new File(outputDirectory, className.replace('.','/') +".exports").toPath())));
+                }
+
+                getPluginInfo().setImports(imports);
+                getPluginInfo().setExports(exports);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+
 
     public void compileJavaTests() {
         if(basedir == null) {

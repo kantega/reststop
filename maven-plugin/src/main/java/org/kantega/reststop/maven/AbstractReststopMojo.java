@@ -144,14 +144,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
                     dependsElem.setAttribute("version", parent.getVersion());
 
                 }
-                for (PluginInfo provider : plugin.getServiceProviders(pluginInfos)) {
-                    Element dependsElem = doc.createElement("imports-from");
-                    pluginElem.appendChild(dependsElem);
-                    dependsElem.setAttribute("groupId", provider.getGroupId());
-                    dependsElem.setAttribute("artifactId", provider.getArtifactId());
-                    dependsElem.setAttribute("version", provider.getVersion());
 
-                }
                 if(!prod) {
                     if(!plugin.getConfig().isEmpty()) {
                         Element configElem = doc.createElement("config");
