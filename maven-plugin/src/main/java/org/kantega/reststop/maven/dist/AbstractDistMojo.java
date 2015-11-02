@@ -18,6 +18,7 @@ package org.kantega.reststop.maven.dist;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.maven.model.Exclusion;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Component;
@@ -29,14 +30,17 @@ import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.Untar;
 import org.apache.tools.ant.types.EnumeratedAttribute;
 import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyFilter;
+import org.eclipse.aether.graph.DependencyNode;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.LocalRepositoryManager;
-import org.eclipse.aether.resolution.ArtifactResult;
-import org.eclipse.aether.resolution.DependencyRequest;
-import org.eclipse.aether.resolution.DependencyResolutionException;
-import org.eclipse.aether.resolution.DependencyResult;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.*;
+import org.eclipse.aether.util.artifact.JavaScopes;
+import org.eclipse.aether.util.filter.DependencyFilterUtils;
 import org.eclipse.aether.util.filter.ScopeDependencyFilter;
 import org.kantega.reststop.maven.AbstractReststopMojo;
 import org.kantega.reststop.maven.Plugin;
@@ -57,6 +61,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 
 /**
@@ -78,7 +83,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
     private final String jettydistPrefix = "org.eclipse.jetty:jetty-distribution:tar.gz:";
 
-    @Parameter(defaultValue="7.0.42")
+    @Parameter(defaultValue = "7.0.42")
     protected String tomcatVersion;
 
     private final String tomcatdistPrefix = "org.apache.tomcat:tomcat:tar.gz:";
@@ -119,6 +124,9 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     @Parameter
     private List<Plugin> distributionPlugins;
 
+    @Parameter
+    private List<org.apache.maven.model.Dependency> containerDependencies;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
@@ -150,11 +158,15 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
             copyJetty(containerDistrDir);
 
+            copyContainerDependencies(containerDependencies, new File(containerDistrDir, "lib/ext"));
+
             createJettyContextXml(name, warArifact, manager, new File(containerDistrDir, "webapps/reststop.xml"));
 
             createJettyServicesFile(rootDirectory);
         } else if ("tomcat".compareTo(this.container) == 0) {
             copyTomcat(containerDistrDir);
+
+            copyContainerDependencies(containerDependencies, new File(containerDistrDir, "lib"));
 
             createTomcatContextXml(name, warArifact, manager, new File(containerDistrDir, "conf/Catalina/localhost/ROOT.xml"));
         } else
@@ -167,8 +179,57 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
         performPackaging();
 
-        if(attach) {
+        if (attach) {
             attachPackage(mavenProjectHelper, mavenProject);
+        }
+    }
+
+    private void copyContainerDependencies(List<org.apache.maven.model.Dependency> containerDependencies, File targetDir) throws MojoFailureException, MojoExecutionException {
+
+        for (org.apache.maven.model.Dependency dependency : containerDependencies) {
+
+            Artifact dependencyArtifact = resolveArtifact(
+                    String.format("%s:%s:%s", dependency.getGroupId(), dependency.getArtifactId(),dependency.getVersion()));
+
+            try {
+
+                ArtifactDescriptorResult descriptorResult = repoSystem.readArtifactDescriptor(repoSession, new ArtifactDescriptorRequest(dependencyArtifact, remoteRepos, null));
+
+                CollectRequest collectRequest = new CollectRequest();
+
+                for (RemoteRepository repo : remoteRepos) {
+                    collectRequest.addRepository(repo);
+                }
+                for (Dependency dep : descriptorResult.getDependencies()) {
+                    collectRequest.addDependency(dep);
+                }
+
+                collectRequest.setManagedDependencies(descriptorResult.getManagedDependencies());
+
+
+                final DependencyFilter filter = DependencyFilterUtils.andFilter(
+                        DependencyFilterUtils.classpathFilter(JavaScopes.RUNTIME),
+                        (dependencyNode, list) ->
+                                dependencyNode.getDependency() == null || !dependencyNode.getDependency().isOptional());
+
+                DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, filter);
+
+                DependencyResult dependencyResult = repoSystem.resolveDependencies(repoSession, dependencyRequest);
+
+                if (!dependencyResult.getCollectExceptions().isEmpty()) {
+                    throw new MojoFailureException("Failed resolving plugin dependencies", dependencyResult.getCollectExceptions().get(0));
+                }
+
+                targetDir.getParentFile().mkdirs();
+                for (ArtifactResult result : dependencyResult.getArtifactResults()) {
+                    Artifact artifact = result.getArtifact();
+                    Files.copy(artifact.getFile().toPath(),new File(targetDir,artifact.getFile().getName()).toPath());
+                }
+                Files.copy(dependencyArtifact.getFile().toPath(),new File(targetDir,dependencyArtifact.getFile().getName()).toPath());
+
+            } catch (IOException | DependencyResolutionException | ArtifactDescriptorException e) {
+                throw new MojoFailureException("Failed resolving plugin dependencies", e);
+            }
         }
     }
 
@@ -179,15 +240,15 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     }
 
     private void copyResources() {
-        if(resources != null) {
+        if (resources != null) {
             for (Resource resource : resources) {
 
                 String[] includedFiles = getIncludedFiles(resource);
 
-                if(includedFiles != null) {
+                if (includedFiles != null) {
                     for (String includedFile : includedFiles) {
 
-                        String target = resource.getTargetDirectory() == null ? includedFile : resource.getTargetDirectory() +"/" + includedFile;
+                        String target = resource.getTargetDirectory() == null ? includedFile : resource.getTargetDirectory() + "/" + includedFile;
                         File source = new File(resource.getDirectory(), includedFile);
                         File dest = new File(rootDirectory, target);
                         dest.getParentFile().mkdirs();
@@ -209,14 +270,13 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     private void copyOverridingConfig() throws MojoExecutionException {
         try {
             if (this.distSrc.exists()) {
-                getLog().info("Copying local configuration from "  + distSrc.getCanonicalPath());
+                getLog().info("Copying local configuration from " + distSrc.getCanonicalPath());
                 FileUtils.copyDirectory(this.distSrc, distDirectory);
             }
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
     }
-    
 
 
     protected void writePluginsXml(File xmlFile) throws MojoFailureException, MojoExecutionException {
@@ -269,7 +329,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     }
 
     private void copyTomcat(File tomcatDir) throws MojoFailureException, MojoExecutionException {
-        Artifact tomcatArtifact = resolveArtifact(tomcatdistPrefix+tomcatVersion);
+        Artifact tomcatArtifact = resolveArtifact(tomcatdistPrefix + tomcatVersion);
 
         if (tomcatDir.exists()) {
             try {
@@ -315,7 +375,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     }
 
     private void copyJetty(File jettyDir) throws MojoFailureException, MojoExecutionException {
-        Artifact jettyDistroArtifact = resolveArtifact(jettydistPrefix+getJettyVersion());
+        Artifact jettyDistroArtifact = resolveArtifact(jettydistPrefix + getJettyVersion());
 
         if (jettyDir.exists()) {
             try {
@@ -348,7 +408,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     }
 
     private String getJettyVersion() throws MojoExecutionException {
-        if(jettyVersion != null) {
+        if (jettyVersion != null) {
             return jettyVersion;
         } else {
             Properties props = new Properties();
