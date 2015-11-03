@@ -15,7 +15,7 @@
 ### END INIT INFO
 
 NAME=RESTSTOPNAME
-JETTY_USER=RESTSTOPNAME
+export JETTY_USER=RESTSTOPNAME
 
 # Source the settings
 if [ -r "/etc/default/$NAME" ]; then
@@ -32,7 +32,7 @@ case "$1" in
     start)
       SAVEPWD=$PWD
       cd $APPDIR/jetty/
-      mkdir /var/log/$NAME
+      mkdir -p /var/log/$NAME
       chown $NAME:$NAME /var/log/$NAME
       bin/jetty.sh start
       cd $SAVEPWD
