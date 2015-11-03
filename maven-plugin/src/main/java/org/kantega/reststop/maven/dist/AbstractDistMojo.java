@@ -442,6 +442,23 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
                 resolveSources(pluginArtifact, manager);
                 CollectRequest collectRequest = new CollectRequest(new Dependency(pluginArtifact, "compile"), remoteRepos);
 
+                if(plugin.getDependencies() != null) {
+                    for (org.kantega.reststop.maven.Dependency dependency : plugin.getDependencies()) {
+                        List<org.eclipse.aether.graph.Exclusion> exclusions = new ArrayList<>();
+
+                        if(dependency.getExclusions() != null) {
+                            for (Exclusion exclusion : dependency.getExclusions()) {
+                                exclusions.add(new org.eclipse.aether.graph.Exclusion(exclusion.getGroupId(), exclusion.getArtifactId(), "*", "*"));
+                            }
+                        }
+                        Dependency dep = new Dependency(new DefaultArtifact(dependency.getGroupId(),
+                                dependency.getArtifactId(), dependency.getClassifier(), dependency.getType(), dependency.getVersion()), dependency.getScope(), dependency.isOptional(), exclusions);
+
+                        collectRequest.addDependency(dep);
+
+                    }
+                }
+
                 DependencyResult dependencyResult;
                 try {
                     dependencyResult = repoSystem.resolveDependencies(repoSession, new DependencyRequest(collectRequest, new ScopeDependencyFilter("test", "provided")));
