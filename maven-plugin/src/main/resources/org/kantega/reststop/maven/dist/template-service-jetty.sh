@@ -51,7 +51,8 @@ case "$1" in
     restart)
       SAVEPWD=$PWD
       cd $APPDIR/jetty/
-      bin/jetty.sh restart
+      bin/jetty.sh stop
+      bin/jetty.sh start
       cd $SAVEPWD
     ;;
     check)
