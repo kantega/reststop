@@ -217,7 +217,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
                     targetDir.getParentFile().mkdirs();
                     for (ArtifactResult result : dependencyResult.getArtifactResults()) {
                         Artifact artifact = result.getArtifact();
-                        Files.copy(artifact.getFile().toPath(), new File(targetDir, artifact.getFile().getName()).toPath());
+                        Files.copy(artifact.getFile().toPath(), new File(targetDir, artifact.getFile().getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
                     }
 
                 } catch (IOException | DependencyResolutionException | ArtifactDescriptorException e) {
