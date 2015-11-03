@@ -17,7 +17,14 @@
 NAME=RESTSTOPNAME
 export JETTY_USER=RESTSTOPNAME
 
+INSTDIR=RESTSTOPINSTDIR
+APPDIR="$INSTDIR/$NAME"
+
+
 # Source the settings
+if [ -r "$APPDIR/jetty/defaults/$NAME" ]; then
+    source "$APPDIR/jetty/defaults/$NAME"
+fi
 if [ -r "/etc/default/$NAME" ]; then
     source "/etc/default/$NAME"
 fi
@@ -25,8 +32,6 @@ if [ -r "$CNF" ]; then
     source $CNF
 fi
 
-INSTDIR=RESTSTOPINSTDIR
-APPDIR="$INSTDIR/$NAME"
 
 case "$1" in
     start)
