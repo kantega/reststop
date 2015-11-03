@@ -32,6 +32,8 @@ case "$1" in
     start)
       SAVEPWD=$PWD
       cd $APPDIR/jetty/
+      mkdir /var/log/$NAME
+      chown $NAME:$NAME /var/log/$NAME
       bin/jetty.sh start
       cd $SAVEPWD
     ;;
