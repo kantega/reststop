@@ -15,6 +15,7 @@
 ### END INIT INFO
 
 NAME=RESTSTOPNAME
+JETTY_USER=RESTSTOPNAME
 
 # Source the settings
 if [ -r "/etc/default/$NAME" ]; then
