@@ -18,6 +18,8 @@ package org.kantega.reststop.apt;
 
 import org.kantega.reststop.api.Config;
 import org.kantega.reststop.api.Export;
+import org.kantega.reststop.classloaderutils.config.PluginConfigParam;
+import org.kantega.reststop.classloaderutils.config.PluginConfigParams;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -26,6 +28,8 @@ import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
 import java.io.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -74,6 +78,8 @@ public class PluginClassProcessor extends AbstractProcessor {
                 Set<String> imports = new TreeSet<>();
                 Set<String> exports = new TreeSet<>();
 
+                PluginConfigParams params = new PluginConfigParams();
+
                 for (Element enclosedElement : enclosedElements) {
                     if (enclosedElement.getKind() == ElementKind.CONSTRUCTOR) {
 
@@ -84,7 +90,8 @@ public class PluginClassProcessor extends AbstractProcessor {
                         for (VariableElement parameter : parameters) {
                             Name simpleName = parameter.getSimpleName();
                             parameterNames.add(simpleName.toString());
-                            if(parameter.getAnnotation(Config.class) == null) {
+                            Config configAnnotation = parameter.getAnnotation(Config.class);
+                            if(configAnnotation == null) {
                                 if(isCollection(parameter.asType())) {
                                     DeclaredType type  = (DeclaredType) parameter.asType();
                                     DeclaredType typeArgument = (DeclaredType) type.getTypeArguments().get(0);
@@ -98,7 +105,20 @@ public class PluginClassProcessor extends AbstractProcessor {
                                 } else {
                                     imports.add(parameter.asType().toString());
                                 }
+                            } else {
+                                PluginConfigParam param = new PluginConfigParam();
+                                param.setType(parameter.asType().toString());
+                                param.setDefaultValue(configAnnotation.defaultValue());
+                                param.setDoc(configAnnotation.doc());
+                                String name = configAnnotation.property();
+                                if(name.equals("")) {
+                                    name = parameter.getSimpleName().toString();
+                                }
+                                param.setParamName(name);
+                                param.setRequired(configAnnotation.required());
+                                params.add(param);
                             }
+
                         }
 
                     } else if(enclosedElement.getKind() == ElementKind.FIELD) {
@@ -151,6 +171,19 @@ public class PluginClassProcessor extends AbstractProcessor {
                         writer.append(exports.stream().collect(Collectors.joining("\n")));
                     }
                 } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+
+                try {
+                    FileObject configParams = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT,
+                            packageElement.getQualifiedName(),
+                            clazzElem.getSimpleName() + ".config-params",
+                            element);
+
+                    try (OutputStream outputStream = configParams.openOutputStream()) {
+                        JAXBContext.newInstance(PluginConfigParams.class).createMarshaller().marshal(params, outputStream);
+                    }
+                } catch (IOException | JAXBException e) {
                     throw new RuntimeException(e);
                 }
 

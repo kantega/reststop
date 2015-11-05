@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.maven;
+package org.kantega.reststop.classloaderutils.config;
+
 
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlRootElement;
@@ -24,9 +25,11 @@ import java.util.List;
 /**
  *
  */
-@XmlRootElement(name = "plugins")
-public class PluginConfigs extends ArrayList<PluginConfig> {
+@XmlRootElement(name = "params")
+public class PluginConfigParams extends ArrayList<PluginConfigParam> {
 
-    @XmlElement(name = "plugin")
-    List<PluginConfig> getPluginConfigs() {return this;}
+    @XmlElement(name = "param")
+    public List<PluginConfigParam> getParams() {
+        return this;
+    }
 }

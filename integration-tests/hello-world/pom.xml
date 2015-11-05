@@ -224,6 +224,12 @@
                         </goals>
                     </execution>
                     <execution>
+                        <id>conf-doc</id>
+                        <goals>
+                            <goal>conf-doc</goal>
+                        </goals>
+                    </execution>
+                    <execution>
                         <id>start</id>
                         <goals>
                             <goal>start</goal>

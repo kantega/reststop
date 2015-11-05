@@ -16,35 +16,27 @@
 
 package org.kantega.reststop.maven;
 
-
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
-import java.util.ArrayList;
-import java.util.List;
+import org.kantega.reststop.classloaderutils.config.PluginConfigParams;
 
 /**
  *
  */
-public class PluginConfig {
-    private String className;
-    private List<PluginConfigParam> params = new ArrayList<>();
+public class PluginConfig  {
 
+    private final String className;
 
-    public void setClassName(String className) {
+    private final PluginConfigParams configParams;
+
+    public PluginConfig(String className, PluginConfigParams configParams) {
         this.className = className;
+        this.configParams = configParams;
     }
 
-    public void addParam(PluginConfigParam pluginConfigParam) {
-        params.add(pluginConfigParam);
-    }
-
-    @XmlAttribute(name = "class")
     public String getClassName() {
         return className;
     }
 
-    @XmlElement(name = "param")
-    public List<PluginConfigParam> getParams() {
-        return params;
+    public PluginConfigParams getConfigParams() {
+        return configParams;
     }
 }

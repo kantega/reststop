@@ -22,6 +22,8 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.kantega.reststop.classloaderutils.config.PluginConfigParam;
+import org.kantega.reststop.classloaderutils.config.PluginConfigParams;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
@@ -55,12 +57,11 @@ public class ConfDocMojo extends AbstractReststopMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
 
         try {
-            JAXBContext context = JAXBContext.newInstance(PluginConfigs.class);
+            JAXBContext context = JAXBContext.newInstance(PluginConfigParams.class);
 
             exampleConfigFile.getParentFile().mkdirs();
 
-
-            Map<String, PluginConfigs> configs = findConfigs(context);
+            Map<String, List<PluginConfig>> configs = findConfigs(context);
 
             Properties properties = validateConfiguration(configs);
             writeExampleConfig(configs);
@@ -72,7 +73,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
         }
     }
 
-    private void writeHtmlDoc(Map<String, PluginConfigs> configs, Properties properties) throws FileNotFoundException, UnsupportedEncodingException {
+    private void writeHtmlDoc(Map<String, List<PluginConfig>> configMap, Properties properties) throws FileNotFoundException, UnsupportedEncodingException {
         try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(htmlDocumentationFile), "iso-8859-1"))) {
 
             out.println("<html>");
@@ -99,20 +100,23 @@ public class ConfDocMojo extends AbstractReststopMojo {
             out.println("</th>");
             out.println("</tr>");
 
-            for (Map.Entry<String, PluginConfigs> entry : configs.entrySet()) {
+            for (Map.Entry<String, List<PluginConfig>> entry : configMap.entrySet()) {
                 out.println("<tr>");
                 out.println("<td style='font-weight:bold' colspan=4>");
                 out.print(entry.getKey().split(":")[1]);
                 out.println("</td>");
                 out.println("</tr>");
 
-                for (PluginConfig config : entry.getValue()) {
-                    Collections.sort(config.getParams(), Comparator.comparing(PluginConfigParam::isOptional).thenComparing(PluginConfigParam::getParamName));
 
-                    for (PluginConfigParam param : config.getParams()) {
+
+                for(PluginConfig config : entry.getValue()) {
+
+                    Collections.sort(config.getConfigParams(), Comparator.comparing(PluginConfigParam::isOptional).thenComparing(PluginConfigParam::getParamName));
+
+                    for (PluginConfigParam param : config.getConfigParams()) {
                         out.println("<tr>");
                         out.print("<td");
-                        if(param.isOptional()) {
+                        if (param.isOptional()) {
                             out.print(" class=optional");
                         }
                         out.println(">");
@@ -121,7 +125,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
                         out.println("</td>");
 
                         out.println("<td style='font-size:small'>");
-                        if(param.hasDocumentation()) {
+                        if (param.hasDocumentation()) {
                             out.print(param.getDoc());
                         }
                         out.println("</td>");
@@ -132,13 +136,15 @@ public class ConfDocMojo extends AbstractReststopMojo {
 
                         out.println("<td class=value>");
                         String value = properties.getProperty(param.getParamName());
-                        if(value != null) {
+                        if (value != null) {
                             out.print(value);
                         }
                         out.println("</td>");
                         out.println("</tr>");
                     }
                 }
+
+
             }
             out.println("</table>");
             out.println("</body>");
@@ -146,7 +152,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
         }
     }
 
-    private Properties validateConfiguration(Map<String, PluginConfigs> configs) throws IOException, MojoFailureException {
+    private Properties validateConfiguration(Map<String, List<PluginConfig>> configMap) throws IOException, MojoFailureException {
         Properties props = new Properties();
         String configFileName = applicationName + ".conf";
         props.load(new FileInputStream(new File(configDir, configFileName)));
@@ -154,9 +160,13 @@ public class ConfDocMojo extends AbstractReststopMojo {
         List<ParamContext> missingParameters = new ArrayList<>();
 
         Set<String> knownProperties = new HashSet<>();
-        for (Map.Entry<String, PluginConfigs> entry : configs.entrySet()) {
+        for (Map.Entry<String, List<PluginConfig>> entry : configMap.entrySet()) {
+
             for (PluginConfig config : entry.getValue()) {
-                for (PluginConfigParam param : config.getParams()) {
+                for (PluginConfigParam param : config.getConfigParams()) {
+                    if(param.getType().equals("java.util.Properties")) {
+                        continue;
+                    }
                     knownProperties.add(param.getParamName());
                     String value = props.getProperty(param.getParamName());
                     if (value == null && param.isRequired() && !param.hasDefaultValue()) {
@@ -192,26 +202,29 @@ public class ConfDocMojo extends AbstractReststopMojo {
         return props;
     }
 
-    private void writeExampleConfig(Map<String, PluginConfigs> configs) throws FileNotFoundException, UnsupportedEncodingException {
+    private void writeExampleConfig(Map<String, List<PluginConfig>> configs) throws FileNotFoundException, UnsupportedEncodingException {
         try (PrintWriter out = new PrintWriter(new OutputStreamWriter(new FileOutputStream(exampleConfigFile), "iso-8859-1"))) {
 
 
-            for (Map.Entry<String, PluginConfigs> entry : configs.entrySet()) {
+            for (Map.Entry<String, List<PluginConfig>> entry : configs.entrySet()) {
 
                 getLog().info("Found plugin " + entry.getKey());
 
                 out.println("############################");
                 out.println("# " + entry.getKey());
                 out.println("#");
+                List<PluginConfig> plugins = entry.getValue();
 
-                for (PluginConfig config : entry.getValue()) {
-                    getLog().info("\tFound plugin class " + config.getClassName());
-                    if (!config.getParams().isEmpty()) {
+                for (PluginConfig config : plugins) {
+
+
+                    getLog().info("\tFound plugin class " + config);
+                    if (!config.getConfigParams().isEmpty()) {
 
                         Predicate<PluginConfigParam> hasDefaultValue = PluginConfigParam::hasDefaultValue;
 
 
-                        config.getParams().stream().filter(hasDefaultValue.negate()).forEach(param -> {
+                        config.getConfigParams().stream().filter(hasDefaultValue.negate()).forEach(param -> {
                             getLog().info("\t\tFound plugin param " + param.getParamName());
                             out.println();
                             document(param, out, "# ");
@@ -221,10 +234,10 @@ public class ConfDocMojo extends AbstractReststopMojo {
 
                         });
 
-                        if (config.getParams().stream().filter(hasDefaultValue).findFirst().isPresent()) {
+                        if (config.getConfigParams().stream().filter(hasDefaultValue).findFirst().isPresent()) {
                             out.println();
                             out.println("## Parameters with default values: ");
-                            config.getParams().stream().filter(hasDefaultValue).forEach(param -> {
+                            config.getConfigParams().stream().filter(hasDefaultValue).forEach(param -> {
                                 getLog().info("\t\tFound plugin param " + param.getParamName());
                                 out.println("##");
                                 document(param, out, "## ");
@@ -237,22 +250,21 @@ public class ConfDocMojo extends AbstractReststopMojo {
                     }
 
                 }
-
-
-                out.println();
-                out.println();
             }
 
+            out.println();
+            out.println();
         }
+
     }
 
-    private Map<String, PluginConfigs> findConfigs(JAXBContext context) throws MojoFailureException, MojoExecutionException, JAXBException, IOException {
-        Map<String, PluginConfigs> configs = new LinkedHashMap<>();
+    private Map<String, List<PluginConfig>> findConfigs(JAXBContext context) throws MojoFailureException, MojoExecutionException, JAXBException, IOException {
+        Map<String, List<PluginConfig>> configs = new LinkedHashMap<>();
         for (Plugin plugin : getPlugins()) {
 
             File pluginFile = resolveArtifactFile(plugin.getCoords());
 
-            PluginConfigs configsForPlugin = readPluginConfigs(pluginFile, context);
+            List<PluginConfig>configsForPlugin = readPluginConfigs(pluginFile, context);
 
 
             if (configsForPlugin != null && hasProps(configsForPlugin)) {
@@ -273,31 +285,48 @@ public class ConfDocMojo extends AbstractReststopMojo {
         }
     }
 
-    private boolean hasProps(PluginConfigs configs) {
+    private boolean hasProps(List<PluginConfig> configs) {
         for (PluginConfig config : configs) {
-            if (!config.getParams().isEmpty()) {
+            if (!config.getConfigParams().isEmpty()) {
                 return true;
             }
         }
         return false;
     }
 
-    private PluginConfigs readPluginConfigs(File pluginFile, JAXBContext context) throws JAXBException, IOException {
-        String path = "META-INF/services/ReststopPlugin/config-params.xml";
+    private List<PluginConfig> readPluginConfigs(File pluginFile, JAXBContext context) throws JAXBException, IOException {
 
-        if(pluginFile.isDirectory()) {
-            return (PluginConfigs) context.createUnmarshaller().unmarshal(new File(pluginFile, path));
-        }
-        try (JarFile jarFile = new JarFile(pluginFile)) {
-            ZipEntry entry = jarFile.getEntry(path);
-            if (entry != null) {
-                try (InputStream is = jarFile.getInputStream(entry)) {
-                    return (PluginConfigs) context.createUnmarshaller().unmarshal(is);
+        List<PluginConfig> configs = new ArrayList<>();
+        String path = "META-INF/services/ReststopPlugin/simple.txt";
+
+        if (pluginFile.isDirectory()) {
+            try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(pluginFile, path))))) {
+                String className;
+                while ((className = br.readLine()) != null) {
+                    try (InputStream is = new FileInputStream(new File(pluginFile, className.replace('.', '/') + ".config-params"))) {
+                        configs.add(new PluginConfig(className, (PluginConfigParams) context.createUnmarshaller().unmarshal(is)));
+                    }
                 }
+            }
+        } else {
+            try (JarFile jarFile = new JarFile(pluginFile)) {
+                ZipEntry entry = jarFile.getEntry(path);
+                if (entry != null) {
+                    try (BufferedReader br = new BufferedReader(new InputStreamReader(jarFile.getInputStream(entry)))) {
+                        String className;
+                        while ((className = br.readLine()) != null) {
+                            ZipEntry configParamsEntry = jarFile.getEntry(className.replace('.', '/') + ".config-params");
+                            try (InputStream is = jarFile.getInputStream(configParamsEntry)) {
+                                configs.add(new PluginConfig(className, (PluginConfigParams) context.createUnmarshaller().unmarshal(is)));
+                            }
+                        }
+                    }
 
+
+                }
             }
         }
-        return null;
+        return configs;
     }
 
     @Override
@@ -305,7 +334,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
 
 
         List<Plugin> plugins = new ArrayList<>();
-        if (Boolean.TRUE.equals(mavenProject.getContextValue("reststop.scanned")) && mavenProject.getPackaging().equals("jar")) {
+        if (mavenProject.getPackaging().equals("jar")) {
             Plugin projectPlugin = new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion());
             projectPlugin.setSourceDirectory(mavenProject.getBasedir());
             plugins.add(projectPlugin);

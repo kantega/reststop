@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.maven;
+package org.kantega.reststop.classloaderutils.config;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
