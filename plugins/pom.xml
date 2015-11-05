@@ -39,6 +39,7 @@
         <module>cxf-deploy</module>
         <module>cxf-logging</module>
         <module>metrics</module>
+        <module>metrics-servlets</module>
         <module>cxf-metrics</module>
         <module>jaxrs-metrics</module>
         <module>wicket</module>

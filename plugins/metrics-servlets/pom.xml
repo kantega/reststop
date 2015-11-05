@@ -25,7 +25,7 @@
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>reststop-metrics-plugin</artifactId>
+    <artifactId>reststop-metrics-servlets-plugin</artifactId>
 
     <properties>
         <metrics.version>3.0.2</metrics.version>
@@ -33,8 +33,14 @@
     <dependencies>
 
         <dependency>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-metrics-plugin</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <groupId>com.codahale.metrics</groupId>
-            <artifactId>metrics-core</artifactId>
+            <artifactId>metrics-servlets</artifactId>
             <version>${metrics.version}</version>
             <exclusions>
                 <exclusion>
@@ -45,7 +51,7 @@
         </dependency>
         <dependency>
             <groupId>com.codahale.metrics</groupId>
-            <artifactId>metrics-jvm</artifactId>
+            <artifactId>metrics-healthchecks</artifactId>
             <version>${metrics.version}</version>
             <exclusions>
                 <exclusion>
