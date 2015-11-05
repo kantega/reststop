@@ -17,15 +17,14 @@
 package org.kantega.reststop.maven;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.jetty.maven.plugin.JettyWebAppContext;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
 
@@ -58,7 +57,8 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
     @Parameter(defaultValue = "${project.build.testOutputDirectory}/reststopPort.txt")
     private File reststopPortFile;
 
-
+    @Parameter(defaultValue = "8080")
+    private int port;
 
 
     @Override
@@ -77,12 +77,11 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
 
             System.setProperty("reststopPluginDir", mavenProject.getBasedir().getAbsolutePath());
 
-            int port = nextAvailablePort(8080);
+            int port = this.port;
+            if(port != 0) {
+                port = nextAvailablePort(port);
+            }
 
-            mavenProject.getProperties().setProperty("reststopPort", Integer.toString(port));
-            String reststopPort = Integer.toString(port);
-            System.setProperty("reststopPort", reststopPort);
-            FileUtils.writeStringToFile(reststopPortFile, reststopPort);
 
             Server server = new Server(port);
 
@@ -107,15 +106,26 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
             context.setPersistTempDirectory(!deleteTempDirectory);
             context.setThrowUnavailableOnStartupException(true);
 
-            HandlerCollection handlers = new HandlerCollection();
+            HandlerCollection handlers = new HandlerCollection(true);
 
             handlers.addHandler(new ShutdownHandler(server, getLog()));
-            handlers.addHandler(context);
             server.setHandler(handlers);
 
             server.start();
 
-            afterServerStart(server, port);
+
+            ServerConnector connector = (ServerConnector) server.getConnectors()[0];
+            int actualPort = connector.getLocalPort();
+
+            mavenProject.getProperties().setProperty("reststopPort", Integer.toString(actualPort));
+            String reststopPort = Integer.toString(actualPort);
+            System.setProperty("reststopPort", reststopPort);
+            FileUtils.writeStringToFile(reststopPortFile, reststopPort);
+
+            handlers.addHandler(context);
+            context.start();
+
+            afterServerStart(server, actualPort);
 
         } catch (Exception e) {
             throw new MojoExecutionException("Failed starting Jetty ", e);

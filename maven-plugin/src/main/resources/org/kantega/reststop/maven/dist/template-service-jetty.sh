@@ -15,8 +15,16 @@
 ### END INIT INFO
 
 NAME=RESTSTOPNAME
+export JETTY_USER=RESTSTOPNAME
+
+INSTDIR=RESTSTOPINSTDIR
+APPDIR="$INSTDIR/$NAME"
+
 
 # Source the settings
+if [ -r "$APPDIR/jetty/defaults/$NAME" ]; then
+    source "$APPDIR/jetty/defaults/$NAME"
+fi
 if [ -r "/etc/default/$NAME" ]; then
     source "/etc/default/$NAME"
 fi
@@ -24,13 +32,13 @@ if [ -r "$CNF" ]; then
     source $CNF
 fi
 
-INSTDIR=RESTSTOPINSTDIR
-APPDIR="$INSTDIR/$NAME"
 
 case "$1" in
     start)
       SAVEPWD=$PWD
       cd $APPDIR/jetty/
+      mkdir -p /var/log/$NAME
+      chown $NAME:$NAME /var/log/$NAME
       bin/jetty.sh start
       cd $SAVEPWD
     ;;
@@ -43,7 +51,8 @@ case "$1" in
     restart)
       SAVEPWD=$PWD
       cd $APPDIR/jetty/
-      bin/jetty.sh restart
+      bin/jetty.sh stop
+      bin/jetty.sh start
       cd $SAVEPWD
     ;;
     check)
