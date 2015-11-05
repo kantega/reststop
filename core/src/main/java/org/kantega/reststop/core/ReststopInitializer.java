@@ -36,7 +36,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.*;
-import java.net.*;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -777,6 +780,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
                     try {
                         pluginClassloader.addURL(pluginJar.toURI().toURL());
+                        info.setFile(pluginJar);
 
                         for (Artifact artifact : info.getClassPath("runtime")) {
                             pluginClassloader.addURL(getPluginFile(artifact).toURI().toURL());
