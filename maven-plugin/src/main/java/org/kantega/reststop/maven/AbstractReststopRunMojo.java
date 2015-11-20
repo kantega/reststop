@@ -22,6 +22,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.eclipse.jetty.maven.plugin.JettyWebAppContext;
+import org.eclipse.jetty.maven.plugin.ServerSupport;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -84,6 +85,7 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
 
 
             Server server = new Server(port);
+            ServerSupport.configureDefaultConfigurationClasses(server);
 
             mavenProject.setContextValue("jettyServer", server);
 
