@@ -22,14 +22,12 @@ import org.junit.Test;
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLConnection;
-import java.util.Scanner;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
+import static org.kantega.reststop.helloworld.Utils.readPort;
 
 /**
  *
@@ -37,15 +35,18 @@ import static org.junit.Assert.assertThat;
 public class HelloworldIT {
 
     @Test
-    public void shouldReturnHelloWorld() throws IOException {
+    public void shouldReturnHelloWorld() throws IOException, URISyntaxException {
 
 
-        HttpURLConnection connection = (HttpURLConnection) new URL("http://localhost:" + System.getProperty("reststopPort") + "/helloworld/en?yo=hello").openConnection();
+        String reststopPort = readPort();
+        HttpURLConnection connection = (HttpURLConnection) new URL("http://localhost:" + reststopPort + "/helloworld/en?yo=hello").openConnection();
         connection.setRequestProperty("Authorization", "Basic " + DatatypeConverter.printBase64Binary("joe:joe".getBytes("utf-8")));
         connection.setRequestProperty("Accept", "application/json");
         String message = IOUtils.toString(connection.getInputStream());
 
         assertThat(message, is("{\"message\":\"Hello world\"}"));
     }
+
+
 
 }

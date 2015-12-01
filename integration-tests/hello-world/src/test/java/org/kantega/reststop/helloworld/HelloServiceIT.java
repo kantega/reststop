@@ -16,19 +16,14 @@
 
 package org.kantega.reststop.helloworld;
 
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.w3c.dom.Document;
-import org.w3c.dom.Node;
 
 import javax.xml.namespace.QName;
 import javax.xml.transform.Source;
-import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
-import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.ws.BindingProvider;
 import javax.xml.ws.Dispatch;
@@ -80,7 +75,7 @@ public class HelloServiceIT {
         Map<String,Object> rc = prov.getRequestContext();
         rc.put(BindingProvider.USERNAME_PROPERTY, "joe");
         rc.put(BindingProvider.PASSWORD_PROPERTY, "joe");
-        rc.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, "http://localhost:" + System.getProperty("reststopPort", "8080") + "/ws/hello-1.0");
+        rc.put(BindingProvider.ENDPOINT_ADDRESS_PROPERTY, "http://localhost:" + Utils.readPort() + "/ws/hello-1.0");
         return helloPort;
     }
 }
