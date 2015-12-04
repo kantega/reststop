@@ -159,14 +159,14 @@ public class RpmBuilder extends AbstractDistMojo {
                             FilePerm filePerm = resource.getPermission();
                             if( filePerm == null)
                                 filePerm = defaultPermissions;
-                            attr(filePerm,"/"+ target);
+                            attr(filePerm, filePerm.getFileMode(),"/"+ target);
                         }
                     }
                 }
             }
 
-            pw.println(attr(defaultPermissions,"/"+installDir+"/%{name}/"+trimBothEnds(container,"/")+"/bin/*.sh"));
-            pw.println(attr(defaultPermissions, "/etc/init.d/%{name}"));
+            pw.println(attr(defaultPermissions, defaultPermissions.getExecMode(),"/"+installDir+"/%{name}/"+trimBothEnds(container,"/")+"/bin/*.sh"));
+            pw.println(attr(defaultPermissions, defaultPermissions.getExecMode(), "/etc/init.d/%{name}"));
 
 
         } catch (FileNotFoundException e) {
@@ -174,9 +174,9 @@ public class RpmBuilder extends AbstractDistMojo {
         }
     }
 
-    private static String attr(FilePerm filePerm, String path) {
+    private static String attr(FilePerm filePerm, String mode, String path) {
         StringBuilder builder = new StringBuilder();
-        builder.append("%attr(").append(filePerm.getFileMode())
+        builder.append("%attr(").append(mode)
                 .append(", ").append(filePerm.getUser())
                 .append(", ").append(filePerm.getGroup())
                 .append(") ").append(path);

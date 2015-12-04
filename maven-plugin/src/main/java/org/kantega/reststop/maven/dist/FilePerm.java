@@ -6,8 +6,9 @@ package org.kantega.reststop.maven.dist;
 public class FilePerm {
 
     public static final FilePerm DEFAULT = new FilePerm();
-    private String fileMode = "0644";
-    private String dirMode = "0755";
+    private String fileMode = "0660";
+    private String dirMode = "0770";
+    private String execMode = "0750";
     private String user = "${name}";
     private String group = "${name}";
 
@@ -44,6 +45,14 @@ public class FilePerm {
 
     public void setGroup(String group) {
         this.group = group;
+    }
+
+    public String getExecMode() {
+        return execMode;
+    }
+
+    public void setExecMode(String execMode) {
+        this.execMode = standardizeMode(execMode);
     }
 
     private static String standardizeMode(String mode){
