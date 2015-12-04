@@ -27,9 +27,7 @@ public class Resource {
     String targetDirectory;
     String[] excludes;
     String[] includes;
-    String mode;
-    private String owner;
-    private String group;
+    FilePerm permission;
 
     public File getDirectory() {
         return directory;
@@ -63,28 +61,11 @@ public class Resource {
         this.includes = includes;
     }
 
-    public String getMode() {
-        return mode;
+    public FilePerm getPermission() {
+        return permission;
     }
 
-    public void setMode(String mode) {
-        this.mode = mode;
-    }
-
-    public String getOwner() {
-        return owner;
-    }
-
-    public void setOwner(String owner) {
-        this.owner = owner;
-    }
-
-
-    public String getGroup() {
-        return group;
-    }
-
-    public void setGroup(String group) {
-        this.group = group;
+    public void setPermission(FilePerm permission) {
+        this.permission = permission;
     }
 }

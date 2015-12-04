@@ -127,6 +127,9 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     @Parameter
     private List<org.apache.maven.model.Dependency> containerDependencies;
 
+    @Parameter()
+    protected FilePerm defaultPermissions;
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
@@ -152,6 +155,9 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
         Artifact warArifact = resolveArtifact(warCoords);
         copyArtifactToRepository(warArifact, manager);
+
+        if( defaultPermissions == null)
+            defaultPermissions = FilePerm.DEFAULT;
 
         File containerDistrDir = new File(distDirectory, container);
         if ("jetty".compareTo(this.container) == 0) {
