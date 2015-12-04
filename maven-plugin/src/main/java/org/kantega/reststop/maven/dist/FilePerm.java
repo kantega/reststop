@@ -9,8 +9,8 @@ public class FilePerm {
     private String fileMode = "0660";
     private String dirMode = "0770";
     private String execMode = "0750";
-    private String user = "${name}";
-    private String group = "${name}";
+    private String user = "%{name}";
+    private String group = "%{name}";
 
     public FilePerm() {
     }
