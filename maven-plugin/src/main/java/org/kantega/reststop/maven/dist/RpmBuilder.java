@@ -21,6 +21,7 @@ import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
+import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
@@ -39,6 +40,9 @@ import java.io.*;
         requiresDependencyResolution = ResolutionScope.COMPILE)
 public class RpmBuilder extends AbstractDistMojo {
 
+
+    @Parameter(defaultValue = "false")
+    private boolean useDefattr;
 
     @Override
     protected void performPackaging() throws MojoExecutionException {
@@ -145,7 +149,8 @@ public class RpmBuilder extends AbstractDistMojo {
             pw.println("fi");
 
             pw.println("%files");
-            pw.println(defattr(defaultPermissions));
+            if( useDefattr )
+                pw.println(defattr(defaultPermissions));
             pw.println("/"+installDir+"/%{name}");
             if(resources != null) {
                 for (Resource resource : resources) {
