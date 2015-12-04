@@ -159,7 +159,7 @@ public class RpmBuilder extends AbstractDistMojo {
                             FilePerm filePerm = resource.getPermission();
                             if( filePerm == null)
                                 filePerm = defaultPermissions;
-                            attr(filePerm, filePerm.getFileMode(),"/"+ target);
+                            pw.println(attr(filePerm, filePerm.getFileMode(),"/"+ target));
                         }
                     }
                 }
