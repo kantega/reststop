@@ -19,6 +19,7 @@
 <Configure class="org.eclipse.jetty.webapp.WebAppContext">
     <Set name="contextPath">CONTEXTPATH</Set>
     <Set name="war"><SystemProperty name="jetty.home" default="." />/RESTSTOPWAR</Set>
+    <Set name="throwUnavailableOnStartupException">true</Set>
     <Call name="setInitParameter">
         <Arg>plugins.xml</Arg>
         <Arg><SystemProperty name="jetty.home" default="." />/../plugins.xml</Arg>
