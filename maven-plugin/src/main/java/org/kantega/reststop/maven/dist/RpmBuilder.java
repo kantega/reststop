@@ -16,17 +16,14 @@
 
 package org.kantega.reststop.maven.dist;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
-import org.apache.tools.ant.DirectoryScanner;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
@@ -148,7 +145,7 @@ public class RpmBuilder extends AbstractDistMojo {
             pw.println("fi");
 
             pw.println("%files");
-            pw.println("%defattr(0664, %{name}, %{name}, 0775)");
+            pw.println(defattr(defaultPermissions));
             pw.println("/"+installDir+"/%{name}");
             if(resources != null) {
                 for (Resource resource : resources) {
@@ -159,14 +156,17 @@ public class RpmBuilder extends AbstractDistMojo {
                         for (String includedFile : includedFiles) {
 
                             String target = resource.getTargetDirectory() == null ? includedFile : resource.getTargetDirectory() +"/" + includedFile;
-                            pw.println("/" +target);
+                            FilePerm filePerm = resource.getPermission();
+                            if( filePerm == null)
+                                filePerm = defaultPermissions;
+                            pw.println(attr(filePerm, filePerm.getFileMode(),"/"+ target));
                         }
                     }
                 }
             }
 
-            pw.println("%attr(0755, %{name}, %{name}) /"+installDir+"/%{name}/"+trimBothEnds(container,"/")+"/bin/*.sh");
-            pw.println("%attr(0755, %{name}, %{name}) /etc/init.d/%{name}");
+            pw.println(attr(defaultPermissions, defaultPermissions.getExecMode(),"/"+installDir+"/%{name}/"+trimBothEnds(container,"/")+"/bin/*.sh"));
+            pw.println(attr(defaultPermissions, defaultPermissions.getExecMode(), "/etc/init.d/%{name}"));
 
 
         } catch (FileNotFoundException e) {
@@ -174,6 +174,26 @@ public class RpmBuilder extends AbstractDistMojo {
         }
     }
 
+    private static String attr(FilePerm filePerm, String mode, String path) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("%attr(").append(mode)
+                .append(", ").append(filePerm.getUser())
+                .append(", ").append(filePerm.getGroup())
+                .append(") ").append(path);
+
+        return builder.toString();
+    }
+
+    private static String defattr(FilePerm filePerm) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("%defattr(").append(filePerm.getFileMode())
+                .append(", ").append(filePerm.getUser())
+                .append(", ").append(filePerm.getGroup())
+                .append(", ").append(filePerm.getDirMode())
+                .append(") ");
+
+        return builder.toString();
+    }
 
 
     @Override
