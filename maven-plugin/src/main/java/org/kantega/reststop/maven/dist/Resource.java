@@ -27,6 +27,9 @@ public class Resource {
     String targetDirectory;
     String[] excludes;
     String[] includes;
+    String mode;
+    private String owner;
+    private String group;
 
     public File getDirectory() {
         return directory;
@@ -58,5 +61,30 @@ public class Resource {
 
     public void setIncludes(String[] includes) {
         this.includes = includes;
+    }
+
+    public String getMode() {
+        return mode;
+    }
+
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
+
+    public String getOwner() {
+        return owner;
+    }
+
+    public void setOwner(String owner) {
+        this.owner = owner;
+    }
+
+
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
     }
 }

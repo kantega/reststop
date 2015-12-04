@@ -16,17 +16,14 @@
 
 package org.kantega.reststop.maven.dist;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
-import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
-import org.apache.tools.ant.DirectoryScanner;
 import org.codehaus.plexus.util.cli.CommandLineException;
 import org.codehaus.plexus.util.cli.CommandLineUtils;
 import org.codehaus.plexus.util.cli.Commandline;
@@ -159,6 +156,26 @@ public class RpmBuilder extends AbstractDistMojo {
                         for (String includedFile : includedFiles) {
 
                             String target = resource.getTargetDirectory() == null ? includedFile : resource.getTargetDirectory() +"/" + includedFile;
+                            String mode = resource.getMode();
+                            String owner = resource.getOwner();
+                            String group = resource.getGroup();
+
+                            if(mode != null || owner != null || group != null) {
+                                // Set defaults
+                                if(mode == null) {
+                                    mode = "0644";
+                                }
+                                if(owner == null) {
+                                    owner = "%{name}";
+                                }
+                                if(group == null) {
+                                    group = "%{name}";
+                                }
+                                while(mode.length() < 4) {
+                                    mode = "0" + mode;
+                                }
+                                pw.print("%attr(" + mode + ", " + owner + ", " + group +") ");
+                            }
                             pw.println("/" +target);
                         }
                     }
