@@ -5,18 +5,11 @@ package org.kantega.reststop.maven.dist;
  */
 public class FilePerm {
 
-    public static final FilePerm DEFAULT = new FilePerm("0644","0755","%{name}","%{name}");
-    private String fileMode ;
-    private String dirMode;
-    private String user;
-    private String group;
-
-    public FilePerm(String fileMode, String dirMode, String user, String group) {
-        this.fileMode = fileMode;
-        this.dirMode = dirMode;
-        this.user = user;
-        this.group = group;
-    }
+    public static final FilePerm DEFAULT = new FilePerm();
+    private String fileMode = "0644";
+    private String dirMode = "0755";
+    private String user = "${name}";
+    private String group = "${name}";
 
     public FilePerm() {
     }
