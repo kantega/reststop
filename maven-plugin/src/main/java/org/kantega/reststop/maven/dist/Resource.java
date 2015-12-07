@@ -27,6 +27,7 @@ public class Resource {
     String targetDirectory;
     String[] excludes;
     String[] includes;
+    FilePerm permission;
 
     public File getDirectory() {
         return directory;
@@ -58,5 +59,13 @@ public class Resource {
 
     public void setIncludes(String[] includes) {
         this.includes = includes;
+    }
+
+    public FilePerm getPermission() {
+        return permission;
+    }
+
+    public void setPermission(FilePerm permission) {
+        this.permission = permission;
     }
 }
