@@ -40,9 +40,9 @@ import java.io.*;
         requiresDependencyResolution = ResolutionScope.COMPILE)
 public class RpmBuilder extends AbstractDistMojo {
 
-    @Parameter(defaultValue = "false")
-    boolean useDefattr;
 
+    @Parameter(defaultValue = "false")
+    private boolean useDefattr;
 
     @Override
     protected void performPackaging() throws MojoExecutionException {
@@ -150,8 +150,11 @@ public class RpmBuilder extends AbstractDistMojo {
 
             pw.println("%files");
             if( useDefattr )
-                pw.println(defattr(defaultPermissions));
-            pw.println("/"+installDir+"/%{name}");
+                pw.println(defattr(defaultPermissions, "/"+installDir+"/%{name}"));
+            else
+                pw.println(attr(defaultPermissions,defaultPermissions.getDirMode(), "/"+installDir+"/%{name}" ));
+            pw.println();
+
             if(resources != null) {
                 for (Resource resource : resources) {
                     String[] includedFiles = getIncludedFiles(resource);
@@ -162,9 +165,10 @@ public class RpmBuilder extends AbstractDistMojo {
 
                             String target = resource.getTargetDirectory() == null ? includedFile : resource.getTargetDirectory() +"/" + includedFile;
                             FilePerm filePerm = resource.getPermission();
-                            if( filePerm == null)
-                                filePerm = defaultPermissions;
-                            pw.println(attr(filePerm, filePerm.getFileMode(),"/"+ target));
+                            if( filePerm != null)
+                                pw.println(attr(filePerm, filePerm.getFileMode(),"/"+ target));
+                            else
+                                pw.println("/"+target);
                         }
                     }
                 }
@@ -189,13 +193,13 @@ public class RpmBuilder extends AbstractDistMojo {
         return builder.toString();
     }
 
-    private static String defattr(FilePerm filePerm) {
+    private static String defattr(FilePerm filePerm, String path) {
         StringBuilder builder = new StringBuilder();
         builder.append("%defattr(").append(filePerm.getFileMode())
                 .append(", ").append(filePerm.getUser())
                 .append(", ").append(filePerm.getGroup())
                 .append(", ").append(filePerm.getDirMode())
-                .append(") ");
+                .append(") ").append(path);
 
         return builder.toString();
     }
