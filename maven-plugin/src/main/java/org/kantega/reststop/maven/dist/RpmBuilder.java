@@ -165,9 +165,10 @@ public class RpmBuilder extends AbstractDistMojo {
 
                             String target = resource.getTargetDirectory() == null ? includedFile : resource.getTargetDirectory() +"/" + includedFile;
                             FilePerm filePerm = resource.getPermission();
-                            if( filePerm == null)
-                                filePerm = defaultPermissions;
-                            pw.println(attr(filePerm, filePerm.getFileMode(),"/"+ target));
+                            if( filePerm != null)
+                                pw.println(attr(filePerm, filePerm.getFileMode(),"/"+ target));
+                            else
+                                pw.println("/"+target);
                         }
                     }
                 }
