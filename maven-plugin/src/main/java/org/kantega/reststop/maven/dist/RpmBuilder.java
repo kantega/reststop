@@ -50,8 +50,8 @@ public class RpmBuilder extends AbstractDistMojo {
     @Parameter
     private String[] requires;
 
-    @Parameter(defaultValue = "${project.basedir}/src/rpm/requires")
-    private File requiresFile;
+    @Parameter
+    private String[] baseRequires;
 
     @Override
     protected void performPackaging() throws MojoExecutionException {
@@ -255,22 +255,15 @@ public class RpmBuilder extends AbstractDistMojo {
 
     private String getRequiresSpec() {
         StringBuilder builder = new StringBuilder();
+        if( baseRequires != null && baseRequires.length > 0)
+            for (String req : baseRequires)
+                builder.append(builder.length() > 0 ? "," : "").append(req);
+
         if( requires != null && requires.length > 0) {
             for (String req : requires)
                 builder.append(builder.length() > 0 ? "," : "").append(req);
         }
 
-        if( requiresFile != null ) {
-            if( requiresFile.isFile()) {
-                try {
-                    for(String line : Files.readAllLines(Paths.get(requiresFile.getAbsolutePath()), Charset.forName("utf-8")))
-                        builder.append(builder.length() > 0 ? "," : "").append(line);
-
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-        }
 
         if( builder.length() > 0)
             return "Requires: " + builder.toString();
