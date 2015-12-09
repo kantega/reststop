@@ -50,8 +50,8 @@ public class RpmBuilder extends AbstractDistMojo {
     @Parameter
     private String[] requires;
 
-    @Parameter
-    private File requiesFile;
+    @Parameter(defaultValue = "${project.basedir}/src/dist/requires")
+    private File requiresFile;
 
     @Override
     protected void performPackaging() throws MojoExecutionException {
