@@ -50,7 +50,7 @@ public class RpmBuilder extends AbstractDistMojo {
     @Parameter
     private String[] requires;
 
-    @Parameter(defaultValue = "${project.basedir}/src/dist/requires")
+    @Parameter(defaultValue = "${project.basedir}/src/rpm/requires")
     private File requiresFile;
 
     @Override
@@ -260,10 +260,10 @@ public class RpmBuilder extends AbstractDistMojo {
                 builder.append(builder.length() > 0 ? "," : "").append(req);
         }
 
-        if( requiesFile != null ) {
-            if( requiesFile.isFile()) {
+        if( requiresFile != null ) {
+            if( requiresFile.isFile()) {
                 try {
-                    for(String line : Files.readAllLines(Paths.get(requiesFile.getAbsolutePath()), Charset.forName("utf-8")))
+                    for(String line : Files.readAllLines(Paths.get(requiresFile.getAbsolutePath()), Charset.forName("utf-8")))
                         builder.append(builder.length() > 0 ? "," : "").append(line);
 
                 } catch (IOException e) {
