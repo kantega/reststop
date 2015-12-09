@@ -247,6 +247,10 @@
                             <goal>dist-rpm</goal>
                         </goals>
                         <configuration>
+                            <requires>
+                                <require>httpd</require>
+                            </requires>
+
                             <containerDependencies>
                                 <dependency>
                                     <groupId>ch.qos.logback</groupId>

@@ -31,9 +31,11 @@ import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.StreamConsumer;
 
 import java.io.*;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
 
@@ -48,10 +50,10 @@ public class RpmBuilder extends AbstractDistMojo {
     private boolean useDefattr;
 
     @Parameter
-    private String[] requires;
+    private List<String> requires;
 
     @Parameter
-    private String[] baseRequires;
+    private List<String> baseRequires;
 
     @Override
     protected void performPackaging() throws MojoExecutionException {
@@ -254,19 +256,14 @@ public class RpmBuilder extends AbstractDistMojo {
     }
 
     private String getRequiresSpec() {
-        StringBuilder builder = new StringBuilder();
-        if( baseRequires != null && baseRequires.length > 0)
-            for (String req : baseRequires)
-                builder.append(builder.length() > 0 ? "," : "").append(req);
 
-        if( requires != null && requires.length > 0) {
-            for (String req : requires)
-                builder.append(builder.length() > 0 ? "," : "").append(req);
-        }
+        List<String> reqs = Stream.of(baseRequires, requires)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
 
-
-        if( builder.length() > 0)
-            return "Requires: " + builder.toString();
+        if( !reqs.isEmpty())
+            return "Requires: " + reqs.stream().collect(Collectors.joining(", "));
         else
             return "";
     }
