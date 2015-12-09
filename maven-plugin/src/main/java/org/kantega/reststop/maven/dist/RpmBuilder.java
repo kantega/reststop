@@ -31,6 +31,9 @@ import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.StreamConsumer;
 
 import java.io.*;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
 
@@ -43,6 +46,12 @@ public class RpmBuilder extends AbstractDistMojo {
 
     @Parameter(defaultValue = "false")
     private boolean useDefattr;
+
+    @Parameter
+    private String[] requires;
+
+    @Parameter
+    private File requiesFile;
 
     @Override
     protected void performPackaging() throws MojoExecutionException {
@@ -129,6 +138,7 @@ public class RpmBuilder extends AbstractDistMojo {
             pw.println("License: Unknown");
             pw.println("Group: Webapps/Java");
             pw.println("BuildArchitectures: noarch");
+            pw.println(getRequiresSpec());
             pw.println("%description");
             pw.println("%{summary}");
 
@@ -243,4 +253,28 @@ public class RpmBuilder extends AbstractDistMojo {
         return version.replace('-', '.');
     }
 
+    private String getRequiresSpec() {
+        StringBuilder builder = new StringBuilder();
+        if( requires != null && requires.length > 0) {
+            for (String req : requires)
+                builder.append(builder.length() > 0 ? "," : "").append(req);
+        }
+
+        if( requiesFile != null ) {
+            if( requiesFile.isFile()) {
+                try {
+                    for(String line : Files.readAllLines(Paths.get(requiesFile.getAbsolutePath()), Charset.forName("utf-8")))
+                        builder.append(builder.length() > 0 ? "," : "").append(line);
+
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+
+        if( builder.length() > 0)
+            return "Requires: " + builder.toString();
+        else
+            return "";
+    }
 }
