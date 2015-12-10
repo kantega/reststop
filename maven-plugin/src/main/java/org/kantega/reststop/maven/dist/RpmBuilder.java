@@ -37,6 +37,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static org.kantega.reststop.maven.dist.Appuser.applyDefaults;
+
 /**
 
  */
@@ -54,6 +56,9 @@ public class RpmBuilder extends AbstractDistMojo {
 
     @Parameter
     private List<String> baseRequires;
+
+    @Parameter
+    private Appuser appuser;
 
     @Override
     protected void performPackaging() throws MojoExecutionException {
@@ -147,8 +152,7 @@ public class RpmBuilder extends AbstractDistMojo {
 
             pw.println("Requires(pre): /usr/sbin/useradd, /usr/bin/getent");
             pw.println("%pre");
-            pw.println("/usr/bin/getent group %{name} > /dev/null || /usr/sbin/groupadd -r %{name}");
-            pw.println("/usr/bin/getent passwd %{name} > /dev/null || /usr/sbin/useradd -r -g %{name} -d /" + installDir +"/%{name}/jetty -s /bin/bash %{name}");
+            addAppuser(pw);
 
             pw.println("%preun");
 
@@ -193,6 +197,20 @@ public class RpmBuilder extends AbstractDistMojo {
         } catch (FileNotFoundException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
+    }
+
+    private void addAppuser(PrintWriter pw) {
+
+        appuser = applyDefaults(appuser);
+
+        pw.println(String.format(
+                "/usr/bin/getent group %s > /dev/null || /usr/sbin/groupadd -r %s",
+                appuser.getGroupname(), appuser.getGroupname()));
+        pw.println(String.format(
+                "/usr/bin/getent passwd %s > /dev/null || /usr/sbin/useradd -r -g %s -d %s -s /bin/bash %s",
+                appuser.getUsername(), appuser.getUsername(), appuser.getHomeDir(), appuser.getUsername()
+        ));
+
     }
 
     private static String attr(FilePerm filePerm, String mode, String path) {
