@@ -31,6 +31,11 @@ import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.StreamConsumer;
 
 import java.io.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
 
@@ -43,6 +48,12 @@ public class RpmBuilder extends AbstractDistMojo {
 
     @Parameter(defaultValue = "false")
     private boolean useDefattr;
+
+    @Parameter
+    private List<String> requires;
+
+    @Parameter
+    private List<String> baseRequires;
 
     @Override
     protected void performPackaging() throws MojoExecutionException {
@@ -129,6 +140,7 @@ public class RpmBuilder extends AbstractDistMojo {
             pw.println("License: Unknown");
             pw.println("Group: Webapps/Java");
             pw.println("BuildArchitectures: noarch");
+            pw.println(getRequiresSpec());
             pw.println("%description");
             pw.println("%{summary}");
 
@@ -243,4 +255,16 @@ public class RpmBuilder extends AbstractDistMojo {
         return version.replace('-', '.');
     }
 
+    private String getRequiresSpec() {
+
+        List<String> reqs = Stream.of(baseRequires, requires)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+
+        if( !reqs.isEmpty())
+            return "Requires: " + reqs.stream().collect(Collectors.joining(", "));
+        else
+            return "";
+    }
 }
