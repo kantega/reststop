@@ -31,6 +31,13 @@ import org.codehaus.plexus.util.cli.Commandline;
 import org.codehaus.plexus.util.cli.StreamConsumer;
 
 import java.io.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import static org.kantega.reststop.maven.dist.Appuser.applyDefaults;
 
 /**
 
@@ -43,6 +50,15 @@ public class RpmBuilder extends AbstractDistMojo {
 
     @Parameter(defaultValue = "false")
     private boolean useDefattr;
+
+    @Parameter
+    private List<String> requires;
+
+    @Parameter
+    private List<String> baseRequires;
+
+    @Parameter
+    private Appuser appuser;
 
     @Override
     protected void performPackaging() throws MojoExecutionException {
@@ -129,14 +145,14 @@ public class RpmBuilder extends AbstractDistMojo {
             pw.println("License: Unknown");
             pw.println("Group: Webapps/Java");
             pw.println("BuildArchitectures: noarch");
+            pw.println(getRequiresSpec());
             pw.println("%description");
             pw.println("%{summary}");
 
 
             pw.println("Requires(pre): /usr/sbin/useradd, /usr/bin/getent");
             pw.println("%pre");
-            pw.println("/usr/bin/getent group %{name} > /dev/null || /usr/sbin/groupadd -r %{name}");
-            pw.println("/usr/bin/getent passwd %{name} > /dev/null || /usr/sbin/useradd -r -g %{name} -d /" + installDir +"/%{name}/jetty -s /bin/bash %{name}");
+            addAppuser(pw);
 
             pw.println("%preun");
 
@@ -181,6 +197,20 @@ public class RpmBuilder extends AbstractDistMojo {
         } catch (FileNotFoundException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
+    }
+
+    private void addAppuser(PrintWriter pw) {
+
+        appuser = applyDefaults(appuser);
+
+        pw.println(String.format(
+                "/usr/bin/getent group %s > /dev/null || /usr/sbin/groupadd -r %s",
+                appuser.getGroupname(), appuser.getGroupname()));
+        pw.println(String.format(
+                "/usr/bin/getent passwd %s > /dev/null || /usr/sbin/useradd -r -g %s -d %s -s /bin/bash %s",
+                appuser.getUsername(), appuser.getUsername(), appuser.getHomeDir(), appuser.getUsername()
+        ));
+
     }
 
     private static String attr(FilePerm filePerm, String mode, String path) {
@@ -243,4 +273,16 @@ public class RpmBuilder extends AbstractDistMojo {
         return version.replace('-', '.');
     }
 
+    private String getRequiresSpec() {
+
+        List<String> reqs = Stream.of(baseRequires, requires)
+                .filter(Objects::nonNull)
+                .flatMap(Collection::stream)
+                .collect(Collectors.toList());
+
+        if( !reqs.isEmpty())
+            return "Requires: " + reqs.stream().collect(Collectors.joining(", "));
+        else
+            return "";
+    }
 }
