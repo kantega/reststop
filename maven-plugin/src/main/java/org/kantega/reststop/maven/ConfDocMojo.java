@@ -192,7 +192,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
         }
 
         if (!unknownProperties.isEmpty()) {
-            StringBuilder message = new StringBuilder(String.format("Config file %s is contains the following unused properties:\n", configFileName));
+            StringBuilder message = new StringBuilder(String.format("Config file %s contains the following unused properties:\n", configFileName));
             for (String unknownProperty : unknownProperties) {
                 message.append(String.format("'%s'\n", unknownProperty));
             }
@@ -218,7 +218,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
                 for (PluginConfig config : plugins) {
 
 
-                    getLog().info("\tFound plugin class " + config);
+                    getLog().info("\tFound plugin class " + config.getClassName());
                     if (!config.getConfigParams().isEmpty()) {
 
                         Predicate<PluginConfigParam> hasDefaultValue = PluginConfigParam::hasDefaultValue;
