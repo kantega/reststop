@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.kantega.reststop</groupId>
         <artifactId>reststop-parent</artifactId>
-        <version>2.2-SNAPSHOT</version>
+        <version>2.3-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <artifactId>reststop-hello-world</artifactId>
@@ -247,6 +247,10 @@
                             <goal>dist-rpm</goal>
                         </goals>
                         <configuration>
+                            <requires>
+                                <require>httpd</require>
+                            </requires>
+
                             <containerDependencies>
                                 <dependency>
                                     <groupId>ch.qos.logback</groupId>

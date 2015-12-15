@@ -50,6 +50,7 @@
                 <artifactId>reststop-maven-plugin</artifactId>
                 <version>${reststop.version}</version>
                 <configuration>
+                    <applicationName>${artifactId}</applicationName>
                     <!-- Adds tracking of code base of <plugins>, enabling automatic recompile and hot-deploy. -->
                     <addDevelopmentPlugins>true</addDevelopmentPlugins>
                     <plugins>
@@ -90,6 +91,7 @@
                         <goals>
                             <goal>resolve-plugins</goal>
                             <goal>package-plugins</goal>
+                            <goal>conf-doc</goal>
                         </goals>
                     </execution>
                 </executions>

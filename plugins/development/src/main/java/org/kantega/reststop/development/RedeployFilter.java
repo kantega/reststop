@@ -19,9 +19,8 @@ package org.kantega.reststop.development;
 import org.apache.velocity.app.VelocityEngine;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Result;
-import org.kantega.reststop.classloaderutils.PluginInfo;
-import org.kantega.reststop.core.Reststop;
 import org.kantega.reststop.api.ServletBuilder;
+import org.kantega.reststop.core.Reststop;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -80,6 +79,8 @@ public class RedeployFilter implements Filter {
                     return;
                 } else {
 
+                    List<DevelopmentClassloader> affectedBeforeCompilation = provider.findAffectedClassLoaders(staleClassLoaders);
+
                     for (DevelopmentClassloader classloader : staleClassLoaders) {
                         try {
 
@@ -96,7 +97,11 @@ public class RedeployFilter implements Filter {
 
                     }
 
-                    Collection<DevelopmentClassloader> newClassLoaders = provider.redeploy(staleClassLoaders);
+
+                    List<DevelopmentClassloader> affectedAfterCompilation = provider.findAffectedClassLoaders(staleClassLoaders);
+
+
+                    Collection<DevelopmentClassloader> newClassLoaders = provider.redeploy(provider.union(affectedBeforeCompilation, affectedAfterCompilation));
 
                     if (shouldRunTests) {
                         Map<String, DevelopmentClassloader> testLoaders = new LinkedHashMap<>();

@@ -35,7 +35,7 @@ public class HelloworldJaxRsPlugin  {
     private final Application helloApp;
 
     public HelloworldJaxRsPlugin(
-            @Config byte minusOneByte,
+            @Config(property = "minus.one.byte") byte minusOneByte,
             @Config short fourShort,
             @Config(defaultValue = "5") short fiveInt,
             @Config long sixLong,
