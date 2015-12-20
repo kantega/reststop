@@ -194,11 +194,11 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
 
 
-    private static class DefaultServletBuilder implements ServletBuilder {
+    public static class DefaultServletBuilder implements ServletBuilder {
         private final ServletContext servletContext;
         private ReststopPluginManager manager;
 
-        private DefaultServletBuilder(ServletContext servletContext) {
+        public DefaultServletBuilder(ServletContext servletContext) {
             this.servletContext = servletContext;
         }
 
@@ -410,7 +410,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
     }
 
-    private static class PluginDelegatingFilter implements Filter {
+    public static class PluginDelegatingFilter implements Filter {
         private final ReststopPluginManager manager;
 
         public PluginDelegatingFilter(ReststopPluginManager manager) {

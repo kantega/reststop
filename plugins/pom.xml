@@ -46,6 +46,7 @@
         <module>springmvc</module>
     	<module>wsdl-test</module>
         <module>webjars</module>
+        <module>jetty</module>
     </modules>
     <dependencies>
         <dependency>
