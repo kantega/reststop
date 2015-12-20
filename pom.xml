@@ -72,6 +72,7 @@
         <module>annotation-processor</module>
         <module>api</module>
         <module>core</module>
+        <module>servlet</module>
         <module>webapp</module>
         <module>maven-plugin</module>
         <module>plugins</module>
