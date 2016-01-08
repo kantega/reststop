@@ -47,6 +47,8 @@ public class JettyPlugin {
 
         servletContext =  handler.getServletContext();
 
-        servletBuilder = new ReststopInitializer.DefaultServletBuilder(servletContext);
+        ReststopInitializer.DefaultServletBuilder defaultServletBuilder = new ReststopInitializer.DefaultServletBuilder(servletContext);
+        defaultServletBuilder.setManager(pluginManager);
+        servletBuilder = defaultServletBuilder;
     }
 }

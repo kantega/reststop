@@ -93,7 +93,7 @@ public class PluginManagerBuilder {
         return reststopPluginManager;
     }
 
-    public PluginManagerBuilder withClassLoaderProviders(ClassLoaderProvider[] classLoaderProviders) {
+    public PluginManagerBuilder withClassLoaderProviders(ClassLoaderProvider... classLoaderProviders) {
         this.classLoaderProviders = classLoaderProviders;
         return this;
     }

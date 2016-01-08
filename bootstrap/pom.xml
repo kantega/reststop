@@ -24,36 +24,21 @@
         <version>2.3-SNAPSHOT</version>
     </parent>
 
-    <artifactId>reststop-core</artifactId>
+    <artifactId>reststop-bootstrap</artifactId>
 
-    <dependencies>
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>reststop-api</artifactId>
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>reststop-classloader-utils</artifactId>
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.kantega.jexmec</groupId>
-            <artifactId>jexmec-manager</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.kantega.jexmec</groupId>
-            <artifactId>jexmec-ctor-pl</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.kantega.reststop</groupId>
-            <artifactId>reststop-bootstrap</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-    </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>2.4</version>
+                <configuration>
+                    <archive>
+                        <manifestEntries>
+                            <Main-Class>org.kantega.reststop.bootstrap.Main</Main-Class>
+                        </manifestEntries>
+                    </archive>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
