@@ -10,7 +10,11 @@ import java.io.File;
 public interface Bootstrap {
 
 
-    void bootstrap(File globalConfigurationFile, Document pluginsXml, File repositoryDirectory);
+    default void preBootstrap() {}
 
-    void shutdown();
+    default void bootstrap(File globalConfigurationFile, Document pluginsXml, File repositoryDirectory) {}
+
+    default void postBootstrap() {}
+
+    default void shutdown() {};
 }

@@ -60,7 +60,13 @@ public class Main {
         }
 
         for (Bootstrap bootstrap : load) {
+            bootstrap.preBootstrap();
+        }
+        for (Bootstrap bootstrap : load) {
             bootstrap.bootstrap(globalConfigurationFile, pluginsXml, repositoryDirectory);
+        }
+        for (Bootstrap bootstrap : load) {
+            bootstrap.postBootstrap();
         }
 
 
