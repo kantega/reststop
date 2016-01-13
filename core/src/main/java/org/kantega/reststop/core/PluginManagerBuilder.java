@@ -73,7 +73,6 @@ public class PluginManagerBuilder {
         DefaultPluginManager<Object> manager = buildFor(Object.class)
                 .withClassLoaderProvider(reststop)
                 .withClassLoaderProviders(classLoaderProviders)
-                .withClassLoader(getClass().getClassLoader())
                 .withPluginLoader(new ReststopPluginLoader(exportsServiceLocator))
                 .withService(ServiceKey.by(Reststop.class), reststop)
                 .withService(ServiceKey.by(ReststopPluginManager.class), reststopPluginManager)
@@ -475,18 +474,6 @@ public class PluginManagerBuilder {
                 }
             }
         }
-
-        @Override
-        public void beforePluginManagerStopped(PluginManager<Object> pluginManager) {
-
-        }
-
-        @Override
-        public void afterActivation(PluginManager<Object> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader, PluginLoader<Object> pluginLoader, Collection<Object> plugins) {
-            for (Object plugin : plugins) {
-                // plugin.init();
-            }
-        }
     }
 
     private static class StaticServiceLocator implements ServiceLocator {
@@ -511,6 +498,8 @@ public class PluginManagerBuilder {
     public static class PluginInfosClassLoaderProvider implements ClassLoaderProvider {
         private final List<PluginInfo> pluginInfos;
         private final File repoDir;
+        private List<ClassLoader> classLoadersInStartupOrder;
+        private Registry registry;
 
         public PluginInfosClassLoaderProvider(List<PluginInfo> pluginInfos, File repoDir) {
             this.pluginInfos = pluginInfos;
@@ -519,6 +508,7 @@ public class PluginManagerBuilder {
 
         @Override
         public void start(Registry registry, ClassLoader parentClassLoader) {
+            this.registry = registry;
             List<ClassLoader> loaders = new ArrayList<>();
             Map<String, PluginClassLoader> byDep = new HashMap<>();
 
@@ -554,7 +544,7 @@ public class PluginManagerBuilder {
             }
 
 
-            List<ClassLoader> classLoadersInStartupOrder = new ArrayList<>();
+            classLoadersInStartupOrder = new ArrayList<>();
             List<PluginInfo> pluginsInStartupOrder = PluginInfo.resolveStartupOrder(toStart);
 
             for (PluginInfo info : pluginsInStartupOrder) {
@@ -600,7 +590,9 @@ public class PluginManagerBuilder {
 
         @Override
         public void stop() {
-
+            List<ClassLoader> loaders = new ArrayList<>(classLoadersInStartupOrder);
+            Collections.reverse(loaders);
+            registry.remove(loaders);
         }
     }
 }

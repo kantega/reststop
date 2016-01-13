@@ -17,4 +17,4 @@ RESTSTOP_HOME=$(dirname $BINDIR)
 
 cd $RESTSTOP_HOME
 
-$JAVA $JAVA_OPTS -jar @BOOTSTRAP_PATH $RESTSTOP_HOME/conf/$NAME.conf $RESTSTOP_HOME/plugins.xml $RESTSTOP_HOME/repository
+$JAVA $JAVA_OPTS -jar start.jar $RESTSTOP_HOME/conf/$NAME.conf

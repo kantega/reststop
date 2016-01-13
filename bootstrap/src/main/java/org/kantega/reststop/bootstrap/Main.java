@@ -39,13 +39,11 @@ public class Main {
 
     public static void main(String[] args) throws ParserConfigurationException, IOException, SAXException {
 
-        File globalConfigurationFile =  new File(args[0]);
-        File pluginsXmlFile = new File(args[1]);
-        File repositoryDirectory = new File(args[2]);
+        Settings settings = parseCli(args);
 
-        Document pluginsXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(pluginsXmlFile);
+        Document pluginsXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(settings.pluginsXmlFile);
 
-        List<URL> urls = getCommonURLs(pluginsXml, repositoryDirectory);
+        List<URL> urls = getCommonURLs(pluginsXml, settings.repositoryDirectory);
 
         ClassLoader classLoader = createClassLoader(urls);
 
@@ -63,12 +61,11 @@ public class Main {
             bootstrap.preBootstrap();
         }
         for (Bootstrap bootstrap : load) {
-            bootstrap.bootstrap(globalConfigurationFile, pluginsXml, repositoryDirectory);
+            bootstrap.bootstrap(settings.globalConfigurationFile, pluginsXml, settings.repositoryDirectory);
         }
         for (Bootstrap bootstrap : load) {
             bootstrap.postBootstrap();
         }
-
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
@@ -79,6 +76,71 @@ public class Main {
                 }
             }
         });
+
+    }
+
+    private static Settings parseCli(String[] args) {
+        String configFilePath = null;
+        String repositoryPath = "repository";
+        String pluginsXmlPath = "plugins.xml";
+
+        for (int i = 0; i < args.length; i++) {
+            String arg = args[i].trim();
+            if("--config".equals(arg)) {
+                if(i == args.length-1) {
+                    usage("--config option requires a path");
+                }
+                configFilePath = args[i+1];
+                i++;
+            } else if("--repository".equals(arg)) {
+                if(i == args.length-1) {
+                    usage("--repository option requires a path");
+                }
+                repositoryPath = args[i+1];
+                i++;
+            } else if("--plugins".equals(arg)) {
+                if(i == args.length-1) {
+                    usage("--plugins option requires a path");
+                }
+                pluginsXmlPath = args[i+1];
+                i++;
+            } else if(!arg.startsWith("--")) {
+                usage("'" +arg + "' is not an option");
+            } else {
+                usage("Unknown option: " + arg);
+            }
+        }
+
+        if(configFilePath == null) {
+            usage("--config option is required");
+        }
+
+        File configFile = new File(configFilePath);
+        File repositoryDirectory = new File(repositoryPath);
+        File pluginsXmlFile = new File(pluginsXmlPath);
+
+        if(!configFile.exists()) {
+            usage("--config file does not exist: '" + configFilePath +"'");
+        }
+        if(!repositoryDirectory.exists() || !repositoryDirectory.isDirectory()) {
+            usage("--repository directory does not exist: '" + repositoryPath +"'");
+        }
+        if(! pluginsXmlFile.exists()) {
+            usage("--plugins xml file does not exist: '" + pluginsXmlPath +"'");
+        }
+
+        return new Settings(configFile, pluginsXmlFile, repositoryDirectory);
+    }
+
+    private static void usage(String message) {
+        System.out.println("ERROR: " + message);
+        System.out.println();
+        System.out.println("Usage: java -jar bootstrap.jar --config <configFile> [options]");
+        System.out.println();
+        System.out.println("Options:");
+        System.out.println("\t--repository <directory>   (Default: 'repository/' in working directory)");
+        System.out.println("\t--plugins <pluginsXmlFile> (Default: 'plugins.xml' in working directory)");
+        System.exit(0);
     }
 
     private static ClassLoader createClassLoader(List<URL> commonUrls) throws MalformedURLException {
@@ -110,5 +172,18 @@ public class Main {
                         + version + "/"
                         + artifactId + "-" + version + ".jar");
 
+    }
+
+    static class Settings {
+
+        final File globalConfigurationFile;
+        final File pluginsXmlFile;
+        final File repositoryDirectory;
+
+        public Settings(File globalConfigurationFile, File pluginsXmlFile, File repositoryDirectory) {
+            this.globalConfigurationFile = globalConfigurationFile;
+            this.pluginsXmlFile = pluginsXmlFile;
+            this.repositoryDirectory = repositoryDirectory;
+        }
     }
 }

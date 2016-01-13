@@ -22,6 +22,7 @@ import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.kantega.reststop.api.*;
 import org.kantega.reststop.servlets.ReststopInitializer;
 
+import javax.annotation.PreDestroy;
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
 import java.util.EnumSet;
@@ -34,21 +35,36 @@ public class JettyPlugin {
 
     @Export final ServletBuilder servletBuilder;
     @Export final ServletContext servletContext;
+    private final Server server;
+
     public JettyPlugin(ReststopPluginManager pluginManager, @Config(defaultValue = "8080") int jettyPort)throws Exception {
 
-        Server server = new Server(jettyPort);
+        server = new Server(jettyPort);
 
         ServletContextHandler handler = new ServletContextHandler();
+
 
         handler.addFilter(new FilterHolder(new ReststopInitializer.PluginDelegatingFilter(pluginManager)), "/*", EnumSet.of(DispatcherType.REQUEST));
         server.setHandler(handler);
 
-        server.start();
+        try {
+            server.start();
+        } catch (Exception e) {
+            server.stop();
+            throw e;
+        }
 
         servletContext =  handler.getServletContext();
 
         ReststopInitializer.DefaultServletBuilder defaultServletBuilder = new ReststopInitializer.DefaultServletBuilder(servletContext);
         defaultServletBuilder.setManager(pluginManager);
         servletBuilder = defaultServletBuilder;
+    }
+
+    @PreDestroy
+    public void stop() throws Exception {
+        if(server != null && !server.isStopped()) {
+            server.stop();
+        }
     }
 }

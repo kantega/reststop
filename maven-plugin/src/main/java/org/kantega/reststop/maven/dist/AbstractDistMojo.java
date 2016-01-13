@@ -155,9 +155,11 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         File repository = new File(distDirectory, "repository");
         repository.mkdirs();
 
-        File confDir = new File(distDirectory, "conf");
-        confDir.mkdirs();
-        new File(confDir, ".keep_empty_dir");
+        if(! "bootstrap".equals(container)) {
+            File confDir = new File(distDirectory, "conf");
+            confDir.mkdirs();
+            new File(confDir, ".keep_empty_dir");
+        }
 
 
         LocalRepository repo = new LocalRepository(repository);
@@ -199,10 +201,8 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
             copyArtifactToRepository(warArifact, manager);
         } else if("bootstrap".equals(this.container)) {
             addBootstrapClasspath(pluginsXml, manager);
-            String path = addBootstrapJar(manager);
-            Map<String, String> vars = new HashMap<>();
-            vars.put("BOOTSTRAP_PATH", path);
-            createServicesFile(new File(distDirectory, "bin/reststop.sh"), "template-service-bootstrap.sh", vars);
+            addBootstrapJar(distDirectory);
+            //createServicesFile(new File(distDirectory, "bin/reststop.sh"), "template-service-bootstrap.sh", new HashMap<>());
         }
 
         writePluginsXml(new File(distDirectory, "plugins.xml"), manager, pluginsXml);
@@ -219,10 +219,9 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         }
     }
 
-    private String addBootstrapJar(LocalRepositoryManager manager) throws MojoFailureException, MojoExecutionException {
+    private void addBootstrapJar(File distDirectory) throws MojoFailureException, MojoExecutionException {
         Artifact artifact = resolveArtifact(bootstrapCoords);
-        copyArtifactToRepository(artifact, manager);
-        return manager.getPathForLocalArtifact(artifact);
+        copyArtifactToPath(artifact, new File(distDirectory, "start.jar").toPath());
     }
 
     private void copyContainerDependencies(List<org.apache.maven.model.Dependency> containerDependencies, File targetDir) throws MojoFailureException, MojoExecutionException {
@@ -581,9 +580,13 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
     private void copyArtifactToRepository(Artifact artifact, LocalRepositoryManager remanagerository) throws MojoExecutionException {
         String pathForLocalArtifact = remanagerository.getPathForLocalArtifact(artifact);
-
-        Path from = artifact.getFile().toPath();
         Path to = new File(remanagerository.getRepository().getBasedir(), pathForLocalArtifact).toPath();
+
+        copyArtifactToPath(artifact, to);
+    }
+
+    private void copyArtifactToPath(Artifact artifact, Path to) throws MojoExecutionException {
+        Path from = artifact.getFile().toPath();
         try {
             to.toFile().getParentFile().mkdirs();
             Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);

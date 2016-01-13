@@ -190,7 +190,7 @@ public class RpmBuilder extends AbstractDistMojo {
                 }
             }
             if(container.equals("bootstrap")) {
-                pw.println(attr(defaultPermissions, defaultPermissions.getExecMode(), "/" + installDir + "/%{name}/bin/*.sh"));
+               // pw.println(attr(defaultPermissions, defaultPermissions.getExecMode(), "/" + installDir + "/%{name}/bin/*.sh"));
             } else {
                 pw.println(attr(defaultPermissions, defaultPermissions.getExecMode(), "/" + installDir + "/%{name}/" + trimBothEnds(container, "/") + "/bin/*.sh"));
             }
