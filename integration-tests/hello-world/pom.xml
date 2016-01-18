@@ -279,7 +279,7 @@
                                     <version>${project.version}</version>
                                 </plugin>
                             </bootstrapPlugins>
-                            <container>jetty</container>
+                            <container>bootstrap</container>
                             <resources>
                                 <resource>
                                     <directory>${basedir}/src/install/</directory>
