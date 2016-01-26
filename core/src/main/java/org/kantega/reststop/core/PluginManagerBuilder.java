@@ -31,6 +31,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -80,6 +81,12 @@ public class PluginManagerBuilder {
                 .withServiceLocator(exportsServiceLocator)
                 .withConcretePluginClassAllowed()
                 .build();
+
+        for (ClassLoaderProvider classLoaderProvider : classLoaderProviders) {
+            if(classLoaderProvider instanceof PluginManagerListener) {
+                manager.addPluginManagerListener((PluginManagerListener<Object>) classLoaderProvider);
+            }
+        }
 
         exportsServiceLocator.setPluginManager(manager);
         reststopPluginManager.setExportsServiceLocator(exportsServiceLocator);
@@ -495,10 +502,10 @@ public class PluginManagerBuilder {
     }
 
 
-    public static class PluginInfosClassLoaderProvider implements ClassLoaderProvider {
+    public static class PluginInfosClassLoaderProvider extends PluginManagerListener<Object> implements ClassLoaderProvider {
         private final List<PluginInfo> pluginInfos;
         private final File repoDir;
-        private List<ClassLoader> classLoadersInStartupOrder;
+        private final List<ClassLoader> classLoadersInStartupOrder = new CopyOnWriteArrayList<>();
         private Registry registry;
 
         public PluginInfosClassLoaderProvider(List<PluginInfo> pluginInfos, File repoDir) {
@@ -543,8 +550,6 @@ public class PluginManagerBuilder {
                 }
             }
 
-
-            classLoadersInStartupOrder = new ArrayList<>();
             List<PluginInfo> pluginsInStartupOrder = PluginInfo.resolveStartupOrder(toStart);
 
             for (PluginInfo info : pluginsInStartupOrder) {
@@ -552,6 +557,11 @@ public class PluginManagerBuilder {
                 classLoadersInStartupOrder.add(byDep.get(key));
             }
             registry.add(classLoadersInStartupOrder);
+        }
+
+        @Override
+        public void afterClassLoaderRemoved(PluginManager<Object> pluginManager, ClassLoaderProvider classLoaderProvider, ClassLoader classLoader) {
+            this.classLoadersInStartupOrder.remove(classLoader);
         }
 
         private File getPluginFile(Artifact artifact) {
