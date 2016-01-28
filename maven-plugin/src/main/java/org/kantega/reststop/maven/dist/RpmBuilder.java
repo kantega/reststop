@@ -302,7 +302,7 @@ public class RpmBuilder extends AbstractDistMojo {
                 if( rpmRelease.length() == 0)
                     rpmRelease = "1";
 
-                rpm.release = rpmRelease + "." + versionSuffix;
+                rpm.release = rpmRelease + "." + versionSuffix.replace('-','.');
 
             } else {
                 rpm.version = mvnProjectVersion;
