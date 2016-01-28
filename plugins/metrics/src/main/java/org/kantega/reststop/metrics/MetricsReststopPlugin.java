@@ -17,6 +17,8 @@
 package org.kantega.reststop.metrics;
 
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.health.HealthCheckRegistry;
+import com.codahale.metrics.health.jvm.ThreadDeadlockHealthCheck;
 import com.codahale.metrics.jvm.*;
 import org.kantega.reststop.api.Export;
 import org.kantega.reststop.api.Plugin;
@@ -31,13 +33,14 @@ import java.lang.management.ManagementFactory;
 public class MetricsReststopPlugin {
 
 
-    @Export
-    private final MetricRegistry metricRegistry;
+    @Export final MetricRegistry metricRegistry;
+    @Export final HealthCheckRegistry healthCheckRegistry;
 
     public MetricsReststopPlugin() throws ServletException {
 
         metricRegistry = initMetricsRegistry();
 
+        healthCheckRegistry = initHealthCheckRegistry();
     }
 
 
@@ -50,6 +53,12 @@ public class MetricsReststopPlugin {
         registry.registerAll(new BufferPoolMetricSet(ManagementFactory.getPlatformMBeanServer()));
         registry.registerAll(new ThreadStatesGaugeSet());
 
+        return registry;
+    }
+
+    private HealthCheckRegistry initHealthCheckRegistry() {
+        HealthCheckRegistry registry = new HealthCheckRegistry();
+        registry.register("threadDeadlock", new ThreadDeadlockHealthCheck());
         return registry;
     }
 }

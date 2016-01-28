@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.kantega.reststop</groupId>
         <artifactId>reststop-parent</artifactId>
-        <version>2.2-SNAPSHOT</version>
+        <version>2.3-SNAPSHOT</version>
     </parent>
 
     <artifactId>reststop-core</artifactId>
@@ -40,11 +40,6 @@
         </dependency>
 
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-        </dependency>
-
-        <dependency>
             <groupId>org.kantega.jexmec</groupId>
             <artifactId>jexmec-manager</artifactId>
         </dependency>
@@ -52,6 +47,12 @@
         <dependency>
             <groupId>org.kantega.jexmec</groupId>
             <artifactId>jexmec-ctor-pl</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-bootstrap</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
 
     </dependencies>

@@ -16,13 +16,14 @@
 
 package org.kantega.reststop.development;
 
-import org.kantega.reststop.core.Reststop;
 import org.kantega.reststop.classloaderutils.*;
+import org.kantega.reststop.core.Reststop;
 
 import javax.tools.Diagnostic;
 import javax.tools.JavaFileObject;
 import java.io.File;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -138,12 +139,16 @@ public class DevelopmentClassLoaderProvider {
         return new HashMap<>(classloaders);
     }
 
-    public synchronized Collection<DevelopmentClassloader> redeploy(List<DevelopmentClassloader> staleClassLoaders) {
+    public synchronized Collection<DevelopmentClassloader> redeploy(List<DevelopmentClassloader> classLoaders) {
+
+
+        List<PluginInfo> classLoadingOrder = PluginInfo.resolveClassloaderOrder(classLoaders.stream().map(PluginClassLoader::getPluginInfo).collect(Collectors.toList()));
 
         Map<String, DevelopmentClassloader> newClassLoaders = new HashMap<>();
         Map<String, DevelopmentClassloader> oldClassLoaders = new HashMap<>();
         List<PluginInfo> infos = new ArrayList<>();
-        for (DevelopmentClassloader classloader : staleClassLoaders) {
+
+        for (DevelopmentClassloader classloader : orderClassLoaders(classLoadingOrder)) {
             oldClassLoaders.put(classloader.getPluginInfo().getGroupIdAndArtifactId(), classloader);
             DevelopmentClassloader newClassLoader = newClassLoader(classloader);
             newClassLoader.setFailed(true);
@@ -228,6 +233,25 @@ public class DevelopmentClassLoaderProvider {
         return new ArrayList<>(pluginsInfo.values());
     }
 
+
+    private void getAffectedPlugins(PluginInfo info, Map<String, PluginInfo> affected, List<PluginInfo> all) {
+
+        List<PluginInfo> infos = new ArrayList<>();
+        infos.addAll(info.getServiceConsumers(all));
+        infos.addAll(info.getChildren(all));
+
+        Map<String, PluginInfo> unique = new HashMap<>();
+
+        infos.forEach((i) -> unique.put(i.getPluginId(), i));
+
+
+        for (PluginInfo a : unique.values()) {
+            if(!affected.containsKey(a.getPluginId())) {
+                affected.put(a.getPluginId(), a);
+                getAffectedPlugins(a, affected, all);
+            }
+        }
+    }
     private void getServiceConsumingPlugins(PluginInfo info, Map<String, PluginInfo> children, List<PluginInfo> all) {
 
 
@@ -238,6 +262,37 @@ public class DevelopmentClassLoaderProvider {
             }
         }
     }
+    public List<DevelopmentClassloader> findAffectedClassLoaders(List<DevelopmentClassloader> staleClassLoaders) {
+
+        Map<String, PluginInfo> infos = new HashMap<>();
+
+        staleClassLoaders.forEach((cl) -> infos.put(cl.getPluginInfo().getPluginId(), cl.getPluginInfo()));
+
+        // Add plugins we provide services to or are classloader visible to:
+        for (PluginInfo info : new ArrayList<>(infos.values())) {
+            Map<String, PluginInfo> affected = new HashMap<>();
+            getAffectedPlugins(info, affected, new ArrayList<>(getPluginInfos()));
+            for (String id : affected.keySet()) {
+                infos.put(id, affected.get(id));
+            }
+        }
+
+
+        return orderClassLoaders(PluginInfo.resolveClassloaderOrder(new ArrayList<>(infos.values())));
+
+    }
+
+    private List<DevelopmentClassloader> orderClassLoaders(List<PluginInfo> sorted) {
+        Map<String, DevelopmentClassloader> sortedLoaders = new LinkedHashMap<>();
+
+        for (PluginInfo pluginInfo : sorted) {
+
+            sortedLoaders.put(pluginInfo.getPluginId(), classloaders.get(pluginInfo.getPluginId()));
+        }
+
+        return new ArrayList<>(sortedLoaders.values());
+    }
+
     public List<DevelopmentClassloader> findStaleClassLoaders() {
 
         Map<String, PluginInfo> infos = new HashMap<>();
@@ -249,46 +304,7 @@ public class DevelopmentClassLoaderProvider {
             }
         }
 
-
-
-
-        // Add plugins we provide services to
-        for (PluginInfo info : new ArrayList<>(infos.values())) {
-            Map<String, PluginInfo> deps = new HashMap<>();
-            getServiceConsumingPlugins(info, deps, new ArrayList<>(getPluginInfos()));
-            for (String id : deps.keySet()) {
-                infos.put(id, deps.get(id));
-            }
-        }
-
-        for (PluginInfo info : new ArrayList<>(infos.values())) {
-            Map<String, PluginInfo> deps = new HashMap<>();
-            getChildPlugins(info, deps, new ArrayList<>(getPluginInfos()));
-            for (String id : deps.keySet()) {
-                infos.put(id, deps.get(id));
-            }
-        }
-
-        List<PluginInfo> sorted = PluginInfo.resolveClassloaderOrder(new ArrayList<>(infos.values()));
-
-        Collections.sort(sorted, new Comparator<PluginInfo>() {
-            @Override
-            public int compare(PluginInfo o1, PluginInfo o2) {
-                return isDevPlugin(o1) ? -1 : isDevPlugin(o2) ? -1 : 1;
-            }
-
-            private boolean isDevPlugin(PluginInfo o1) {
-                return o1.getPluginId().contains(":reststop-development-plugin");
-            }
-        });
-        Map<String, DevelopmentClassloader> sortedLoaders = new LinkedHashMap<>();
-
-        for (PluginInfo pluginInfo : sorted) {
-
-            sortedLoaders.put(pluginInfo.getPluginId(), classloaders.get(pluginInfo.getPluginId()));
-        }
-
-        return new ArrayList<>(sortedLoaders.values());
+        return orderClassLoaders(PluginInfo.resolveClassloaderOrder(new ArrayList<>(infos.values())));
 
     }
 
@@ -300,5 +316,19 @@ public class DevelopmentClassLoaderProvider {
                 getChildPlugins(child, children, all);
             }
         }
+    }
+
+    public List<DevelopmentClassloader> union(List<DevelopmentClassloader>... loaders) {
+
+        Map<String, DevelopmentClassloader> union = new HashMap<>();
+
+        for (List<DevelopmentClassloader> loader : loaders) {
+            for (DevelopmentClassloader classloader : loader) {
+                union.put(classloader.getPluginInfo().getPluginId(), classloader);
+            }
+        }
+
+        return new ArrayList<>(union.values());
+
     }
 }

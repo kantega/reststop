@@ -20,15 +20,19 @@
     <parent>
         <groupId>org.kantega.reststop</groupId>
         <artifactId>reststop-parent</artifactId>
-        <version>2.2-SNAPSHOT</version>
+        <version>2.3-SNAPSHOT</version>
     </parent>
     <artifactId>reststop-webapp</artifactId>
     <packaging>war</packaging>
 
     <dependencies>
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>org.kantega.reststop</groupId>
             <artifactId>reststop-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>reststop-servlet</artifactId>
         </dependency>
     </dependencies>
     <build>

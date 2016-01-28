@@ -18,10 +18,9 @@ package org.kantega.reststop.metricsservlets;
 
 import com.codahale.metrics.MetricRegistry;
 import com.codahale.metrics.health.HealthCheckRegistry;
-import com.codahale.metrics.health.jvm.ThreadDeadlockHealthCheck;
-import com.codahale.metrics.jvm.*;
 import com.codahale.metrics.servlets.HealthCheckServlet;
 import com.codahale.metrics.servlets.MetricsServlet;
+import org.kantega.reststop.api.Config;
 import org.kantega.reststop.api.Export;
 import org.kantega.reststop.api.Plugin;
 import org.kantega.reststop.api.ServletBuilder;
@@ -30,7 +29,6 @@ import javax.servlet.Filter;
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
-import java.lang.management.ManagementFactory;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -45,17 +43,19 @@ import java.util.concurrent.TimeUnit;
 @Plugin
 public class MetricsServletsPlugin {
 
-
-    private final HealthCheckRegistry healthCheckRegistry;
-
-
     @Export
     private final Filter metricsServlet;
 
     @Export
     private final Filter healthCheckServlet;
 
-    public MetricsServletsPlugin(MetricRegistry metricRegistry, ServletBuilder servletBuilder, ServletContext servletContext) throws ServletException {
+    public MetricsServletsPlugin(
+            @Config(defaultValue = "/metrics/*") String metricsJsonServletPath,
+            @Config(defaultValue = "/healthchecks/*") String metricsHealthCheckServletPath,
+            MetricRegistry metricRegistry,
+            HealthCheckRegistry healthCheckRegistry,
+            ServletBuilder servletBuilder,
+            ServletContext servletContext) throws ServletException {
 
 
         MetricsServlet metricsServlet = new MetricsServlet(metricRegistry);
@@ -63,16 +63,14 @@ public class MetricsServletsPlugin {
 
         this.metricsServlet = servletBuilder.servlet(
                 metricsServlet,
-                "/metrics/*");
+                metricsJsonServletPath);
 
-
-        healthCheckRegistry = initHealthCheckRegistry();
         HealthCheckServlet healthCheckServlet = new HealthCheckServlet(healthCheckRegistry);
         healthCheckServlet.init(servletBuilder.servletConfig("healthcheck", new Properties()));
 
         this.healthCheckServlet = servletBuilder.servlet(
                 healthCheckServlet,
-                "/healthchecks/*");
+                metricsHealthCheckServletPath);
 
     }
 
@@ -89,24 +87,6 @@ public class MetricsServletsPlugin {
                 return method.invoke(servletContext, args);
             }
         });
-    }
-
-    private HealthCheckRegistry initHealthCheckRegistry() {
-        HealthCheckRegistry registry = new HealthCheckRegistry();
-        registry.register("threadDeadlock", new ThreadDeadlockHealthCheck());
-        return registry;
-    }
-
-    private MetricRegistry initMetricsRegistry() {
-        MetricRegistry registry = new MetricRegistry();
-
-        registry.registerAll(new MemoryUsageGaugeSet());
-        registry.register("fileDescriptorRation", new FileDescriptorRatioGauge());
-        registry.registerAll(new GarbageCollectorMetricSet());
-        registry.registerAll(new BufferPoolMetricSet(ManagementFactory.getPlatformMBeanServer()));
-        registry.registerAll(new ThreadStatesGaugeSet());
-
-        return registry;
     }
 
 

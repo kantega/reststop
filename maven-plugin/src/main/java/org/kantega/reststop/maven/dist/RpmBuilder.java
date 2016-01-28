@@ -190,9 +190,14 @@ public class RpmBuilder extends AbstractDistMojo {
                     }
                 }
             }
-
-            pw.println(attr(defaultPermissions, defaultPermissions.getExecMode(),"/"+installDir+"/%{name}/"+trimBothEnds(container,"/")+"/bin/*.sh"));
-            pw.println(attr(defaultPermissions, defaultPermissions.getExecMode(), "/etc/init.d/%{name}"));
+            if(container.equals("bootstrap")) {
+               // pw.println(attr(defaultPermissions, defaultPermissions.getExecMode(), "/" + installDir + "/%{name}/bin/*.sh"));
+            } else {
+                pw.println(attr(defaultPermissions, defaultPermissions.getExecMode(), "/" + installDir + "/%{name}/" + trimBothEnds(container, "/") + "/bin/*.sh"));
+            }
+            if("jetty".equals(container)) {
+                pw.println(attr(defaultPermissions, defaultPermissions.getExecMode(), "/etc/init.d/%{name}"));
+            }
 
 
         } catch (FileNotFoundException e) {

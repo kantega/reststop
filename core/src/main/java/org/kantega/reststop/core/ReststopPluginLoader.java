@@ -28,8 +28,10 @@ import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.*;
-import java.net.URL;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Parameter;
+import java.lang.reflect.ParameterizedType;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -38,11 +40,11 @@ import java.util.regex.Pattern;
  *
  */
 public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<Object> {
-    private final ReststopInitializer.PluginExportsServiceLocator reststopServiceLocator;
+    private final PluginManagerBuilder.PluginExportsServiceLocator reststopServiceLocator;
 
     private static Pattern sysPropPattern = Pattern.compile(".*\\$\\{(.*)\\}.*");
 
-    public ReststopPluginLoader(ReststopInitializer.PluginExportsServiceLocator reststopServiceLocator) {
+    public ReststopPluginLoader(PluginManagerBuilder.PluginExportsServiceLocator reststopServiceLocator) {
 
         this.reststopServiceLocator = reststopServiceLocator;
     }
@@ -166,7 +168,7 @@ public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<Objec
         String value = properties.getProperty(name, defaultValue);
 
         if( (value == null || value.trim().isEmpty()) && config.required()) {
-            throw new IllegalArgumentException("Configuration missing for required @Config parameter '" +parameterName +"' in class " + param.getDeclaringExecutable().getDeclaringClass().getName());
+            throw new IllegalArgumentException("Configuration missing for required @Config parameter '" +name +"' in class " + param.getDeclaringExecutable().getDeclaringClass().getName());
         }
 
         if (value != null) {
