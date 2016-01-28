@@ -138,9 +138,10 @@ public class RpmBuilder extends AbstractDistMojo {
         try (PrintWriter pw = new PrintWriter(new OutputStreamWriter(new FileOutputStream(spec)))) {
 
             String installDir = trimBothEnds(this.installDir,"/");
+            RpmVersion ver = RpmVersion.fromMavenVersion(version, release);
             pw.println("Name: " + name);
-            pw.println("Version: " + safeVersion());
-            pw.println("Release: " + release);
+            pw.println("Version: " + ver.version);
+            pw.println("Release: " + ver.release);
             pw.println("Summary: " + mavenProject.getDescription());
             pw.println("License: Unknown");
             pw.println("Group: Webapps/Java");
@@ -274,9 +275,6 @@ public class RpmBuilder extends AbstractDistMojo {
         }
     }
 
-    private String safeVersion() {
-        return version.replace('-', '.');
-    }
 
     private String getRequiresSpec() {
 
@@ -289,5 +287,34 @@ public class RpmBuilder extends AbstractDistMojo {
             return "Requires: " + reqs.stream().collect(Collectors.joining(", "));
         else
             return "";
+    }
+
+    private static class RpmVersion {
+        private String version;
+        private String release;
+
+        public static RpmVersion fromMavenVersion(String mvnProjectVersion, String rpmRelease) {
+            RpmVersion rpm = new RpmVersion();
+            int dashPos = mvnProjectVersion.indexOf('-');
+            if(dashPos >= 0) {
+                rpm.version = mvnProjectVersion.substring(0,dashPos);
+                String versionSuffix = mvnProjectVersion.substring(dashPos+1, mvnProjectVersion.length());
+                if(rpmRelease !=null )
+                    rpmRelease = rpmRelease.trim();
+                else
+                    rpmRelease = "1";
+
+                if( rpmRelease.length() == 0)
+                    rpmRelease = "1";
+
+                rpm.release = rpmRelease + "." + versionSuffix.replace('-','.');
+
+            } else {
+                rpm.version = mvnProjectVersion;
+                rpm.release = rpmRelease;
+            }
+
+            return rpm;
+        }
     }
 }
