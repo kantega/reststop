@@ -40,11 +40,11 @@ import java.util.regex.Pattern;
  *
  */
 public class ReststopPluginLoader extends ConstructorInjectionPluginLoader<Object> {
-    private final ReststopInitializer.PluginExportsServiceLocator reststopServiceLocator;
+    private final PluginManagerBuilder.PluginExportsServiceLocator reststopServiceLocator;
 
     private static Pattern sysPropPattern = Pattern.compile(".*\\$\\{(.*)\\}.*");
 
-    public ReststopPluginLoader(ReststopInitializer.PluginExportsServiceLocator reststopServiceLocator) {
+    public ReststopPluginLoader(PluginManagerBuilder.PluginExportsServiceLocator reststopServiceLocator) {
 
         this.reststopServiceLocator = reststopServiceLocator;
     }

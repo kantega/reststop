@@ -34,17 +34,19 @@ import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.collection.CollectRequest;
 import org.eclipse.aether.graph.Dependency;
 import org.eclipse.aether.graph.DependencyFilter;
-import org.eclipse.aether.graph.DependencyNode;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.LocalRepositoryManager;
-import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.resolution.*;
+import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.DependencyRequest;
+import org.eclipse.aether.resolution.DependencyResolutionException;
+import org.eclipse.aether.resolution.DependencyResult;
 import org.eclipse.aether.util.artifact.JavaScopes;
 import org.eclipse.aether.util.filter.DependencyFilterUtils;
 import org.eclipse.aether.util.filter.ScopeDependencyFilter;
 import org.kantega.reststop.maven.AbstractReststopMojo;
 import org.kantega.reststop.maven.Plugin;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
 import javax.xml.transform.OutputKeys;
 import javax.xml.transform.Transformer;
@@ -57,11 +59,10 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 
 /**
@@ -69,8 +70,8 @@ import static java.util.Collections.singleton;
  */
 public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
-    @Parameter(defaultValue = "${plugin}")
-    private Object plugin;
+    @Parameter(defaultValue = "${plugin.version}")
+    private String pluginVersion;
 
     @Parameter(defaultValue = "${project.build.directory}/reststop/")
     protected File workDirectory;
@@ -122,7 +123,16 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     protected List<Resource> resources;
 
     @Parameter
+    protected List<Plugin> baseDistributionPlugins;
+
+    @Parameter
     private List<Plugin> distributionPlugins;
+
+    @Parameter
+    protected List<Plugin> baseBootstrapPlugins;
+
+    @Parameter
+    private List<Plugin> bootstrapPlugins;
 
     @Parameter
     private List<org.apache.maven.model.Dependency> containerDependencies;
@@ -130,20 +140,26 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     @Parameter()
     protected FilePerm defaultPermissions;
 
+
+
+    private static TreeSet<String> supportedContainers = new TreeSet<>(Arrays.asList("jetty", "tomcat", "bootstrap"));
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
-        if ("tomcat".compareTo(container) != 0 && "jetty".compareTo(container) != 0)
-            throw new MojoFailureException(container + " not supported. Try 'jetty' or 'tomcat' ");
+        if (! supportedContainers.contains(container))
+            throw new MojoFailureException(container + " not supported. Try one of " + supportedContainers);
 
         initDirectories();
 
         File repository = new File(distDirectory, "repository");
         repository.mkdirs();
 
-        File confDir = new File(distDirectory, "conf");
-        confDir.mkdirs();
-        new File(confDir, ".keep_empty_dir");
+        if(! "bootstrap".equals(container)) {
+            File confDir = new File(distDirectory, "conf");
+            confDir.mkdirs();
+            new File(confDir, ".keep_empty_dir");
+        }
 
 
         LocalRepository repo = new LocalRepository(repository);
@@ -151,32 +167,45 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
         copyPlugins(getPlugins(), manager);
 
-        writePluginsXml(new File(distDirectory, "plugins.xml"));
+        Document pluginsXml = createPluginXmlDocument(true);
+
+
+
 
         Artifact warArifact = resolveArtifact(warCoords);
-        copyArtifactToRepository(warArifact, manager);
+
 
         if( defaultPermissions == null)
             defaultPermissions = FilePerm.DEFAULT;
 
         File containerDistrDir = new File(distDirectory, container);
-        if ("jetty".compareTo(this.container) == 0) {
+        if ("jetty".equals(this.container)) {
 
             copyJetty(containerDistrDir);
 
             copyContainerDependencies(containerDependencies, new File(containerDistrDir, "lib/ext"));
 
             createJettyContextXml(name, warArifact, manager, new File(containerDistrDir, "webapps/reststop.xml"));
+            Map<String, String> vars = new HashMap<>();
+            vars.put("RESTSTOPINSTDIR", installDir);
+            vars.put("RESTSTOPNAME", name); // use default
 
-            createJettyServicesFile(rootDirectory);
-        } else if ("tomcat".compareTo(this.container) == 0) {
+            createServicesFile(new File(rootDirectory, "etc/init.d/" + name), "template-service-jetty.sh", vars);
+            copyArtifactToRepository(warArifact, manager);
+        } else if ("tomcat".equals(this.container) ) {
             copyTomcat(containerDistrDir);
 
             copyContainerDependencies(containerDependencies, new File(containerDistrDir, "lib"));
 
             createTomcatContextXml(name, warArifact, manager, new File(containerDistrDir, "conf/Catalina/localhost/ROOT.xml"));
-        } else
-            throw new MojoExecutionException("Unknown container " + this.container);
+            copyArtifactToRepository(warArifact, manager);
+        } else if("bootstrap".equals(this.container)) {
+            addBootstrapClasspath(pluginsXml, manager);
+            addBootstrapJar(distDirectory);
+            //createServicesFile(new File(distDirectory, "bin/reststop.sh"), "template-service-bootstrap.sh", new HashMap<>());
+        }
+
+        writePluginsXml(new File(distDirectory, "plugins.xml"), manager, pluginsXml);
 
         copyOverridingConfig();
 
@@ -190,46 +219,71 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         }
     }
 
+    private void addBootstrapJar(File distDirectory) throws MojoFailureException, MojoExecutionException {
+        Artifact artifact = resolveArtifact(bootstrapCoords);
+        copyArtifactToPath(artifact, new File(distDirectory, "start.jar").toPath());
+    }
+
     private void copyContainerDependencies(List<org.apache.maven.model.Dependency> containerDependencies, File targetDir) throws MojoFailureException, MojoExecutionException {
 
         if(containerDependencies != null) {
-            for (org.apache.maven.model.Dependency dependency : containerDependencies) {
 
-                Artifact dependencyArtifact = resolveArtifact(
-                        String.format("%s:%s:%s", dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion()));
-
+            List<Artifact> containerArtifacts = resolveContainerArtifacts(containerDependencies);
+            targetDir.getParentFile().mkdirs();
+            for (Artifact artifact : containerArtifacts) {
                 try {
-
-                    ArtifactDescriptorResult descriptorResult = repoSystem.readArtifactDescriptor(repoSession, new ArtifactDescriptorRequest(dependencyArtifact, remoteRepos, null));
-
-                    CollectRequest collectRequest = new CollectRequest(new Dependency(dependencyArtifact, JavaScopes.RUNTIME), remoteRepos);
-
-                    collectRequest.setManagedDependencies(descriptorResult.getManagedDependencies());
-
-
-                    final DependencyFilter filter = DependencyFilterUtils.andFilter(
-                            DependencyFilterUtils.classpathFilter(JavaScopes.RUNTIME),
-                            (dependencyNode, list) ->
-                                    dependencyNode.getDependency() == null || !dependencyNode.getDependency().isOptional());
-
-                    DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, filter);
-
-                    DependencyResult dependencyResult = repoSystem.resolveDependencies(repoSession, dependencyRequest);
-
-                    if (!dependencyResult.getCollectExceptions().isEmpty()) {
-                        throw new MojoFailureException("Failed resolving plugin dependencies", dependencyResult.getCollectExceptions().get(0));
-                    }
-
-                    targetDir.getParentFile().mkdirs();
-                    for (ArtifactResult result : dependencyResult.getArtifactResults()) {
-                        Artifact artifact = result.getArtifact();
-                        Files.copy(artifact.getFile().toPath(), new File(targetDir, artifact.getFile().getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    }
-
-                } catch (IOException | DependencyResolutionException | ArtifactDescriptorException e) {
+                    Files.copy(artifact.getFile().toPath(), new File(targetDir, artifact.getFile().getName()).toPath(), StandardCopyOption.REPLACE_EXISTING);
+                } catch (IOException e) {
                     throw new MojoFailureException("Failed resolving plugin dependencies", e);
                 }
             }
+
+        }
+    }
+
+    private List<Artifact> resolveContainerArtifacts(List<org.apache.maven.model.Dependency> containerDependencies) throws MojoFailureException, MojoExecutionException {
+
+        List<Artifact> containerArtifacts = new ArrayList<>();
+
+
+        List<Dependency> containerDeps = new ArrayList<>();
+
+        for (org.apache.maven.model.Dependency dependency : containerDependencies) {
+
+            Artifact dependencyArtifact = resolveArtifact(
+                    String.format("%s:%s:%s", dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion()));
+
+            containerDeps.add(new Dependency(dependencyArtifact, JavaScopes.RUNTIME));
+        }
+
+        try {
+
+
+            CollectRequest collectRequest = new CollectRequest(containerDeps, null, remoteRepos);
+
+            final DependencyFilter filter = DependencyFilterUtils.andFilter(
+                    DependencyFilterUtils.classpathFilter(JavaScopes.RUNTIME),
+                    (dependencyNode, list) ->
+                            dependencyNode.getDependency() == null || !dependencyNode.getDependency().isOptional());
+
+            DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, filter);
+
+            DependencyResult dependencyResult = repoSystem.resolveDependencies(repoSession, dependencyRequest);
+
+            if (!dependencyResult.getCollectExceptions().isEmpty()) {
+                throw new MojoFailureException("Failed resolving plugin dependencies", dependencyResult.getCollectExceptions().get(0));
+            }
+
+
+
+            for (ArtifactResult result : dependencyResult.getArtifactResults()) {
+                Artifact artifact = result.getArtifact();
+                containerArtifacts.add(artifact);
+            }
+
+            return containerArtifacts;
+        } catch (DependencyResolutionException e) {
+            throw new MojoFailureException("Failed resolving plugin dependencies", e);
         }
     }
 
@@ -279,8 +333,8 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     }
 
 
-    protected void writePluginsXml(File xmlFile) throws MojoFailureException, MojoExecutionException {
-        Document pluginXmlDocument = createPluginXmlDocument(true);
+    protected void writePluginsXml(File xmlFile, LocalRepositoryManager manager, Document pluginXmlDocument) throws MojoFailureException, MojoExecutionException {
+
 
 
         try {
@@ -290,6 +344,29 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
             transformer.transform(new DOMSource(pluginXmlDocument), new StreamResult(xmlFile));
         } catch (TransformerException e) {
             throw new MojoFailureException(e.getMessage(), e);
+        }
+    }
+
+    private void addBootstrapClasspath(Document pluginXmlDocument, LocalRepositoryManager manager) throws MojoFailureException, MojoExecutionException {
+        ArrayList<org.apache.maven.model.Dependency> deps = new ArrayList<>();
+        if(containerDependencies != null) {
+            deps.addAll(containerDependencies);
+        }
+        org.apache.maven.model.Dependency reststopCore = new org.apache.maven.model.Dependency();
+        reststopCore.setGroupId(mavenProject.getGroupId());
+        reststopCore.setArtifactId("reststop-core");
+        reststopCore.setVersion(pluginVersion);
+
+        deps.add(reststopCore);
+        List<Artifact> containerArtifacts = resolveContainerArtifacts(deps);
+        for (Artifact containerArtifact : containerArtifacts) {
+            copyArtifactToRepository(containerArtifact, manager);
+            Element common = pluginXmlDocument.createElement("common");
+            common.setAttribute("groupId", containerArtifact.getGroupId());
+            common.setAttribute("artifactId", containerArtifact.getArtifactId());
+            common.setAttribute("version", containerArtifact.getVersion());
+            pluginXmlDocument.getDocumentElement().appendChild(common);
+
         }
     }
 
@@ -422,20 +499,23 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         }
     }
 
-    protected void createJettyServicesFile(File distDirectory) throws MojoFailureException, MojoExecutionException {
+    protected void createServicesFile(File dir, String template, Map<String, String> vars) throws MojoFailureException, MojoExecutionException {
         try {
-            String serviceFile = IOUtils.toString(getClass().getResourceAsStream("template-service-jetty.sh"), "utf-8");
-            serviceFile = serviceFile.replaceAll("RESTSTOPINSTDIR", installDir);
-            serviceFile = serviceFile.replaceAll("RESTSTOPNAME", name); // use default
+            String serviceFile = IOUtils.toString(getClass().getResourceAsStream(template), "utf-8");
+            for (String name : vars.keySet()) {
+                serviceFile = serviceFile.replace("@" + name, vars.get(name));
+            }
 
-            File initDDir = new File(distDirectory, "etc/init.d");
-            initDDir.mkdirs();
+            dir.getParentFile().mkdirs();
 
-            Files.write(new File(initDDir, name).toPath(), singleton(serviceFile), Charset.forName("utf-8"));
+            Files.write(dir.toPath(), singleton(serviceFile), Charset.forName("utf-8"));
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
     }
+
+
+
 
 
     protected void copyPlugins(List<Plugin> plugins, LocalRepositoryManager manager) throws MojoFailureException, MojoExecutionException {
@@ -500,9 +580,13 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
     private void copyArtifactToRepository(Artifact artifact, LocalRepositoryManager remanagerository) throws MojoExecutionException {
         String pathForLocalArtifact = remanagerository.getPathForLocalArtifact(artifact);
-
-        Path from = artifact.getFile().toPath();
         Path to = new File(remanagerository.getRepository().getBasedir(), pathForLocalArtifact).toPath();
+
+        copyArtifactToPath(artifact, to);
+    }
+
+    private void copyArtifactToPath(Artifact artifact, Path to) throws MojoExecutionException {
+        Path from = artifact.getFile().toPath();
         try {
             to.toFile().getParentFile().mkdirs();
             Files.copy(from, to, StandardCopyOption.REPLACE_EXISTING);
@@ -517,10 +601,15 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         if (new File(mavenProject.getBasedir(), "target/classes/META-INF/services/ReststopPlugin").exists()) {
             plugins.add(new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion()));
         }
-        if (distributionPlugins != null) {
-            plugins.addAll(distributionPlugins);
+        if("bootstrap".equals(container)) {
+            plugins.addAll(Stream.of(baseBootstrapPlugins, bootstrapPlugins)
+                    .filter(Objects::nonNull)
+                    .flatMap(List::stream).collect(Collectors.toList()));
         }
-        return plugins;
+
+        return Stream.of(plugins, baseDistributionPlugins, distributionPlugins)
+                .filter(Objects::nonNull)
+                .flatMap(List::stream).collect(Collectors.toList());
     }
 
     private class DeleteDirectory extends SimpleFileVisitor<Path> {

@@ -20,7 +20,6 @@ import org.apache.maven.model.Exclusion;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
@@ -37,23 +36,16 @@ import org.eclipse.aether.resolution.*;
 import org.eclipse.aether.util.artifact.JavaScopes;
 import org.eclipse.aether.util.filter.DependencyFilterUtils;
 import org.eclipse.jetty.maven.plugin.JettyWebAppContext;
-import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.kantega.reststop.classloaderutils.CircularDependencyException;
 import org.kantega.reststop.classloaderutils.PluginInfo;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
-import java.net.ServerSocket;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.*;
@@ -61,7 +53,6 @@ import java.util.jar.JarFile;
 import java.util.zip.ZipEntry;
 
 import static java.util.Arrays.asList;
-import static java.util.Arrays.deepEquals;
 
 /**
  *
@@ -80,6 +71,9 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
     @Parameter (defaultValue = "org.kantega.reststop:reststop-webapp:war:${plugin.version}")
     protected String warCoords;
+
+    @Parameter (defaultValue = "org.kantega.reststop:reststop-bootstrap:jar:${plugin.version}")
+    protected String bootstrapCoords;
 
     @Parameter(defaultValue = "${project.build.directory}/${project.build.finalName}.${project.packaging}")
     private File pluginJar;

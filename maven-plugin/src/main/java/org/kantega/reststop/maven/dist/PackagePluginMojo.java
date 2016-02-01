@@ -24,8 +24,6 @@ import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.project.MavenProjectHelper;
-import org.apache.tools.ant.Project;
-import org.apache.tools.ant.taskdefs.Zip;
 import org.eclipse.aether.repository.LocalRepository;
 import org.eclipse.aether.repository.LocalRepositoryManager;
 
@@ -52,7 +50,7 @@ public class PackagePluginMojo extends AbstractDistMojo {
 
         copyPlugins(getPlugins(), manager);
 
-        writePluginsXml(new File(packageDirectory, "plugins.xml"));
+        writePluginsXml(new File(packageDirectory, "plugins.xml"), manager, createPluginXmlDocument(true));
 
     }
 

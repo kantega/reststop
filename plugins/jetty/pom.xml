@@ -20,40 +20,23 @@
 
     <parent>
         <groupId>org.kantega.reststop</groupId>
-        <artifactId>reststop-parent</artifactId>
+        <artifactId>reststop-plugins</artifactId>
         <version>2.3-SNAPSHOT</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>reststop-core</artifactId>
+    <artifactId>reststop-jetty-plugin</artifactId>
+
 
     <dependencies>
         <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>reststop-api</artifactId>
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>${project.groupId}</groupId>
-            <artifactId>reststop-classloader-utils</artifactId>
-            <scope>compile</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.kantega.jexmec</groupId>
-            <artifactId>jexmec-manager</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.kantega.jexmec</groupId>
-            <artifactId>jexmec-ctor-pl</artifactId>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <version>${jetty.version}</version>
         </dependency>
         <dependency>
             <groupId>org.kantega.reststop</groupId>
-            <artifactId>reststop-bootstrap</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
+            <artifactId>reststop-servlet</artifactId>
         </dependency>
-
     </dependencies>
 </project>
