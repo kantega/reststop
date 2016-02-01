@@ -15,25 +15,37 @@
   ~ limitations under the License.
   -->
 
-<!DOCTYPE Configure PUBLIC "-" "http://www.eclipse.org/jetty/configure.dtd">
-<Configure class="org.eclipse.jetty.webapp.WebAppContext">
-    <Set name="contextPath">CONTEXTPATH</Set>
-    <Set name="war"><SystemProperty name="jetty.home" default="." />/RESTSTOPWAR</Set>
-    <Set name="throwUnavailableOnStartupException">true</Set>
-    <Call name="setInitParameter">
-        <Arg>plugins.xml</Arg>
-        <Arg><SystemProperty name="jetty.home" default="." />/../plugins.xml</Arg>
-    </Call>
-    <Call name="setInitParameter">
-        <Arg>applicationName</Arg>
-        <Arg>WEBAPP</Arg>
-    </Call>
-    <Call name="setInitParameter">
-        <Arg>repositoryPath</Arg>
-        <Arg><SystemProperty name="jetty.home" default="." />/../repository</Arg>
-    </Call>
-    <Call name="setInitParameter">
-        <Arg>pluginConfigurationDirectory</Arg>
-        <Arg><SystemProperty name="jetty.home" default="." />/../conf</Arg>
-    </Call>
+<!DOCTYPE Configure PUBLIC "-//Jetty//Configure//EN" "http://www.eclipse.org/jetty/configure_9_3.dtd">
+<Configure class="org.eclipse.jetty.server.Server">
+    <Ref refid="Contexts">
+        <Call name="addHandler">
+            <Arg>
+                <New class="org.eclipse.jetty.webapp.WebAppContext">
+                    <Set name="contextPath">CONTEXTPATH</Set>
+                    <Set name="war"><SystemProperty name="jetty.home" default="."/>/RESTSTOPWAR
+                    </Set>
+                    <Set name="throwUnavailableOnStartupException">true</Set>
+                    <Call name="setInitParameter">
+                        <Arg>plugins.xml</Arg>
+                        <Arg><SystemProperty name="jetty.home" default="."/>/../plugins.xml
+                        </Arg>
+                    </Call>
+                    <Call name="setInitParameter">
+                        <Arg>applicationName</Arg>
+                        <Arg>WEBAPP</Arg>
+                    </Call>
+                    <Call name="setInitParameter">
+                        <Arg>repositoryPath</Arg>
+                        <Arg><SystemProperty name="jetty.home" default="."/>/../repository
+                        </Arg>
+                    </Call>
+                    <Call name="setInitParameter">
+                        <Arg>pluginConfigurationDirectory</Arg>
+                        <Arg><SystemProperty name="jetty.home" default="."/>/../conf
+                        </Arg>
+                    </Call>
+                </New>
+            </Arg>
+        </Call>
+    </Ref>
 </Configure>
