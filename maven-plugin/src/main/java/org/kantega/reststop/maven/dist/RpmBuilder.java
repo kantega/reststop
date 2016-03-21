@@ -153,6 +153,7 @@ public class RpmBuilder extends AbstractDistMojo {
 
             pw.println("Requires(pre): /usr/sbin/useradd, /usr/bin/getent");
             pw.println("%pre");
+            pw.println("/sbin/chkconfig --add %{name} 2> /dev/null || :");
             addAppuser(pw);
 
             pw.println("%preun");
