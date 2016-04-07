@@ -155,6 +155,9 @@ public class RpmBuilder extends AbstractDistMojo {
             pw.println("%pre");
             addAppuser(pw);
 
+            pw.println("%post");
+            pw.println("/sbin/chkconfig --add %{name} 2> /dev/null || :");
+
             pw.println("%preun");
 
             pw.println("if [ $1 == 0 ]; then");
