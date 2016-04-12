@@ -56,6 +56,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -63,6 +64,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static java.util.Arrays.asList;
 import static java.util.Collections.singleton;
 
 /**
@@ -137,11 +139,10 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     @Parameter
     private List<org.apache.maven.model.Dependency> containerDependencies;
 
-    @Parameter()
+    @Parameter
     protected FilePerm defaultPermissions;
 
-
-    private static TreeSet<String> supportedContainers = new TreeSet<>(Arrays.asList("jetty", "tomcat", "bootstrap"));
+    private static TreeSet<String> supportedContainers = new TreeSet<>(asList("jetty", "tomcat", "bootstrap"));
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -265,8 +266,6 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         }
 
         try {
-
-
             CollectRequest collectRequest = new CollectRequest(containerDeps, null, remoteRepos);
 
             final DependencyFilter filter = DependencyFilterUtils.andFilter(
@@ -498,24 +497,24 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
             Properties props = new Properties();
             try {
                 props.load(getClass().getClassLoader().getResourceAsStream("META-INF/maven/org.eclipse.jetty/jetty-webapp/pom.properties"));
-                String version = props.getProperty("version");
-                return version;
+                return props.getProperty("version");
             } catch (IOException e) {
                 throw new MojoExecutionException("Can't load pom.properties", e);
             }
         }
     }
 
-    protected void createServicesFile(File dir, String template, Map<String, String> vars) throws MojoFailureException, MojoExecutionException {
-        try {
-            String serviceFile = IOUtils.toString(getClass().getResourceAsStream(template), "utf-8");
+    protected void createServicesFile(File serviceFile, String template, Map<String, String> vars) throws MojoFailureException, MojoExecutionException {
+        try (InputStream is = getClass().getResourceAsStream(template)){
+            String serviceFileContent = IOUtils.toString(is, "utf-8");
             for (String name : vars.keySet()) {
-                serviceFile = serviceFile.replace("@" + name, vars.get(name));
+                serviceFileContent = serviceFileContent.replace("@" + name, vars.get(name));
             }
 
-            dir.getParentFile().mkdirs();
+            serviceFile.getParentFile().mkdirs();
 
-            Files.write(dir.toPath(), singleton(serviceFile), Charset.forName("utf-8"));
+            Path serviceFilepath = serviceFile.toPath();
+            Files.write(serviceFilepath, singleton(serviceFileContent), Charset.forName("utf-8"));
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }

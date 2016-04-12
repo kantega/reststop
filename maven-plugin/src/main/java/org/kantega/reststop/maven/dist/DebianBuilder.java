@@ -47,7 +47,7 @@ public class DebianBuilder extends AbstractDistMojo {
     @Parameter(defaultValue ="java-common")
     private String depends;
 
-    @Component()
+    @Component
     private BuildPluginManager pluginManager;
 
     @Override
@@ -93,7 +93,10 @@ public class DebianBuilder extends AbstractDistMojo {
 
             pw.println("#!/bin/sh");
             pw.println("/usr/sbin/update-rc.d " + name + " defaults 90 10");
-
+            pw.println("adduser --system --no-create-home --group " + name);
+            pw.print(String.format("if id -u %s > /dev/null 2>&1; then\n" +
+                    "    chown %s:%s %s\n" +
+                    "fi", name, name, name, installDir + "/" + name));
         } catch (FileNotFoundException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
@@ -105,7 +108,7 @@ public class DebianBuilder extends AbstractDistMojo {
             pw.println("#!/bin/sh");
             pw.println("/usr/sbin/service " + name + " stop");
             pw.println("/usr/sbin/update-rc.d -f " + name + " remove");
-
+            // It is not recomended to remove users on uninstall: http://unix.stackexchange.com/questions/47880/how-debian-package-should-create-user-accounts#answer-147123
         } catch (FileNotFoundException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
@@ -115,28 +118,32 @@ public class DebianBuilder extends AbstractDistMojo {
     private void executeJDeb() throws MojoExecutionException {
 
         executeMojo(
-                plugin("org.vafer", "jdeb", "1.0.1"),
+                plugin("org.vafer", "jdeb", "1.5"),
                 goal("jdeb"),
                 configuration(
                         element(name("controlDir"), "${project.build.directory}/reststop/deb/control"),
                         element(name("dataSet"),
                                 element(name("data"),
-                                        element(name("src"), "${project.build.directory}/reststop/distRoot"),
+                                        element(name("src"), "${project.build.directory}/reststop/distRoot/${project.build.finalName}"),
                                         element(name("type"), "directory"),
                                         element(name("includes"), ""),
-                                        element(name("excludes"), "**/.svn,**/*.sh,etc/init.d/"+name)
+                                        element(name("excludes"), "**/.svn,**/*.sh,etc/init.d/" + name),
+                                        element(name("mapper"),
+                                                element(name("type"), "perm"),
+                                                element(name("filemode"), "755"),
+                                                element(name("user"), name),
+                                                element(name("group"), name))
                                 ),
                                 element(name("data"),
-                                        element(name("src"), "${project.build.directory}/reststop/distRoot"),
+                                        element(name("src"), "${project.build.directory}/reststop/distRoot/${project.build.finalName}"),
                                         element(name("type"), "directory"),
-                                        element(name("includes"), "**/*.sh,etc/init.d/"+name ),
+                                        element(name("includes"), "**/*.sh,etc/init.d/" + name),
                                         element(name("excludes"), "**/.svn"),
                                         element(name("mapper"),
                                                 element(name("type"), "perm"),
                                                 element(name("filemode"), "755"))
                                 )
                         )
-
                 ),
                 executionEnvironment(mavenProject, mavenSession, pluginManager));
     }
