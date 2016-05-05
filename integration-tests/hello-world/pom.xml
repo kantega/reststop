@@ -23,49 +23,51 @@
         <version>2.5-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-    <artifactId>reststop-hello-world</artifactId>
 
+    <groupId>org.kantega.reststop.test</groupId>
+    <artifactId>reststop-hello-world</artifactId>
 
     <dependencies>
         <dependency>
-            <groupId>${project.groupId}</groupId>
+            <groupId>${project.parent.groupId}</groupId>
             <artifactId>reststop-api</artifactId>
             <scope>provided</scope>
+            <version>${project.parent.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>org.kantega.reststop</groupId>
+            <groupId>${project.parent.groupId}</groupId>
             <artifactId>reststop-jaxrs-api</artifactId>
             <scope>provided</scope>
-            <version>${project.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>org.kantega.reststop</groupId>
+            <groupId>${project.parent.groupId}</groupId>
             <artifactId>reststop-cxf-plugin</artifactId>
             <scope>provided</scope>
-            <version>${project.version}</version>
+            <version>${project.parent.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>org.kantega.reststop</groupId>
+            <groupId>${project.parent.groupId}</groupId>
             <artifactId>reststop-jaxws-api</artifactId>
-            <version>${project.version}</version>
+            <version>${project.parent.version}</version>
             <scope>provided</scope>
         </dependency>
 
 
         <dependency>
-            <groupId>org.kantega.reststop</groupId>
+            <groupId>${project.parent.groupId}</groupId>
             <artifactId>reststop-wicket-plugin</artifactId>
-            <version>${project.version}</version>
+            <version>${project.parent.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <dependency>
-            <groupId>org.kantega.reststop</groupId>
+            <groupId>${project.parent.groupId}</groupId>
             <artifactId>reststop-springmvc-plugin</artifactId>
-            <version>${project.version}</version>
+            <version>${project.parent.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -93,9 +95,9 @@
         </dependency>
 
         <dependency>
-            <groupId>org.kantega.reststop</groupId>
+            <groupId>${project.parent.groupId}</groupId>
             <artifactId>reststop-annotation-processor</artifactId>
-            <version>${project.version}</version>
+            <version>${project.parent.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -104,57 +106,57 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.kantega.reststop</groupId>
+                <groupId>${project.parent.groupId}</groupId>
                 <artifactId>reststop-maven-plugin</artifactId>
-                <version>${project.version}</version>
+                <version>${project.parent.version}</version>
                 <configuration>
                     <path>dev</path>
                     <applicationName>helloworld</applicationName>
                     <plugins>
                         <plugin>
-                            <groupId>org.kantega.reststop</groupId>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-springmvc-plugin</artifactId>
-                            <version>${project.version}</version>
+                            <version>${project.parent.version}</version>
                         </plugin>
                         <plugin>
-                            <groupId>org.kantega.reststop</groupId>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-metrics-plugin</artifactId>
-                            <version>${project.version}</version>
+                            <version>${project.parent.version}</version>
                         </plugin>
                         <plugin>
-                            <groupId>org.kantega.reststop</groupId>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-metrics-servlets-plugin</artifactId>
-                            <version>${project.version}</version>
+                            <version>${project.parent.version}</version>
                         </plugin>
                         <plugin>
-                            <groupId>org.kantega.reststop</groupId>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-cxf-metrics-plugin</artifactId>
-                            <version>${project.version}</version>
+                            <version>${project.parent.version}</version>
                         </plugin>
                         <plugin>
-                            <groupId>org.kantega.reststop</groupId>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-jaxrs-metrics-plugin</artifactId>
-                            <version>${project.version}</version>
+                            <version>${project.parent.version}</version>
                         </plugin>
                         <plugin>
-                            <groupId>org.kantega.reststop</groupId>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-jaxrs-api</artifactId>
-                            <version>${project.version}</version>
+                            <version>${project.parent.version}</version>
                         </plugin>
                         <plugin>
-                            <groupId>org.kantega.reststop</groupId>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-jaxws-api</artifactId>
-                            <version>${project.version}</version>
+                            <version>${project.parent.version}</version>
                         </plugin>
                         <plugin>
-                            <groupId>${project.groupId}</groupId>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-statistics-plugin</artifactId>
-                            <version>${project.version}</version>
+                            <version>${project.parent.version}</version>
                         </plugin>
                         <plugin>
-                            <groupId>${project.groupId}</groupId>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-security-plugin</artifactId>
-                            <version>${project.version}</version>
+                            <version>${project.parent.version}</version>
                         </plugin>
                         <plugin>
                             <groupId>javax.validation</groupId>
@@ -162,9 +164,9 @@
                             <version>1.1.0.Final</version>
                         </plugin>
                         <plugin>
-                            <groupId>${project.groupId}</groupId>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-jersey-plugin</artifactId>
-                            <version>${project.version}</version>
+                            <version>${project.parent.version}</version>
                             <dependencies>
                                 <dependency>
                                     <groupId>org.glassfish.jersey.ext</groupId>
@@ -181,37 +183,37 @@
                         </plugin>
 
                         <plugin>
-                            <groupId>${project.groupId}</groupId>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-jersey-deploy-plugin</artifactId>
-                            <version>${project.version}</version>
+                            <version>${project.parent.version}</version>
                         </plugin>
                         <plugin>
-                            <groupId>${project.groupId}</groupId>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-cxf-logging-plugin</artifactId>
-                            <version>${project.version}</version>
+                            <version>${project.parent.version}</version>
                         </plugin>
 
                         <plugin>
-                            <groupId>${project.groupId}</groupId>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-cxf-plugin</artifactId>
-                            <version>${project.version}</version>
+                            <version>${project.parent.version}</version>
                         </plugin>
 
                         <plugin>
-                            <groupId>${project.groupId}</groupId>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-cxf-deploy-plugin</artifactId>
-                            <version>${project.version}</version>
+                            <version>${project.parent.version}</version>
                         </plugin>
 
                         <plugin>
-                            <groupId>${project.groupId}</groupId>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-wicket-plugin</artifactId>
-                            <version>${project.version}</version>
+                            <version>${project.parent.version}</version>
                         </plugin>
                         <plugin>
-                            <groupId>${project.groupId}</groupId>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-wsdl-test-plugin</artifactId>
-                            <version>${project.version}</version>
+                            <version>${project.parent.version}</version>
                         </plugin>
                     </plugins>
                 </configuration>
@@ -274,12 +276,12 @@
                             </containerDependencies>
                             <bootstrapPlugins>
                                 <plugin>
-                                    <groupId>${project.groupId}</groupId>
+                                    <groupId>${project.parent.groupId}</groupId>
                                     <artifactId>reststop-jetty-plugin</artifactId>
-                                    <version>${project.version}</version>
+                                    <version>${project.parent.version}</version>
                                 </plugin>
                             </bootstrapPlugins>
-                            <container>jetty</container>
+                            <container>bootstrap</container>
                             <resources>
                                 <resource>
                                     <directory>${basedir}/src/install/</directory>
