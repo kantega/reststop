@@ -41,6 +41,10 @@ public class Main {
 
         Settings settings = parseCli(args);
 
+        if(WindowsServiceInstaller.shouldInstallOrUninstall(args)) {
+            WindowsServiceInstaller.installOrUninstallAndExit(args, settings);
+        }
+
         Document pluginsXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(settings.pluginsXmlFile);
 
         List<URL> urls = getCommonURLs(pluginsXml, settings.repositoryDirectory);
@@ -79,6 +83,16 @@ public class Main {
 
     }
 
+    /**
+     * Required by {@link WindowsServiceInstaller}.
+     *
+     * @param args not used
+     */
+    @SuppressWarnings("unused")
+    public static void shutdown(String args[]) {
+        Runtime.getRuntime().exit(0);
+    }
+
     private static Settings parseCli(String[] args) {
         String configFilePath = null;
         String repositoryPath = "repository";
@@ -104,6 +118,8 @@ public class Main {
                 }
                 pluginsXmlPath = args[i+1];
                 i++;
+            } else if(WindowsServiceInstaller.isOption(arg)) {
+                i = i + WindowsServiceInstaller.getOptionParameterCount(arg);
             } else if(!arg.startsWith("--")) {
                 usage("'" +arg + "' is not an option");
             } else {
@@ -140,6 +156,7 @@ public class Main {
         System.out.println("Options:");
         System.out.println("\t--repository <directory>   (Default: 'repository/' in working directory)");
         System.out.println("\t--plugins <pluginsXmlFile> (Default: 'plugins.xml' in working directory)");
+        System.out.println(WindowsServiceInstaller.getOptions());
         System.exit(0);
     }
 
@@ -184,6 +201,13 @@ public class Main {
             this.globalConfigurationFile = globalConfigurationFile;
             this.pluginsXmlFile = pluginsXmlFile;
             this.repositoryDirectory = repositoryDirectory;
+        }
+
+        public List<String> getAsList() {
+            return Arrays.asList(
+                    "--config " + globalConfigurationFile.getAbsolutePath(),
+                    "--repository " + repositoryDirectory.getAbsolutePath(),
+                    "--plugins " + pluginsXmlFile.getAbsolutePath());
         }
     }
 }
