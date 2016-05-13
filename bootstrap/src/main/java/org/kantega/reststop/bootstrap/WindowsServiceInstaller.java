@@ -32,6 +32,7 @@ public class WindowsServiceInstaller {
     public static final String INSTALL_PARAM = "--installWinSrv";
     public static final String UNINSTALL_PARAM = "--unInstallWinSrv";
     public static final String JVM_DLL_PARAM = "--jvmDllPath";
+    public static final String SPACE = " ";
 
     static boolean shouldInstallOrUninstall(String[] args) {
         Settings installSettings = parseCli(args);
@@ -57,6 +58,9 @@ public class WindowsServiceInstaller {
         try {
 
             File warLocation = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().getPath());
+            if(warLocation.getAbsolutePath().contains("%20")) {
+                exitWithUsage(operation + " can't be done from a path with space(es)");
+            }
 
             File binLocation = new File(warLocation.getParentFile(), "bin");
             binLocation.mkdirs();
@@ -121,7 +125,7 @@ public class WindowsServiceInstaller {
 
             StringBuilder startParams = new StringBuilder();
             for (String setting : settings.getAsList()) {
-                String[] keyAndValue = setting.split(" ");
+                String[] keyAndValue = setting.split(SPACE);
                 startParams.append(keyAndValue[0]).append(";").append(keyAndValue[1]).append(";");
             }
 
@@ -170,7 +174,7 @@ public class WindowsServiceInstaller {
             if (INSTALL_PARAM.equals(args[i])) {
                 installWinSrv = true;
                 if (i == args.length - 1) {
-                    exitWithUsage("--installWinSrv option requires a service name");
+                    exitWithUsage(INSTALL_PARAM + " option requires a service name");
                 }
                 serviceName = args[i + 1];
                 i++;
@@ -189,12 +193,16 @@ public class WindowsServiceInstaller {
             for (int i = 0; i < args.length; i++) {
                 if (JVM_DLL_PARAM.equals(args[i])) {
                     if (i == args.length - 1) {
-                        exitWithUsage("--jvmDllPath option requires a path");
+                        exitWithUsage(JVM_DLL_PARAM + " option requires a path");
                     }
                     javaHome = args[i + 1];
+                    if(javaHome.contains(SPACE)) {
+                        exitWithUsage(JVM_DLL_PARAM + " option requires a path without space(es). " +
+                                "Use 'dir /X' or 'for %I in (.) do echo %~sI' to find path with short name notation.");
+                    }
                     File jvmDll = new File(javaHome);
                     if (!jvmDll.exists()) {
-                        exitWithUsage("--jvmDllPath option requires a path to an existing jvm.dll file");
+                        exitWithUsage(JVM_DLL_PARAM + " option requires a path to an existing jvm.dll file");
                     }
                 }
             }
