@@ -35,6 +35,10 @@ import java.util.*;
  */
 public class Main {
 
+    public static final String CONFIG_PARAM = "--config";
+    public static final String REPOSITORY_PARAM = "--repository";
+    public static final String PLUGINS_PARAM = "--plugins";
+
     private static List<Bootstrap> bootstraps = new ArrayList<>();
 
     public static void main(String[] args) throws ParserConfigurationException, IOException, SAXException {
@@ -100,26 +104,26 @@ public class Main {
 
         for (int i = 0; i < args.length; i++) {
             String arg = args[i].trim();
-            if("--config".equals(arg)) {
+            if(CONFIG_PARAM.equals(arg)) {
                 if(i == args.length-1) {
-                    usage("--config option requires a path");
+                    usage(CONFIG_PARAM + " option requires a path");
                 }
                 configFilePath = args[i+1];
                 i++;
-            } else if("--repository".equals(arg)) {
+            } else if(REPOSITORY_PARAM.equals(arg)) {
                 if(i == args.length-1) {
-                    usage("--repository option requires a path");
+                    usage(REPOSITORY_PARAM + " option requires a path");
                 }
                 repositoryPath = args[i+1];
                 i++;
-            } else if("--plugins".equals(arg)) {
+            } else if(PLUGINS_PARAM.equals(arg)) {
                 if(i == args.length-1) {
-                    usage("--plugins option requires a path");
+                    usage(PLUGINS_PARAM + " option requires a path");
                 }
                 pluginsXmlPath = args[i+1];
                 i++;
             } else if(WindowsServiceInstaller.isOption(arg)) {
-                i = i + WindowsServiceInstaller.getOptionParameterCount(arg);
+                i++;
             } else if(!arg.startsWith("--")) {
                 usage("'" +arg + "' is not an option");
             } else {
@@ -128,7 +132,7 @@ public class Main {
         }
 
         if(configFilePath == null) {
-            usage("--config option is required");
+            usage(CONFIG_PARAM + " option is required");
         }
 
         File configFile = new File(configFilePath);
@@ -136,13 +140,13 @@ public class Main {
         File pluginsXmlFile = new File(pluginsXmlPath);
 
         if(!configFile.exists()) {
-            usage("--config file does not exist: '" + configFilePath +"'");
+            usage(CONFIG_PARAM + " file does not exist: '" + configFilePath +"'");
         }
         if(!repositoryDirectory.exists() || !repositoryDirectory.isDirectory()) {
-            usage("--repository directory does not exist: '" + repositoryPath +"'");
+            usage(REPOSITORY_PARAM + " directory does not exist: '" + repositoryPath +"'");
         }
         if(! pluginsXmlFile.exists()) {
-            usage("--plugins xml file does not exist: '" + pluginsXmlPath +"'");
+            usage(PLUGINS_PARAM + " xml file does not exist: '" + pluginsXmlPath +"'");
         }
 
         return new Settings(configFile, pluginsXmlFile, repositoryDirectory);
@@ -151,11 +155,11 @@ public class Main {
     private static void usage(String message) {
         System.out.println("ERROR: " + message);
         System.out.println();
-        System.out.println("Usage: java -jar bootstrap.jar --config <configFile> [options]");
+        System.out.println("Usage: java -jar <bootstrap jar> " + CONFIG_PARAM + " <configFile> [options]");
         System.out.println();
         System.out.println("Options:");
-        System.out.println("\t--repository <directory>   (Default: 'repository/' in working directory)");
-        System.out.println("\t--plugins <pluginsXmlFile> (Default: 'plugins.xml' in working directory)");
+        System.out.println("\t" + REPOSITORY_PARAM + " <directory>   (Default: 'repository/' in working directory)");
+        System.out.println("\t" + PLUGINS_PARAM + " <pluginsXmlFile> (Default: 'plugins.xml' in working directory)");
         System.out.println(WindowsServiceInstaller.getOptions());
         System.exit(0);
     }
@@ -205,9 +209,9 @@ public class Main {
 
         public List<String> getAsList() {
             return Arrays.asList(
-                    "--config " + globalConfigurationFile.getAbsolutePath(),
-                    "--repository " + repositoryDirectory.getAbsolutePath(),
-                    "--plugins " + pluginsXmlFile.getAbsolutePath());
+                    CONFIG_PARAM + " " + globalConfigurationFile.getAbsolutePath(),
+                    REPOSITORY_PARAM + " " + repositoryDirectory.getAbsolutePath(),
+                    PLUGINS_PARAM + " " + pluginsXmlFile.getAbsolutePath());
         }
     }
 }

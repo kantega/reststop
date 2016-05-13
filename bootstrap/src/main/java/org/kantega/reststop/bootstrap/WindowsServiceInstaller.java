@@ -29,9 +29,13 @@ import java.util.List;
  */
 public class WindowsServiceInstaller {
 
+    public static final String INSTALL_PARAM = "--installWinSrv";
+    public static final String UNINSTALL_PARAM = "--unInstallWinSrv";
+    public static final String JVM_DLL_PARAM = "--jvmDllPath";
+
     static boolean shouldInstallOrUninstall(String[] args) {
         Settings installSettings = parseCli(args);
-        return isWindows() && !installSettings.isEmpty();
+        return isWindows() && !installSettings.serviceName.isEmpty();
     }
 
     static void installOrUninstallAndExit(String[] args, Main.Settings settings) {
@@ -43,7 +47,7 @@ public class WindowsServiceInstaller {
 
         Settings installSettings = parseCli(args);
 
-        if (installSettings.isEmpty()) {
+        if (installSettings.serviceName.isEmpty()) {
             System.out.println("Settings for installation as Windows service are missing!");
             System.exit(2);
         }
@@ -79,31 +83,13 @@ public class WindowsServiceInstaller {
 
     static String getOptions() {
         return isWindows() ?
-                "\t--installwinsrv ---serviceName <name> ---jvmDllPath <path to jvm.dll>\n" +
-                        "\t--uninstallwinsrv ---serviceName <name> " :
+                "\t" + INSTALL_PARAM + " <service name> " + JVM_DLL_PARAM + " <path to jvm.dll>\n" +
+                        "\t" + UNINSTALL_PARAM + " <service name> " :
                 "";
     }
 
     static boolean isOption(String arg) {
-        return isWindows() && "--installwinsrv".equals(arg) ||
-                "--uninstallwinsrv".equals(arg) ||
-                "---serviceName".equals(arg) ||
-                "---jvmDllPath".equals(arg);
-    }
-
-    static int getOptionParameterCount(String arg) {
-
-        if (!isWindows()) {
-            throw new IllegalStateException("'" + arg + "' is not an Windows service option");
-        } else if ("--installwinsrv".equals(arg) || "--uninstallwinsrv".equals(arg)) {
-            return 0;
-        } else if ("---serviceName".equals(arg) || "---jvmDllPath".equals(arg)) {
-            return 1;
-        }
-
-        exitWithUsage("'" + arg + "' is not an option");
-
-        throw new IllegalStateException("'" + arg + "' is not an option");
+        return isWindows() && INSTALL_PARAM.equals(arg) || UNINSTALL_PARAM.equals(arg) || JVM_DLL_PARAM.equals(arg);
     }
 
     private static File unpackProcrun(File location, String serviceName) throws IOException {
@@ -132,18 +118,23 @@ public class WindowsServiceInstaller {
         installCmd.add((installSettings.install ? "//IS//" : "//DS//") + installSettings.serviceName);
 
         if (installSettings.install) {
-            installCmd.add("--StartMode=jvm");
-            installCmd.add("--Jvm=" + installSettings.jvmDllPath);
-            installCmd.add("--Classpath=" + warLocation.getAbsolutePath());
-            installCmd.add("--StartPath=" + warLocation.getParentFile().getAbsolutePath());
 
-            installCmd.add("--StartClass=" + Main.class.getCanonicalName());
-            installCmd.add("--StartMethod=main");
             StringBuilder startParams = new StringBuilder();
             for (String setting : settings.getAsList()) {
                 String[] keyAndValue = setting.split(" ");
                 startParams.append(keyAndValue[0]).append(";").append(keyAndValue[1]).append(";");
             }
+
+            File stdoutLog = new File(logsLocation, installSettings.serviceName + "-stdout.log");
+            File stderrLog = new File(logsLocation, installSettings.serviceName + "-stderr.log");
+
+            installCmd.add("--StartMode=jvm");
+            installCmd.add("--Jvm=" + (installSettings.jvmDllPath.isEmpty() ? "auto" : installSettings.jvmDllPath));
+            installCmd.add("--Classpath=" + warLocation.getAbsolutePath());
+            installCmd.add("--StartPath=" + warLocation.getParentFile().getAbsolutePath());
+
+            installCmd.add("--StartClass=" + Main.class.getCanonicalName());
+            installCmd.add("--StartMethod=main");
             installCmd.add("--StartParams=" + startParams);
 
             installCmd.add("--StopMode=jvm");
@@ -155,9 +146,7 @@ public class WindowsServiceInstaller {
             installCmd.add("--LogPath=" + logsLocation.getAbsolutePath());
             installCmd.add("--LogLevel=Debug");
             installCmd.add("--LogPrefix=" + installSettings.serviceName);
-            File stdoutLog = new File(logsLocation, installSettings.serviceName + "-stdout.log");
             installCmd.add("--StdOutput=" + stdoutLog.getAbsolutePath());
-            File stderrLog = new File(logsLocation, installSettings.serviceName + "-stderr.log");
             installCmd.add("--StdError=" + stderrLog.getAbsolutePath());
         }
 
@@ -172,57 +161,46 @@ public class WindowsServiceInstaller {
 
     private static Settings parseCli(String[] args) {
 
-        boolean installwinsrv = false;
-        boolean uninstallwinsrv = false;
-
-        for (int i = 0; i < args.length; i++) {
-            if ("--installwinsrv".equals(args[i])) {
-                installwinsrv = true;
-                if (i == args.length - 1) {
-                    exitWithUsage("--installwinsrv option requires more options:");
-                }
-            }
-            if ("--uninstallwinsrv".equals(args[i])) {
-                uninstallwinsrv = true;
-                if (i == args.length - 1) {
-                    exitWithUsage("--uninstallwinsrv option requires more options:");
-                }
-            }
-        }
+        boolean installWinSrv = false;
 
         String serviceName = "";
         String javaHome = "";
 
-        if (installwinsrv || uninstallwinsrv) {
-
-            for (int i = 0; i < args.length; i++) {
-                if ("---serviceName".equals(args[i])) {
-                    if (i == args.length - 1) {
-                        exitWithUsage("---serviceName option requires a name");
-                    }
-                    serviceName = args[i + 1];
-                    i++;
+        for (int i = 0; i < args.length; i++) {
+            if (INSTALL_PARAM.equals(args[i])) {
+                installWinSrv = true;
+                if (i == args.length - 1) {
+                    exitWithUsage("--installWinSrv option requires a service name");
                 }
+                serviceName = args[i + 1];
+                i++;
+            }
+            if (UNINSTALL_PARAM.equals(args[i])) {
+                if (i == args.length - 1) {
+                    exitWithUsage(UNINSTALL_PARAM + " option requires a service name");
+                }
+                serviceName = args[i + 1];
+                i++;
             }
         }
 
-        if (installwinsrv) {
+        if (installWinSrv) {
 
             for (int i = 0; i < args.length; i++) {
-                if ("---jvmDllPath".equals(args[i])) {
+                if (JVM_DLL_PARAM.equals(args[i])) {
                     if (i == args.length - 1) {
-                        exitWithUsage("---jvmDllPath option requires a path");
+                        exitWithUsage("--jvmDllPath option requires a path");
                     }
                     javaHome = args[i + 1];
+                    File jvmDll = new File(javaHome);
+                    if (!jvmDll.exists()) {
+                        exitWithUsage("--jvmDllPath option requires a path to an existing jvm.dll file");
+                    }
                 }
-            }
-            File jvmDll = new File(javaHome);
-            if (!jvmDll.exists()) {
-                exitWithUsage("---jvmDllPath option requires a path to an existing jvm.dll file");
             }
         }
 
-        return new Settings(installwinsrv, serviceName, javaHome);
+        return new Settings(installWinSrv, serviceName, javaHome);
     }
 
     private static boolean isWindows() {
@@ -239,11 +217,6 @@ public class WindowsServiceInstaller {
             this.install = install;
             this.serviceName = serviceName;
             this.jvmDllPath = jvmDllPath;
-        }
-
-        private boolean isEmpty() {
-            return install && (serviceName.isEmpty() || jvmDllPath.isEmpty()) ||
-                    !install && serviceName.isEmpty();
         }
     }
 }
