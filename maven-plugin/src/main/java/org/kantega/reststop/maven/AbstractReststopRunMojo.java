@@ -110,7 +110,7 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
 
             HandlerCollection handlers = new HandlerCollection(true);
 
-            handlers.addHandler(new ShutdownHandler(server, getLog()));
+            handlers.addHandler(new ShutdownHandler(context, server, getLog()));
             server.setHandler(handlers);
 
             server.start();
@@ -148,10 +148,12 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
     }
 
     private class ShutdownHandler extends AbstractHandler {
+        private final JettyWebAppContext context;
         private final Server server;
         private final Log log;
 
-        public ShutdownHandler(Server server, Log log) {
+        public ShutdownHandler(JettyWebAppContext context, Server server, Log log) {
+            this.context = context;
             this.server = server;
             this.log = log;
         }
@@ -166,6 +168,7 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
                         @Override
                         public void run() {
                             try {
+                                context.stop();
                                 server.stop();
                             } catch (Throwable e) {
                                 org.eclipse.jetty.util.log.Log.getLogger(getClass()).ignore(e);
