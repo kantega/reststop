@@ -29,10 +29,10 @@ import java.util.List;
  */
 public class WindowsServiceInstaller {
 
-    public static final String INSTALL_PARAM = "--installWinSrv";
-    public static final String UNINSTALL_PARAM = "--unInstallWinSrv";
-    public static final String JVM_DLL_PARAM = "--jvmDllPath";
-    public static final String SPACE = " ";
+    private static final String INSTALL_PARAM = "--installWinSrv";
+    private static final String UNINSTALL_PARAM = "--unInstallWinSrv";
+    private static final String SPACE = " ";
+    private static final String JAVA_HOME = "java.home";
 
     static boolean shouldInstallOrUninstall(String[] args) {
         Settings installSettings = parseCli(args);
@@ -58,7 +58,7 @@ public class WindowsServiceInstaller {
         try {
 
             File warLocation = new File(Main.class.getProtectionDomain().getCodeSource().getLocation().getPath());
-            if(warLocation.getAbsolutePath().contains("%20")) {
+            if (warLocation.getAbsolutePath().contains("%20")) {
                 exitWithUsage(operation + " can't be done from a path with space(es)");
             }
 
@@ -76,7 +76,10 @@ public class WindowsServiceInstaller {
             if (exitValue != 0) {
                 System.out.println(operation + " process returned " + exitValue + ", this is the expected exit value!");
             }
-            System.out.println("Finished " + operation + " of service '" + installSettings.serviceName + "'");
+            System.out.println("Finished " + operation + " of service '" + installSettings.serviceName + "'.");
+            if (installSettings.install) {
+                System.out.println("The service will use the JRE installed in " + System.getProperty(JAVA_HOME));
+            }
 
             System.exit(0);
 
@@ -87,13 +90,14 @@ public class WindowsServiceInstaller {
 
     static String getOptions() {
         return isWindows() ?
-                "\t" + INSTALL_PARAM + " <service name> " + JVM_DLL_PARAM + " <path to jvm.dll>\n" +
+                "\t" + INSTALL_PARAM + " <service name> (The service will use the JRE installed in " +
+                        System.getProperty(JAVA_HOME) + ")\n" +
                         "\t" + UNINSTALL_PARAM + " <service name> " :
                 "";
     }
 
     static boolean isOption(String arg) {
-        return isWindows() && INSTALL_PARAM.equals(arg) || UNINSTALL_PARAM.equals(arg) || JVM_DLL_PARAM.equals(arg);
+        return isWindows() && INSTALL_PARAM.equals(arg) || UNINSTALL_PARAM.equals(arg);
     }
 
     private static File unpackProcrun(File location, String serviceName) throws IOException {
@@ -133,7 +137,7 @@ public class WindowsServiceInstaller {
             File stderrLog = new File(logsLocation, installSettings.serviceName + "-stderr.log");
 
             installCmd.add("--StartMode=jvm");
-            installCmd.add("--Jvm=" + (installSettings.jvmDllPath.isEmpty() ? "auto" : installSettings.jvmDllPath));
+            installCmd.add("--Jvm=" + installSettings.jvmDllPath);
             installCmd.add("--Classpath=" + warLocation.getAbsolutePath());
             installCmd.add("--StartPath=" + warLocation.getParentFile().getAbsolutePath());
 
@@ -188,27 +192,25 @@ public class WindowsServiceInstaller {
             }
         }
 
+        String jvmDllPath = "";
         if (installWinSrv) {
 
-            for (int i = 0; i < args.length; i++) {
-                if (JVM_DLL_PARAM.equals(args[i])) {
-                    if (i == args.length - 1) {
-                        exitWithUsage(JVM_DLL_PARAM + " option requires a path");
-                    }
-                    javaHome = args[i + 1];
-                    if(javaHome.contains(SPACE)) {
-                        exitWithUsage(JVM_DLL_PARAM + " option requires a path without space(es). " +
-                                "Use 'dir /X' or 'for %I in (.) do echo %~sI' to find path with short name notation.");
-                    }
-                    File jvmDll = new File(javaHome);
-                    if (!jvmDll.exists()) {
-                        exitWithUsage(JVM_DLL_PARAM + " option requires a path to an existing jvm.dll file");
-                    }
-                }
+            javaHome = System.getProperty(JAVA_HOME, "");
+            if (javaHome.isEmpty()) {
+                exitWithUsage("Failed to find Java installation, '" + JAVA_HOME + "' system property is empty.");
+            }
+            if (javaHome.contains(SPACE)) {
+                exitWithUsage("Java must be installed in a path without space(es). " +
+                        "Use 'dir /X' or 'for %I in (.) do echo %~sI' to find path with short name notation.");
+            }
+            jvmDllPath = javaHome + "\\bin\\server\\jvm.dll";
+            File jvmDll = new File(jvmDllPath);
+            if (!jvmDll.exists()) {
+                exitWithUsage("Failed to find path to an existing jvm.dll file, it should be here: " + jvmDllPath);
             }
         }
 
-        return new Settings(installWinSrv, serviceName, javaHome);
+        return new Settings(installWinSrv, serviceName, jvmDllPath);
     }
 
     private static boolean isWindows() {
