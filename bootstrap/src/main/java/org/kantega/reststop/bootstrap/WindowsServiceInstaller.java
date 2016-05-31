@@ -13,7 +13,7 @@ import java.util.List;
 
 /**
  * Provides install/uninstall of bootstrap jar as a Windows service. Supports only 64-bit Windows.
- * <p>
+ *
  * During install (or uninstall) two directories are created, in the jar's location:
  * <ul>
  * <li>bin: Contains two executable files:
@@ -25,7 +25,6 @@ import java.util.List;
  * </li>
  * <li>logs: Contains log files for the Windows service.
  * </ul>
- * </p>
  */
 public class WindowsServiceInstaller {
 
