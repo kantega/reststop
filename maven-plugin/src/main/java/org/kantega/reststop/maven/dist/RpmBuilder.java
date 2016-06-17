@@ -247,18 +247,23 @@ public class RpmBuilder extends AbstractDistMojo {
     @Override
     protected void attachPackage(MavenProjectHelper mavenProjectHelper, MavenProject mavenProject) throws MojoFailureException {
         File rpms = new File(rpmDirectory(), "RPMS/noarch");
-        File[] rpmFiles = rpms.listFiles(new FileFilter() {
-            @Override
-            public boolean accept(File pathname) {
-                return pathname.getName().endsWith(".rpm");
-            }
+        File[] rpmFiles = rpms.listFiles(pathname -> {
+            return pathname.getName().endsWith(".rpm");
         });
 
         if(rpmFiles.length != 1) {
-            throw new MojoFailureException("Expected exactly one .rpm file in " + rpms +", found " + rpms.length());
+            throw new MojoFailureException("Expected exactly one .rpm file in " + rpms +", found " + rpmFiles.length);
         }
 
         mavenProjectHelper.attachArtifact(mavenProject, "rpm", rpmFiles[0]);
+
+        File[] pluginFiles = distDirectory.listFiles(pathname -> {
+            return pathname.getName().equals("plugins.xml");
+        });
+
+        if(pluginFiles.length != 1) {
+            throw new MojoFailureException("Expected exactly one plugins.xml file in " + distDirectory +", found " + pluginFiles.length);
+        }
     }
 
     private class LogStreamConsumer implements StreamConsumer {
