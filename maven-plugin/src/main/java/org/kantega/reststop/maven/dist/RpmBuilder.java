@@ -257,13 +257,7 @@ public class RpmBuilder extends AbstractDistMojo {
 
         mavenProjectHelper.attachArtifact(mavenProject, "rpm", rpmFiles[0]);
 
-        File[] pluginFiles = distDirectory.listFiles(pathname -> {
-            return pathname.getName().equals("plugins.xml");
-        });
-
-        if(pluginFiles.length != 1) {
-            throw new MojoFailureException("Expected exactly one plugins.xml file in " + distDirectory +", found " + pluginFiles.length);
-        }
+        mavenProjectHelper.attachArtifact(mavenProject, "plugins", new File(distDirectory, "plugins.xml"));
     }
 
     private class LogStreamConsumer implements StreamConsumer {
