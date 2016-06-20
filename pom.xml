@@ -49,7 +49,7 @@
     <scm>
         <url>https://github.com/kantega/reststop</url>
         <connection>scm:git:git@github.com:kantega/reststop.git</connection>
-    <tag>reststop-parent-2.5</tag>
+    <tag>HEAD</tag>
   </scm>
 
 
