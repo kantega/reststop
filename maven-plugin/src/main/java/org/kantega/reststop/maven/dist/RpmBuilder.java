@@ -257,8 +257,10 @@ public class RpmBuilder extends AbstractDistMojo {
 
         mavenProjectHelper.attachArtifact(mavenProject, "rpm", rpmFiles[0]);
 
-        getLog().info("Attaching " + new File(distDirectory, "plugins.xml"));
-        mavenProjectHelper.attachArtifact(mavenProject, "plugins", new File(distDirectory, "plugins.xml"));
+
+        final File pluginsXmlFile = new File(mavenProject.getBasedir(), "target/plugins.xml");
+        getLog().info("Attaching " + pluginsXmlFile);
+        mavenProjectHelper.attachArtifact(mavenProject, "plugins", pluginsXmlFile);
     }
 
     private class LogStreamConsumer implements StreamConsumer {
