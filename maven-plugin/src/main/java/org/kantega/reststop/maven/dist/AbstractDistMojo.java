@@ -343,6 +343,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
 
         try {
+            getLog().info("Writing xmlFile " + xmlFile);
             Transformer transformer = TransformerFactory.newInstance().newTransformer();
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
             transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");

@@ -257,6 +257,7 @@ public class RpmBuilder extends AbstractDistMojo {
 
         mavenProjectHelper.attachArtifact(mavenProject, "rpm", rpmFiles[0]);
 
+        getLog().info("Attaching " + new File(distDirectory, "plugins.xml"));
         mavenProjectHelper.attachArtifact(mavenProject, "plugins", new File(distDirectory, "plugins.xml"));
     }
 
