@@ -167,7 +167,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
         copyPlugins(getPlugins(), manager);
 
-        Document pluginsXml = createPluginXmlDocument(true);
+        Document pluginsXmlContent = createPluginXmlDocument(true);
 
 
         Artifact warArifact = resolveArtifact(warCoords);
@@ -200,12 +200,18 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
             createTomcatContextXml(name, warArifact, manager, new File(containerDistrDir, "conf/Catalina/localhost/ROOT.xml"));
             copyArtifactToRepository(warArifact, manager);
         } else if ("bootstrap".equals(this.container)) {
-            addBootstrapClasspath(pluginsXml, manager);
+            addBootstrapClasspath(pluginsXmlContent, manager);
             addBootstrapJar(distDirectory);
             //createServicesFile(new File(distDirectory, "bin/reststop.sh"), "template-service-bootstrap.sh", new HashMap<>());
         }
 
-        writePluginsXml(new File(distDirectory, "plugins.xml"), manager, pluginsXml);
+        File pluginsXmlFile = new File(distDirectory, "plugins.xml");
+        writePluginsXml(pluginsXmlFile, manager, pluginsXmlContent);
+        try {
+            Files.copy(pluginsXmlFile.toPath(), new File(mavenProject.getBasedir(), "target").toPath());
+        } catch (IOException e) {
+            throw new MojoFailureException("Failed to copy plugins.xml", e);
+        }
 
         copyOverridingConfig();
 
