@@ -42,10 +42,15 @@ public class RunMojo extends AbstractReststopRunMojo {
     @Parameter(defaultValue = "${openProjectDir}")
     private boolean openProjectDir;
 
+    @Parameter(defaultValue = "localhost")
+    private String hostname;
+
     @Override
     protected void afterServerStart(Server server, int port) throws MojoFailureException {
         try {
-            openInBrowser("http://localhost:" + port);
+            if( hostname == null || hostname.length() == 0)
+                hostname = "localhost";
+            openInBrowser("http://"+ hostname + ":" + port);
             server.join();
         } catch (InterruptedException e) {
             throw new MojoFailureException(e.getMessage(), e);
