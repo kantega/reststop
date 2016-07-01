@@ -34,10 +34,7 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
@@ -57,6 +54,8 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         ClassLoaderProvider[] classLoaderProviders = findClassLoaderProviders(servletContext, globalConfigFile);
         DefaultServletBuilder servletBuilder = new DefaultServletBuilder(servletContext);
+
+        boolean servletFilterAsyncSupported = isServletFilterAsyncSupported(globalConfigFile);
         PluginManagerBuilder.DefaultReststopPluginManager manager = PluginManagerBuilder.builder()
                 .withService(ServiceKey.by(ServletContext.class), servletContext)
                 .withService(ServiceKey.by(ServletBuilder.class), servletBuilder)
@@ -69,8 +68,11 @@ public class ReststopInitializer implements ServletContainerInitializer{
         servletContext.setAttribute("reststopPluginManager", manager);
 
 
-        servletContext.addFilter(PluginDelegatingFilter.class.getName(), new PluginDelegatingFilter(manager))
-                .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
+        FilterRegistration.Dynamic dynamic = servletContext.addFilter(PluginDelegatingFilter.class.getName(), new PluginDelegatingFilter(manager));
+        dynamic.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
+        if (servletFilterAsyncSupported) {
+            dynamic.setAsyncSupported(true);
+        }
 
         servletContext.addListener(new ShutdownListener(manager));
 
@@ -191,8 +193,17 @@ public class ReststopInitializer implements ServletContainerInitializer{
         providers.add(new PluginManagerBuilder.PluginInfosClassLoaderProvider(parsed, repoDir));
     }
 
-
-
+    private boolean isServletFilterAsyncSupported(File globalConfigFile) throws ServletException {
+        try (BufferedInputStream bufferedInputStream = new BufferedInputStream(new FileInputStream(globalConfigFile))) {
+            Properties properties = new Properties();
+            properties.load(bufferedInputStream);
+            return Boolean.parseBoolean(properties.getProperty("servletFilterAsyncSupported", "false"));
+        } catch (FileNotFoundException cause) {
+            throw new ServletException("Could not find file: " + globalConfigFile.getAbsoluteFile(), cause);
+        } catch (IOException cause) {
+            throw new ServletException("Could not read file: " + globalConfigFile.getAbsoluteFile(), cause);
+        }
+    }
 
     public static class DefaultServletBuilder implements ServletBuilder {
         private final ServletContext servletContext;

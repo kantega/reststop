@@ -47,6 +47,8 @@
     	<module>wsdl-test</module>
         <module>webjars</module>
         <module>jetty</module>
+        <module>bayeux-api</module>
+        <module>bayeux</module>
     </modules>
     <dependencies>
         <dependency>
