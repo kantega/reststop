@@ -38,6 +38,9 @@ public interface BayeuxService extends AutoCloseable {
     void close();
 
     @FunctionalInterface
-    interface MessageListener extends BiConsumer<ServerSession,ServerMessage> {}
+    interface MessageListener {
+
+        void accept(BayeuxService bayeuxService, ServerSession serverSession, ServerMessage serverMessage);
+    }
 
 }

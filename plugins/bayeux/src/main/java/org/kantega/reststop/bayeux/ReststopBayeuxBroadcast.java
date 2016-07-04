@@ -20,12 +20,12 @@ import org.cometd.bayeux.server.ServerMessage;
 /**
  *
  */
-public class ReststopBayeuxBroadcast implements BayeuxBroadcast, AutoCloseable {
+public class ReststopBayeuxBroadcast implements BayeuxBroadcast {
 
-    private BayeuxBroadcastManager bayeuxBroadcastManager;
+    private ReststopBayeuxBroadcastManager bayeuxBroadcastManager;
     private String channelName;
 
-    public ReststopBayeuxBroadcast(BayeuxBroadcastManager bayeuxBroadcastManager, String channelName) {
+    public ReststopBayeuxBroadcast(ReststopBayeuxBroadcastManager bayeuxBroadcastManager, String channelName) {
         this.bayeuxBroadcastManager = bayeuxBroadcastManager;
         this.channelName = channelName;
     }
@@ -51,7 +51,8 @@ public class ReststopBayeuxBroadcast implements BayeuxBroadcast, AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
+        bayeuxBroadcastManager.destroyBroadcast(channelName);
         this.channelName = null;
     }
 }

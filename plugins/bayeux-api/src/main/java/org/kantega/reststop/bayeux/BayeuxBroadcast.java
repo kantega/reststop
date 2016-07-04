@@ -21,12 +21,14 @@ import org.cometd.bayeux.server.ServerMessage;
  * @author Kristian Myrhaug
  * @since 2016-06-30
  */
-public interface BayeuxBroadcast {
+public interface BayeuxBroadcast extends AutoCloseable {
 
     BayeuxBroadcastManager getBayeuxBroadcastManager();
     String getChannelName();
 
     void broadcast(Object message);
     void broadcast(ServerMessage.Mutable message);
+
+    void close();
 
 }

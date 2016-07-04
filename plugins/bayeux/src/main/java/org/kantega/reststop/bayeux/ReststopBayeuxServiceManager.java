@@ -128,7 +128,7 @@ public class ReststopBayeuxServiceManager implements BayeuxServiceManager {
         public void accept(ServerSession serverSession, ServerMessage serverMessage) {
             ReststopBayeuxService service = services.get(serverMessage.getChannel());
             if (nonNull(service)) {
-                service.accept(serverSession, serverMessage);
+                service.accept(service, serverSession, serverMessage);
             }
         }
     }

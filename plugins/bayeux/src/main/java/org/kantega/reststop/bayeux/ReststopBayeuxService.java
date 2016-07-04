@@ -75,9 +75,9 @@ public class ReststopBayeuxService implements BayeuxService, BayeuxService.Messa
     }
 
     @Override
-    public void accept(ServerSession serverSession, ServerMessage serverMessage) {
+    public void accept(BayeuxService bayeuxService, ServerSession serverSession, ServerMessage serverMessage) {
         for (MessageListener listener : listeners) {
-            listener.accept(serverSession, serverMessage);
+            listener.accept(this, serverSession, serverMessage);
         }
     }
 }
