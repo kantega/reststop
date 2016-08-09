@@ -261,7 +261,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
                         pa.setGroupId(artifact.getGroupId());
                         pa.setArtifactId(artifact.getArtifactId());
-                        pa.setVersion(artifact.getVersion());
+                        pa.setVersion(artifact.getBaseVersion());
 
                         pa.setFile(artifact.getFile());
                     }

@@ -376,7 +376,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
             Element common = pluginXmlDocument.createElement("common");
             common.setAttribute("groupId", containerArtifact.getGroupId());
             common.setAttribute("artifactId", containerArtifact.getArtifactId());
-            common.setAttribute("version", containerArtifact.getVersion());
+            common.setAttribute("version", containerArtifact.getBaseVersion());
             pluginXmlDocument.getDocumentElement().appendChild(common);
 
         }
@@ -578,7 +578,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
     private void resolveSources(Artifact artifact, LocalRepositoryManager manager) throws MojoFailureException, MojoExecutionException {
         if (resolveSources) {
-            String coords = artifact.getGroupId() + ":" + artifact.getArtifactId() + ":jar:sources:" + artifact.getVersion();
+            String coords = artifact.getGroupId() + ":" + artifact.getArtifactId() + ":jar:sources:" + artifact.getBaseVersion();
             try {
                 Artifact sourceArtifact = resolveArtifact(coords);
                 copyArtifactToRepository(sourceArtifact, manager);
