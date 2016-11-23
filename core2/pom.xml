@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2015 Kantega AS
+  ~ Copyright 2016 Kantega AS
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -20,39 +20,31 @@
 
     <parent>
         <groupId>org.kantega.reststop</groupId>
-        <artifactId>reststop-plugins</artifactId>
+        <artifactId>reststop-parent</artifactId>
         <version>2.7-SNAPSHOT</version>
-        <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>reststop-jaxrs-api</artifactId>
+    <artifactId>reststop-core2</artifactId>
 
     <dependencies>
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>reststop-api</artifactId>
+            <scope>compile</scope>
+        </dependency>
 
         <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>reststop-classloader-utils</artifactId>
+            <scope>compile</scope>
         </dependency>
+
         <dependency>
-            <groupId>javax.ws.rs</groupId>
-            <artifactId>javax.ws.rs-api</artifactId>
-            <version>2.0.1</version>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-bootstrap</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
+
     </dependencies>
-
-
-    <build>
-        <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <fork>true</fork>
-                    <!--<compilerArgs>
-                        <arg> -add-modules</arg>
-                        <arg>java.xml.bind</arg>
-                    </compilerArgs>-->
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 </project>

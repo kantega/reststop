@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 Kantega AS
+ * Copyright 2016 Kantega AS
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,25 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.api;
+package org.kantega.reststop.core2;
 
 /**
  *
  */
-public interface PluginExport<T> {
+public class InvalidPluginException extends RuntimeException {
+    private final Class clazz;
 
-    Class<T> getType();
-    T getExport();
-    ClassLoader getClassLoader();
-    Object getPlugin();
+    public InvalidPluginException(String message, Class clazz) {
+        super(message);
+        this.clazz = clazz;
+    }
+
+    public InvalidPluginException(String message, Throwable cause, Class clazz) {
+        super(message, cause);
+        this.clazz = clazz;
+    }
+
+    public Class getPluginClass() {
+        return clazz;
+    }
 }

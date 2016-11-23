@@ -228,14 +228,14 @@ public class PluginManagerBuilder {
                                                     forClassLoader.put(serviceKey, new ArrayList<>());
                                                 }
                                                 Collection<?> collection = (Collection<?>) service;
-                                                collection.forEach((s) -> forClassLoader.get(serviceKey).add(new Exreg(classLoader, plugin, s)));
+                                                collection.forEach((s) -> forClassLoader.get(serviceKey).add(new Exreg(classLoader, plugin, serviceKey.getType(), s)));
                                             } else {
                                                 ServiceKey<?> serviceKey = ServiceKey.by(type);
 
                                                 if (!forClassLoader.containsKey(serviceKey)) {
                                                     forClassLoader.put(serviceKey, new ArrayList<>());
                                                 }
-                                                forClassLoader.get(serviceKey).add(new Exreg(classLoader, plugin, service));
+                                                forClassLoader.get(serviceKey).add(new Exreg(classLoader, plugin, type, service));
                                             }
 
                                         }
@@ -394,15 +394,22 @@ public class PluginManagerBuilder {
         private final ClassLoader classLoader;
         private final Object plugin;
         private final T export;
+        private final Class<T> type;
 
-        public Exreg(ClassLoader classLoader, Object plugin, T export) {
+        public Exreg(ClassLoader classLoader, Object plugin, Class<T> type, T export) {
             this.classLoader = classLoader;
             this.plugin = plugin;
+            this.type = type;
             this.export = export;
         }
 
         public Object getPlugin() {
             return plugin;
+        }
+
+        @Override
+        public Class<T> getType() {
+            return type;
         }
 
         public T getExport() {
