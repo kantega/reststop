@@ -50,8 +50,7 @@ public class JerseyPlugin implements ApplicationDeployer, ApplicationBuilder {
     @Export final ApplicationBuilder applicationBuilder = this;
     private ServletContainer filter;
 
-    public JerseyPlugin(final ServletBuilder reststop, final ReststopPluginManager pluginManager) throws ServletException {
-
+    public JerseyPlugin(final ServletBuilder reststop) throws ServletException {
 
         filter = addJerseyFilter(new ReststopApplication(Collections.emptyList()));
 
