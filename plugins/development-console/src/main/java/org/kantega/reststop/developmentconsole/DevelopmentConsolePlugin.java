@@ -107,7 +107,7 @@ public class DevelopmentConsolePlugin {
                 map.get(pluginManager.getClassLoader(plugin)).add(plugin);
             }
 
-            List<PluginInfo> sorted = PluginInfo.resolveStartupOrder(new ArrayList<>(infos.keySet()));
+            List<PluginInfo> sorted = PluginInfo.resolveClassloaderOrder(new ArrayList<>(infos.keySet()));
 
             Map<ClassLoader, Collection<Object>> map2 = new LinkedHashMap<>();
 

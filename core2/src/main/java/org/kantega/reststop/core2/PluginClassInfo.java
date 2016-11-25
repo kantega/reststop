@@ -16,6 +16,7 @@
 
 package org.kantega.reststop.core2;
 
+import org.kantega.reststop.classloaderutils.CircularDependencyException;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 
 import java.util.*;
@@ -43,19 +44,24 @@ public class PluginClassInfo {
 
         List<PluginClassInfo> sorted = new ArrayList<>();
 
+        Set<String> ancestors = new LinkedHashSet<>();
         for (PluginClassInfo pluginClass : pluginClasses) {
-            resolveStartupOrder(pluginClass, processed, sorted, pluginClasses);
+            if(!processed.containsKey(pluginClass)) {
+                resolveStartupOrder(pluginClass, processed, sorted, pluginClasses, ancestors);
+            }
         }
         return sorted;
     }
 
-    private static void resolveStartupOrder(PluginClassInfo pluginClass, Map<PluginClassInfo, PluginClassInfo> processed, List<PluginClassInfo> sorted, List<PluginClassInfo> allPlugins) {
+    private static void resolveStartupOrder(PluginClassInfo pluginClass, Map<PluginClassInfo, PluginClassInfo> processed, List<PluginClassInfo> sorted, List<PluginClassInfo> allPlugins, Set<String> ancestors) {
+        detectCircularStartupChain(pluginClass, ancestors);
+        ancestors.add(pluginClass.getKey());
 
         allPlugins.stream()
                 .filter(p -> p.getExports().stream().anyMatch(t -> pluginClass.getImports().contains(t)))
                 .forEach(p -> {
                     if(!processed.containsKey(p)) {
-                        resolveStartupOrder(p, processed, sorted, allPlugins);
+                        resolveStartupOrder(p, processed, sorted, allPlugins, ancestors);
                         processed.put(p, p);
                     }
                 });
@@ -65,6 +71,28 @@ public class PluginClassInfo {
         }
     }
 
+    private String getKey() {
+        return getClassLoader().getPluginInfo().getPluginId() +":" + getPluginClass().getName();
+    }
+
+    private static void detectCircularStartupChain(PluginClassInfo info, Set<String> ancestors) {
+        if(ancestors.contains(info.getKey())) {
+            StringBuilder chain = new StringBuilder();
+            for (String ancestor : ancestors) {
+                if(chain.length() > 0 || ancestor.equals(info.getKey())) {
+                    if(chain.length() > 0) {
+                        chain.append(" => ");
+                    }
+                    chain.append(ancestor);
+                }
+            }
+            if(chain.length() > 0) {
+                chain.append(" => ");
+            }
+            chain.append(info.getKey());
+            throw new CircularDependencyException("Detected circular plugin dependency chain: " + chain.toString());
+        }
+    }
     public static List<PluginClassInfo> resolveShutdownOrder(List<PluginClassInfo> plugins) {
         List<PluginClassInfo> reversed = new ArrayList<>(resolveStartupOrder(plugins));
         Collections.reverse(reversed);
@@ -88,4 +116,6 @@ public class PluginClassInfo {
     public Class getPluginClass() {
         return pluginClass;
     }
+
+
 }

@@ -24,7 +24,6 @@ import java.io.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.jar.JarFile;
-import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
 import static java.util.Arrays.asList;
@@ -38,7 +37,6 @@ public class PluginInfo extends Artifact {
     private File sourceDirectory;
     private List<Artifact> dependsOn = new ArrayList<>();
     private Properties config = new Properties();
-    private Set<String> imports, exports;
     private Integer priority = null;
 
     public List<Artifact> getClassPath(String scope) {
@@ -149,39 +147,6 @@ public class PluginInfo extends Artifact {
         pluginInfo.setVersion(pluginElement.getAttribute("version"));
     }
 
-    public List<PluginInfo> getServiceProviders(List<PluginInfo> pluginInfos) {
-        Set<String> myImports = getImports();
-        List<PluginInfo> serviceProviders = new ArrayList<>();
-
-        for (PluginInfo pluginInfo : pluginInfos) {
-            if( !pluginInfo.getPluginId().equals(getPluginId())) {
-                for (String export : pluginInfo.getExports()) {
-                    if(myImports.contains(export)) {
-                        serviceProviders.add(pluginInfo);
-                        break;
-                    }
-                }
-            }
-
-        }
-
-        return serviceProviders;
-    }
-
-    private Set<String> getExports() {
-        if(exports == null) {
-            exports = readLines("exports");
-        }
-        return exports;
-    }
-
-    private Set<String> getImports() {
-        if(imports == null) {
-            imports = readLines("imports");
-        }
-        return imports;
-    }
-
 
     private int readPriority() {
 
@@ -270,21 +235,6 @@ public class PluginInfo extends Artifact {
         return deps;
     }
 
-    public List<PluginInfo> getServiceConsumers(List<PluginInfo> all) {
-        List<PluginInfo> consumers = new ArrayList<>();
-
-        for (PluginInfo info : all) {
-            for (PluginInfo provider : info.getServiceProviders(all)) {
-                if(provider.getGroupIdAndArtifactId().equals(getGroupIdAndArtifactId())) {
-                    consumers.add(info);
-                }
-            }
-        }
-
-
-        return consumers;
-    }
-
     @Override
     public String toString() {
         return "Plugin " + getGroupId() +":" + getArtifactId() +":" + getVersion();
@@ -298,10 +248,6 @@ public class PluginInfo extends Artifact {
         return sourceDirectory;
     }
 
-    public boolean isDevelopmentPlugin() {
-        return "org.kantega.reststop".equals(getGroupId()) && "reststop-development-plugin".equals(getArtifactId());
-    }
-
     public String getPluginId() {
         return getGroupId() + ":" + getArtifactId() + ":" + getVersion();
     }
@@ -310,10 +256,6 @@ public class PluginInfo extends Artifact {
     public static List<PluginInfo> resolveClassloaderOrder(List<PluginInfo> infos) throws CircularDependencyException {
         return resolveOrder(infos, PluginInfo::getDependsOn);
 
-    }
-
-    public static List<PluginInfo> resolveStartupOrder(List<PluginInfo> infos) throws CircularDependencyException {
-        return resolveOrder(infos, (pi) -> pi.getServiceProviders(infos).stream().map((i)-> (Artifact) i).collect(Collectors.toList()));
     }
 
     public static List<PluginInfo> resolveOrder(List<PluginInfo> infos, Function<PluginInfo, Collection<Artifact>> dependencyFunction) throws CircularDependencyException {
@@ -443,13 +385,5 @@ public class PluginInfo extends Artifact {
                 }
             }
         }
-    }
-
-    public void setImports(Set<String> imports) {
-        this.imports = imports;
-    }
-
-    public void setExports(Set<String> exports) {
-        this.exports = exports;
     }
 }
