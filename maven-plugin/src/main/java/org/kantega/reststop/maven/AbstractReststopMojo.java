@@ -89,7 +89,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
 
     @Parameter (defaultValue = "${plugin.version}")
-    private String pluginVersion;
+    protected String pluginVersion;
 
 
 
@@ -165,7 +165,6 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
 
                     pluginElem.setAttribute("pluginFile", plugin.getFile().getAbsolutePath());
-                    pluginElem.setAttribute("directDeploy", Boolean.toString(plugin.isDirectDeploy()));
                 }
 
 
@@ -460,16 +459,11 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
         {
             Plugin devConsolePlugin = new Plugin("org.kantega.reststop", "reststop-development-console", pluginVersion);
             plugins.add(devConsolePlugin);
-            devConsolePlugin.setDirectDeploy(false);
         }
 
-        for (Plugin plugin : plugins) {
-            plugin.setDirectDeploy(false);
-        }
         {
             Plugin developmentPlugin = new Plugin("org.kantega.reststop", "reststop-development-plugin", pluginVersion);
             plugins.add(developmentPlugin);
-            developmentPlugin.setDirectDeploy(true);
         }
 
 

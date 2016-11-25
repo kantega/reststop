@@ -29,7 +29,6 @@ public class Plugin {
     private String groupId;
     private String artifactId;
     private String version;
-    private boolean directDeploy = true;
     private File sourceDirectory;
     private Properties config;
 
@@ -74,14 +73,6 @@ public class Plugin {
     }
 
 
-    public boolean isDirectDeploy() {
-        return directDeploy;
-    }
-
-    public void setDirectDeploy(boolean directDeploy) {
-        this.directDeploy = directDeploy;
-    }
-
     public File getSourceDirectory() {
         return sourceDirectory;
     }
@@ -97,9 +88,6 @@ public class Plugin {
         info.setGroupId(getGroupId());
         info.setArtifactId(getArtifactId());
         info.setVersion(getVersion());
-
-
-        info.setDirectDeploy(isDirectDeploy());
 
         info.setSourceDirectory(getSourceDirectory());
 

@@ -36,7 +36,6 @@ public class PluginInfo extends Artifact {
 
     private Map<String, List<Artifact>> classpaths = new HashMap<>();
     private File sourceDirectory;
-    private boolean directDeploy;
     private List<Artifact> dependsOn = new ArrayList<>();
     private Properties config = new Properties();
     private Set<String> imports, exports;
@@ -73,7 +72,6 @@ public class PluginInfo extends Artifact {
 
             parseGav(pluginInfo, pluginElement);
 
-            pluginInfo.setDirectDeploy(!"false".equals(pluginElement.getAttribute("directDeploy")));
             String pluginFile = pluginElement.getAttribute("pluginFile");
             if(!pluginFile.isEmpty()) {
                 File pluginJar = new File(pluginFile);
@@ -184,6 +182,27 @@ public class PluginInfo extends Artifact {
         return imports;
     }
 
+
+    private int readPriority() {
+
+
+        if(this.getFile() != null) {
+            try (JarFile jar = new JarFile(this.getFile())) {
+                ZipEntry pluginsEntry = jar.getEntry("META-INF/services/ReststopPlugin/priority.txt");
+
+                if (pluginsEntry != null) {
+                    Set<String> lines = readLines(jar.getInputStream(pluginsEntry));
+                    if (!lines.isEmpty()) {
+                        return Integer.parseInt(lines.iterator().next());
+                    }
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return 0;
+    }
+
     private Set<String> readLines(String suffix) {
         Set<String> lines = new HashSet<>();
 
@@ -287,15 +306,6 @@ public class PluginInfo extends Artifact {
         return getGroupId() + ":" + getArtifactId() + ":" + getVersion();
     }
 
-    public void setDirectDeploy(boolean directDeploy) {
-        this.directDeploy = directDeploy;
-    }
-
-
-    public boolean isDirectDeploy() {
-        return directDeploy;
-    }
-
 
     public static List<PluginInfo> resolveClassloaderOrder(List<PluginInfo> infos) throws CircularDependencyException {
         return resolveOrder(infos, PluginInfo::getDependsOn);
@@ -392,12 +402,8 @@ public class PluginInfo extends Artifact {
 
     public synchronized int getPriority() {
         if(priority == null) {
-            Set<String> lines = readLines("META-INF/services/ReststopPlugin/priority.txt");
-            if(! lines.isEmpty()) {
-                priority = Integer.parseInt(lines.iterator().next());
-            }
+            priority = readPriority();
         }
-
         if(priority == null) {
             priority = 0;
         }

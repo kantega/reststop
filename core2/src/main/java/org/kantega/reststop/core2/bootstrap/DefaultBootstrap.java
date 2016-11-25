@@ -17,16 +17,17 @@
 package org.kantega.reststop.core2.bootstrap;
 
 import org.kantega.reststop.bootstrap.Bootstrap;
-import org.kantega.reststop.classloaderutils.*;
+import org.kantega.reststop.classloaderutils.Artifact;
+import org.kantega.reststop.classloaderutils.PluginClassLoader;
+import org.kantega.reststop.classloaderutils.PluginInfo;
+import org.kantega.reststop.core2.ClassLoaderFactory;
 import org.kantega.reststop.core2.DefaultReststopPluginManager;
-import org.kantega.reststop.core2.PluginClassInfo;
 import org.w3c.dom.Document;
 
 import java.io.File;
 import java.net.MalformedURLException;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import static org.kantega.reststop.classloaderutils.PluginInfo.configure;
 
@@ -38,84 +39,42 @@ public class DefaultBootstrap implements Bootstrap{
 
     private DefaultReststopPluginManager manager;
 
+    private CountDownLatch shutdownLatch = new CountDownLatch(1);
+
     @Override
     public void bootstrap(File globalConfigurationFile, Document pluginsXml, File repositoryDirectory) {
         List<PluginInfo> parsed = PluginInfo.parse(pluginsXml);
         configure(parsed, globalConfigurationFile);
 
-        manager = new DefaultReststopPluginManager();
+        ClassLoader parentClassLoader = getClass().getClassLoader();
 
-        deployPlugins(parsed, repositoryDirectory, getClass().getClassLoader());
+        manager = new DefaultReststopPluginManager(parentClassLoader);
 
+        ClassLoaderFactory classLoaderFactory = new DefaultClassLoaderFactory(repositoryDirectory);
+
+        deployPlugins(parsed, classLoaderFactory);
+
+        /*
         manager.getPluginClassLoaders().stream()
                 .map(cl -> (PluginClassLoader)cl)
                 .filter(cl -> cl.getPluginInfo().getArtifactId().equals("reststop-cxf-plugin"))
                 .forEach(cl ->
-                        manager.redeploy(Collections.singletonList(cl), Function.identity())
+                        manager.redeploy(Collections.singletonList(cl), classLoaderFactory)
                 );
-    }
+                */
 
-    private void deployPlugins(List<PluginInfo> plugins, File repositoryDirectory, ClassLoader parentClassLoader) {
-        Map<String, PluginClassLoader> byDep = new HashMap<>();
-
-
-        List<PluginInfo> pluginsInClassloaderOrder = PluginInfo.resolveClassloaderOrder(plugins);
-
-        for (PluginInfo info : pluginsInClassloaderOrder) {
-
-            if (info.isDirectDeploy()) {
-                PluginClassLoader pluginClassloader = new PluginClassLoader(info, getParentClassLoader(info, parentClassLoader, byDep));
-
-                File pluginJar = getPluginFile(info, repositoryDirectory);
-
-                try {
-                    pluginClassloader.addURL(pluginJar.toURI().toURL());
-                    info.setFile(pluginJar);
-
-                    for (Artifact artifact : info.getClassPath("runtime")) {
-                        pluginClassloader.addURL(getPluginFile(artifact, repositoryDirectory).toURI().toURL());
-
-                    }
-                } catch (MalformedURLException e) {
-                    throw new RuntimeException(e);
-                }
-
-
-                byDep.put(info.getGroupIdAndArtifactId(), pluginClassloader);
-
-            }
-        }
-
-        List<PluginInfo> pluginsInStartupOrder = PluginInfo.resolveStartupOrder(pluginsInClassloaderOrder);
-
-        List<PluginClassLoader> classLoaders = pluginsInStartupOrder.stream()
-                .map(p -> byDep.get(p.getGroupIdAndArtifactId()))
-                .collect(Collectors.toList());
-
-
-        manager.deploy(classLoaders);
-    }
-
-    private ClassLoader getParentClassLoader(PluginInfo pluginInfo, ClassLoader parentClassLoader, Map<String, PluginClassLoader> byDep) {
-        Set<PluginClassLoader> delegates = new HashSet<>();
-
-        for (Artifact dep : pluginInfo.getDependsOn()) {
-            PluginClassLoader dependencyLoader = byDep.get(dep.getGroupIdAndArtifactId());
-            if (dependencyLoader != null) {
-                delegates.add(dependencyLoader);
-            }
-        }
-        if (delegates.isEmpty()) {
-            return parentClassLoader;
-        } else {
-            return new ResourceHidingClassLoader(new DelegateClassLoader(parentClassLoader, delegates), Object.class) {
-                @Override
-                protected boolean isLocalResource(String name) {
-                    return name.startsWith("META-INF/services/ReststopPlugin/");
-                }
-            };
+        try {
+            shutdownLatch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
         }
     }
+
+    private void deployPlugins(List<PluginInfo> plugins, ClassLoaderFactory classLoaderFactory) {
+        manager.deploy(plugins, classLoaderFactory);
+    }
+
+
 
     private File getPluginFile(Artifact artifact, File repoDir) {
         if (repoDir != null) {
@@ -133,6 +92,37 @@ public class DefaultBootstrap implements Bootstrap{
 
     @Override
     public void shutdown() {
-         manager.stop();
+        manager.stop();
+        shutdownLatch.countDown();
+    }
+
+    private class DefaultClassLoaderFactory implements ClassLoaderFactory {
+
+        private final File repositoryDirectory;
+
+
+        private DefaultClassLoaderFactory(File repositoryDirectory) {
+            this.repositoryDirectory = repositoryDirectory;
+        }
+
+        @Override
+        public PluginClassLoader createPluginClassLoader(PluginInfo info, ClassLoader parentClassLoader, List<PluginInfo> allPlugins) {
+            PluginClassLoader pluginClassloader = new PluginClassLoader(info, parentClassLoader);
+
+            File pluginJar = getPluginFile(info, repositoryDirectory);
+
+            try {
+                pluginClassloader.addURL(pluginJar.toURI().toURL());
+                info.setFile(pluginJar);
+
+                for (Artifact artifact : info.getClassPath("runtime")) {
+                    pluginClassloader.addURL(getPluginFile(artifact, repositoryDirectory).toURI().toURL());
+
+                }
+            } catch (MalformedURLException e) {
+                throw new RuntimeException(e);
+            }
+            return pluginClassloader;
+        }
     }
 }

@@ -72,8 +72,6 @@ import static java.util.Collections.singleton;
  */
 public abstract class AbstractDistMojo extends AbstractReststopMojo {
 
-    @Parameter(defaultValue = "${plugin.version}")
-    private String pluginVersion;
 
     @Parameter(defaultValue = "${project.build.directory}/reststop/")
     protected File workDirectory;

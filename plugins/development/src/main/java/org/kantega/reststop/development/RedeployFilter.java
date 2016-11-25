@@ -17,34 +17,35 @@
 package org.kantega.reststop.development;
 
 import org.apache.velocity.app.VelocityEngine;
-import org.junit.runner.JUnitCore;
-import org.junit.runner.Result;
 import org.kantega.reststop.api.ServletBuilder;
-import org.kantega.reststop.core.Reststop;
+import org.kantega.reststop.classloaderutils.PluginClassLoader;
+import org.kantega.reststop.core2.DefaultReststopPluginManager;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  *
  */
 public class RedeployFilter implements Filter {
 
-    private final DevelopmentClassLoaderProvider provider;
-    private final Reststop reststop;
+
     private volatile boolean checkingRedeploy = false;
 
     private final Object runTestsMonitor = new Object();
+    private final DefaultReststopPluginManager pluginManager;
     private final ServletBuilder servletBuilder;
     private final VelocityEngine velocityEngine;
     private final boolean shouldRunTests;
 
-    public RedeployFilter(DevelopmentClassLoaderProvider provider, Reststop reststop, ServletBuilder servletBuilder, VelocityEngine velocityEngine, boolean shouldRunTests) {
-        this.provider = provider;
-        this.reststop = reststop;
+    public RedeployFilter(DefaultReststopPluginManager pluginManager, ServletBuilder servletBuilder, VelocityEngine velocityEngine, boolean shouldRunTests) {
+        this.pluginManager = pluginManager;
         this.servletBuilder = servletBuilder;
         this.velocityEngine = velocityEngine;
         this.shouldRunTests = shouldRunTests;
@@ -72,14 +73,12 @@ public class RedeployFilter implements Filter {
             List<DevelopmentClassloader> staleClassLoaders = new ArrayList<>();
 
             synchronized (this) {
-                staleClassLoaders.addAll(provider.findStaleClassLoaders());
+                staleClassLoaders.addAll(findStaleClassLoaders());
 
                 if (staleClassLoaders.isEmpty()) {
                     filterChain.doFilter(servletRequest, servletResponse);
                     return;
                 } else {
-
-                    List<DevelopmentClassloader> affectedBeforeCompilation = provider.findAffectedClassLoaders(staleClassLoaders);
 
                     for (DevelopmentClassloader classloader : staleClassLoaders) {
                         try {
@@ -97,13 +96,16 @@ public class RedeployFilter implements Filter {
 
                     }
 
+                    DevelopmentClassLoaderFactory factory = DevelopmentClassLoaderFactory.getInstance();
 
-                    List<DevelopmentClassloader> affectedAfterCompilation = provider.findAffectedClassLoaders(staleClassLoaders);
+                    Collection<PluginClassLoader> stale = staleClassLoaders.stream()
+                            .map(c -> (PluginClassLoader) c)
+                            .collect(Collectors.toList());
 
-
-                    Collection<DevelopmentClassloader> newClassLoaders = provider.redeploy(provider.union(affectedBeforeCompilation, affectedAfterCompilation));
+                    pluginManager.redeploy(stale, factory);
 
                     if (shouldRunTests) {
+                        /*
                         Map<String, DevelopmentClassloader> testLoaders = new LinkedHashMap<>();
 
                         for (DevelopmentClassloader classloader : newClassLoaders) {
@@ -158,9 +160,11 @@ public class RedeployFilter implements Filter {
 
                         }
                     }
+                    */
+
+                    }
 
                 }
-
             }
             if (!staleClassLoaders.isEmpty()) {
                 servletBuilder.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
@@ -171,6 +175,14 @@ public class RedeployFilter implements Filter {
             checkingRedeploy = false;
         }
 
+    }
+
+    public List<DevelopmentClassloader> findStaleClassLoaders() {
+        return pluginManager.getPluginClassLoaders().stream()
+                .filter(cl -> cl instanceof DevelopmentClassloader)
+                .map(cl -> (DevelopmentClassloader) cl)
+                .filter(cl -> cl.isStaleSources() || cl.isFailed())
+                .collect(Collectors.toList());
     }
 
     @Override

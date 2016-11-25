@@ -71,7 +71,6 @@ public class ResolvePluginsMojo extends AbstractReststopMojo {
 
         if(developmentPlugins != null) {
             for (Plugin plugin : developmentPlugins) {
-                plugin.setDirectDeploy(false);
                 plugins.add(plugin);
             }
         }

@@ -39,7 +39,7 @@ public class JettyPlugin {
 
     public JettyPlugin(ReststopPluginManager pluginManager, @Config(defaultValue = "8080") int jettyPort)throws Exception {
 
-        server = new Server(jettyPort);
+        server = new Server(1700);
 
         ServletContextHandler handler = new ServletContextHandler();
 
@@ -64,7 +64,12 @@ public class JettyPlugin {
     @PreDestroy
     public void stop() throws Exception {
         if(server != null && !server.isStopped()) {
-            server.stop();
+            server.setStopTimeout(500l);
+            try {
+                server.stop();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 }

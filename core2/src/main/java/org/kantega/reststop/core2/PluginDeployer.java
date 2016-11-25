@@ -16,9 +16,12 @@
 
 package org.kantega.reststop.core2;
 
-import org.kantega.reststop.classloaderutils.PluginClassLoader;
+import org.kantega.reststop.classloaderutils.*;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -30,12 +33,20 @@ import java.util.stream.Stream;
 public class PluginDeployer {
 
     private final ReststopPluginLoader pluginLoader = new ReststopPluginLoader();
+    private final ClassLoader parentClassLoader;
 
-    public PluginState deploy(Collection<PluginClassLoader> classLoaders, PluginState currentPluginState) {
-        return deploy(findPlugins(classLoaders), currentPluginState);
+    public PluginDeployer(ClassLoader parentClassLoader) {
+        this.parentClassLoader = parentClassLoader;
     }
 
-    public PluginState deploy(List<PluginClassInfo> plugins, PluginState currentPluginState) {
+    public PluginState deploy(Collection<PluginInfo> plugins, ClassLoaderFactory factory, PluginState currentPluginState) {
+        List<PluginClassLoader> newClassLoaders = newClassLoaders(plugins, currentPluginState, factory);
+        PluginState pluginState = deploy(findPlugins(newClassLoaders), currentPluginState);
+        pluginState = pluginState.addPluginClassLoaders(newClassLoaders);
+        return pluginState;
+    }
+
+    private PluginState deploy(List<PluginClassInfo> plugins,PluginState currentPluginState) {
 
         List<PluginClassInfo> startupOrder = PluginClassInfo.resolveStartupOrder(plugins);
         PluginState pluginState = currentPluginState;
@@ -46,13 +57,17 @@ public class PluginDeployer {
         return pluginState;
     }
 
-    public PluginState redeploy(Collection<PluginClassLoader> removeRequest, Function<PluginClassLoader, PluginClassLoader> replacer, PluginState currentPluginState) {
+    public PluginState redeploy(Collection<PluginClassLoader> removeRequest, ClassLoaderFactory classLoaderFactory, PluginState currentPluginState) {
 
         List<PluginClassLoader> remove = currentPluginState.getTransitiveClosure(removeRequest);
 
         List<LoadedPluginClass> removedPlugins = currentPluginState.getPluginsLoadedBy(remove);
 
-        List<PluginClassInfo> newPlugins = findPlugins(newClassLoaders(remove, replacer));
+        List<PluginInfo> removedPluginInfo = remove.stream().
+                map(PluginClassLoader::getPluginInfo).collect(Collectors.toList());
+
+        List<PluginClassLoader> newClassLoaders = newClassLoaders(removedPluginInfo, currentPluginState, classLoaderFactory);
+        List<PluginClassInfo> newPlugins = findPlugins(newClassLoaders);
 
         List<LoadedPluginClass> affectedPlugins = currentPluginState.findConsumers(getAffectedTypes(removedPlugins, newPlugins));
 
@@ -71,14 +86,59 @@ public class PluginDeployer {
         PluginState pluginState = currentPluginState;
 
         pluginState = undeploy(undeploys, pluginState);
-        
+
+        pluginState = pluginState.removeClassLoaders(remove);
+
         pluginState = deploy(deploys, pluginState);
+
+        pluginState = pluginState.addPluginClassLoaders(newClassLoaders);
+
 
         return pluginState;
     }
 
-    private List<PluginClassLoader> newClassLoaders(Collection<PluginClassLoader> remove, Function<PluginClassLoader, PluginClassLoader> replacer) {
-        return remove.stream().map(replacer::apply).collect(Collectors.toList());
+    private List<PluginClassLoader> newClassLoaders(Collection<PluginInfo> pluginInfos, PluginState currentPluginState, ClassLoaderFactory classLoaderFactory) {
+        Map<String, PluginClassLoader> current = currentPluginState.getClassLoaders().stream()
+                .collect(Collectors.toMap(p -> p.getPluginInfo().getGroupIdAndArtifactId(), p ->p));
+
+
+        List<PluginClassLoader> result = new ArrayList<>();
+
+        for (PluginInfo info : PluginInfo.resolveClassloaderOrder(new ArrayList<>(pluginInfos))) {
+            ClassLoader parentClassLoader = getParentClassLoader(info, this.parentClassLoader, current);
+            List<PluginInfo> allPlugins = current.values().stream().map(PluginClassLoader::getPluginInfo).collect(Collectors.toList());
+            PluginClassLoader newClassLoader = classLoaderFactory.createPluginClassLoader(info, parentClassLoader, allPlugins);
+            current.put(newClassLoader.getPluginInfo().getGroupIdAndArtifactId(), newClassLoader);
+            result.add(newClassLoader);
+            Iterator<ClassLoaderFactory> classLoaderFactories = ServiceLoader.load(ClassLoaderFactory.class, newClassLoader).iterator();
+            if(classLoaderFactories.hasNext()) {
+                classLoaderFactory= classLoaderFactories.next();
+            }
+        }
+
+        return result;
+    }
+
+    public ClassLoader getParentClassLoader(PluginInfo pluginInfo, ClassLoader parentClassLoader, Map<String, PluginClassLoader> byDep) {
+        Set<PluginClassLoader> delegates = new HashSet<>();
+
+        for (Artifact dep : pluginInfo.getDependsOn()) {
+            PluginClassLoader dependencyLoader = byDep.get(dep.getGroupIdAndArtifactId());
+            if (dependencyLoader != null) {
+                delegates.add(dependencyLoader);
+            }
+        }
+        if (delegates.isEmpty()) {
+            return parentClassLoader;
+        } else {
+            return new ResourceHidingClassLoader(new DelegateClassLoader(parentClassLoader, delegates), Object.class) {
+                @Override
+                protected boolean isLocalResource(String name) {
+                    return name.startsWith("META-INF/services/ReststopPlugin/")
+                            || name.equals("META-INF/services/" + ClassLoaderFactory.class.getName());
+                }
+            };
+        }
     }
 
     private Set<Class> getAffectedTypes(List<LoadedPluginClass> removedPlugins, List<PluginClassInfo> newPlugins) {
@@ -125,12 +185,11 @@ public class PluginDeployer {
 
 
     private List<PluginClassInfo> findPlugins(Collection<PluginClassLoader> classLoaders) {
-        List<PluginClassInfo> pluginClasses = classLoaders.stream()
+
+        return classLoaders.stream()
                 .map(this::findPlugins)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
-
-        return pluginClasses;
 
     }
 

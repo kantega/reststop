@@ -31,28 +31,23 @@ public class PluginState {
 
     // Real state
     private final List<LoadedPluginClass> plugins;
+    private final List<PluginClassLoader> classLoaders;
     private final Map<Class, Object> staticServices;
 
     // Computed for lookup
-    private final Map<PluginClassLoader, ClassLoader> classLoaders;
     private final Map<Object, ClassLoader> byClassLoader;
     private final Map<Class, List<PluginExport>> exports;
     private final Map<Class, List<Object>> services;
     private final List<Object> allPlugins;
 
     public PluginState(Map<Class, Object> services) {
-        this(Collections.emptyList(), services);
+        this(Collections.emptyList(), Collections.emptyList(), services);
     }
 
-    public PluginState(List<LoadedPluginClass> plugins, Map<Class, Object> staticServices) {
+    public PluginState(List<LoadedPluginClass> plugins, List<PluginClassLoader> classLoaders, Map<Class, Object> staticServices) {
         this.plugins = plugins;
+        this.classLoaders = classLoaders;
         this.staticServices = staticServices;
-
-
-        this.classLoaders = plugins.stream()
-                .map(LoadedPluginClass::getPluginClassInfo)
-                .map(PluginClassInfo::getClassLoader)
-                .collect(Collectors.toMap(Function.identity(), Function.identity(), (u,v) -> u, IdentityHashMap::new));
 
         this.byClassLoader = Collections.unmodifiableMap(plugins.stream()
                 .collect(Collectors.toMap(LoadedPluginClass::getPlugin, p -> p.getPluginClassInfo().getClassLoader())));
@@ -82,11 +77,16 @@ public class PluginState {
 
 
     public PluginState addPlugin(LoadedPluginClass loadedPluginClass) {
-        return new PluginState(Stream.concat(plugins.stream(), Stream.of(loadedPluginClass)).collect(Collectors.toList()), staticServices);
+        List<LoadedPluginClass> plugins = Stream.concat(this.plugins.stream(), Stream.of(loadedPluginClass)).collect(Collectors.toList());
+        List<PluginClassLoader> classLoaders = Stream.concat(
+                 this.classLoaders.stream(), Stream.of(loadedPluginClass.getPluginClassInfo().getClassLoader()))
+                .distinct().collect(Collectors.toList());
+
+        return new PluginState(plugins, classLoaders, staticServices);
     }
 
     public PluginState removePlugin(LoadedPluginClass plugin) {
-        return new PluginState(plugins.stream().filter(p -> p != plugin).collect(Collectors.toList()), staticServices);
+        return new PluginState(plugins.stream().filter(p -> p != plugin).collect(Collectors.toList()), classLoaders, staticServices);
     }
 
     public Collection<Object> getPlugins() {
@@ -105,7 +105,7 @@ public class PluginState {
     }
 
     public Collection<PluginClassLoader> getClassLoaders() {
-        return classLoaders.keySet();
+        return classLoaders;
     }
 
 
@@ -179,12 +179,23 @@ public class PluginState {
     }
 
     private void getTransitiveClosure(PluginClassLoader classLoader, Map<PluginClassLoader, PluginClassLoader> transitiveConsumers) {
-        List<PluginClassLoader> dependants = classLoaders.keySet().stream()
+        List<PluginClassLoader> dependants = classLoaders.stream()
                 .filter(cl -> cl.getPluginInfo().getDependsOn().stream().anyMatch(a -> a.getPluginId().equals(classLoader.getPluginInfo().getPluginId())))
                 .collect(Collectors.toList());
 
         dependants.forEach(cl -> getTransitiveClosure(cl, transitiveConsumers));
 
         transitiveConsumers.put(classLoader, classLoader);
+    }
+
+    public PluginState addPluginClassLoaders(List<PluginClassLoader> classLoaders) {
+        List<PluginClassLoader> newClassLoaders = Stream.concat(this.classLoaders.stream(), classLoaders.stream()).distinct().collect(Collectors.toList());
+        return new PluginState(plugins, newClassLoaders, staticServices);
+    }
+
+    public PluginState removeClassLoaders(List<PluginClassLoader> remove) {
+        List<PluginClassLoader> classLoaders = new ArrayList<>(this.classLoaders);
+        classLoaders.removeAll(remove);
+        return new PluginState(plugins, classLoaders, staticServices);
     }
 }

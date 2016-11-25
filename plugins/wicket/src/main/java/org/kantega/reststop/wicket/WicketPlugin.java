@@ -20,6 +20,7 @@ import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.http.WicketFilter;
 import org.kantega.reststop.api.*;
 
+import javax.annotation.PreDestroy;
 import javax.servlet.Filter;
 import javax.servlet.ServletException;
 import java.util.Properties;
@@ -36,21 +37,26 @@ public class WicketPlugin  {
 
     @Export
     private final Filter wicketFilter;
+    private final WicketFilter realWicketfilter;
 
     public WicketPlugin(ServletBuilder servletBuilder) throws ServletException {
 
             wicketApplication = new WicketApplication();
 
-            WicketFilter filter = new WicketFilter(wicketApplication);
+            realWicketfilter = new WicketFilter(wicketApplication);
 
             Properties properties = new Properties();
             String filterPath = "/wicket/*";
             properties.setProperty(WicketFilter.FILTER_MAPPING_PARAM, filterPath);
 
-            filter.init(servletBuilder.filterConfig("wicket", properties));
+            realWicketfilter.init(servletBuilder.filterConfig("wicket", properties));
 
-            wicketFilter = servletBuilder.filter(filter, filterPath, FilterPhase.USER);
+            wicketFilter = servletBuilder.filter(realWicketfilter, filterPath, FilterPhase.USER);
 
     }
 
+    @PreDestroy
+    public void destroy() {
+        realWicketfilter.destroy();
+    }
 }

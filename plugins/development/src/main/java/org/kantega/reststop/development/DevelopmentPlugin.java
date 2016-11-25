@@ -19,20 +19,13 @@ package org.kantega.reststop.development;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.kantega.reststop.api.*;
-import org.kantega.reststop.classloaderutils.PluginClassLoader;
-import org.kantega.reststop.classloaderutils.PluginInfo;
-import org.kantega.reststop.core.Reststop;
+import org.kantega.reststop.core2.DefaultReststopPluginManager;
 import org.kantega.reststop.development.velocity.SectionDirective;
-import org.w3c.dom.Document;
 
 import javax.servlet.Filter;
 import javax.servlet.ServletContext;
-import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
-
-import static org.kantega.reststop.classloaderutils.PluginInfo.configure;
 
 /**
  *
@@ -52,87 +45,13 @@ public class DevelopmentPlugin  {
     private final Collection<PluginListener> listeners = new ArrayList<>();
 
     public DevelopmentPlugin(@Config(defaultValue = "true") String runTestsOnRedeploy,
-                             Reststop reststop, final ServletBuilder servletBuilder, ServletContext servletContext) {
-
-        Document pluginsXml = (Document) servletContext.getAttribute("pluginsXml");
-
-
-        if(! loadedByDevelopmentClassLoader()) {
-
-            for(PluginInfo info : PluginInfo.parse(pluginsXml)) {
-
-                if(info.isDevelopmentPlugin()) {
-                    ClassLoader pluginParentClassLoader = reststop.getPluginParentClassLoader();
-                    PluginInfo origInfo = ((PluginClassLoader)getClass().getClassLoader()).getPluginInfo();
-                    final DevelopmentClassloader devloader = createClassLoader(origInfo, pluginParentClassLoader);
-
-                    listeners.add(new PluginListener() {
-                        @Override
-                        public void pluginManagerStarted() {
-                            reststop.changePluginClassLoaders().remove(getClass().getClassLoader()).add(devloader).commit();
-                        }
-                    });
-                    return;
-                }
-            }
-
-            throw new IllegalStateException("Can't seem to find myself");
-        }
-
+                             ReststopPluginManager pluginManager, final ServletBuilder servletBuilder, ServletContext servletContext) {
 
         VelocityEngine velocityEngine = initVelocityEngine();
         velocityEngines.add(velocityEngine);
 
-        final DevelopmentClassLoaderProvider provider = new DevelopmentClassLoaderProvider();
-
-
-        List<PluginInfo> infos = PluginInfo.parse(pluginsXml);
-        String pluginConfigurationDirectory = servletContext.getInitParameter("pluginConfigurationDirectory");
-        String applicationName = servletContext.getInitParameter("applicationName");
-        File globalConfigFile = new File(pluginConfigurationDirectory, applicationName +".conf");
-        configure(infos, globalConfigFile);
-        List<PluginInfo> sortedInfos = PluginInfo.resolveClassloaderOrder(infos);
-        for (PluginInfo info : sortedInfos) {
-            if(info.isDevelopmentPlugin()) {
-                provider.addExistingClassLoader(info.getPluginId(), createClassLoader(info, reststop.getPluginParentClassLoader()));
-                provider.addByDepartmentId(info, (PluginClassLoader) getClass().getClassLoader());
-            }
-
-            if(!info.isDirectDeploy()) {
-                provider.addPluginInfo(info);
-            }
-        }
-
-        
-
-        if(!loadedByDevelopmentClassLoader()) {
-            listeners.add(new PluginListener() {
-                @Override
-                public void pluginManagerStarted() {
-                    provider.start(reststop);
-                }
-            });
-        } else {
-            listeners.add(new PluginListener() {
-                @Override
-                public void pluginsUpdated(Collection<Object> plugins) {
-                    if (!providerStarted) {
-                        providerStarted = true;
-                        for (Object plugin : plugins) {
-                            if (plugin == DevelopmentPlugin.this) {
-                                provider.start(reststop);
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-
-
-
         filters.add(servletBuilder.filter(new DevelopmentAssetsFilter(), "/dev/assets/*", FilterPhase.PRE_UNMARSHAL));
-        filters.add(servletBuilder.filter(new RedeployFilter(provider, reststop, servletBuilder, velocityEngine, "true".equals(runTestsOnRedeploy)), "/*", FilterPhase.PRE_UNMARSHAL));
+        filters.add(servletBuilder.filter(new RedeployFilter((DefaultReststopPluginManager) pluginManager, servletBuilder, velocityEngine, "true".equals(runTestsOnRedeploy)), "/*", FilterPhase.PRE_UNMARSHAL));
 
     }
 
@@ -150,18 +69,4 @@ public class DevelopmentPlugin  {
         engine.init();
         return engine;
     }
-
-    private DevelopmentClassloader createClassLoader(PluginInfo info, ClassLoader pluginParentClassLoader) {
-        List<File> runtime  = info.getClassPathFiles("runtime");
-        List<File> compile  = info.getClassPathFiles("compile");
-        List<File> test  = info.getClassPathFiles("test");
-
-        return new DevelopmentClassloader(info, info.getSourceDirectory(), info.getFile(), compile, runtime, test, pluginParentClassLoader, 1);
-    }
-
-    private boolean loadedByDevelopmentClassLoader() {
-        return getClass().getClassLoader().getClass().getName().equals(DevelopmentClassloader.class.getName());
-    }
-
-
 }

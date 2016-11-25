@@ -19,12 +19,12 @@ package org.kantega.reststop.core2;
 import org.kantega.reststop.api.PluginExport;
 import org.kantega.reststop.api.ReststopPluginManager;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
+import org.kantega.reststop.classloaderutils.PluginInfo;
 
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -34,16 +34,17 @@ public class DefaultReststopPluginManager implements ReststopPluginManager {
 
 
 
-    private final PluginDeployer pluginDeployer = new PluginDeployer();
+    private final PluginDeployer pluginDeployer;
 
     private volatile PluginState pluginState;
 
 
-    public DefaultReststopPluginManager() {
-        this(Collections.emptyMap());
+    public DefaultReststopPluginManager(ClassLoader parentClassLoader) {
+        this(parentClassLoader, Collections.emptyMap());
     }
 
-    public DefaultReststopPluginManager(Map<Class, Object> staticServices) {
+    public DefaultReststopPluginManager(ClassLoader parentClassLoader, Map<Class, Object> staticServices) {
+        this.pluginDeployer = new PluginDeployer(parentClassLoader);
         Map<Class, Object> services = new HashMap<>(staticServices);
         services.put(ReststopPluginManager.class, this);
         pluginState = new PluginState(services);
@@ -53,12 +54,12 @@ public class DefaultReststopPluginManager implements ReststopPluginManager {
         pluginState = pluginDeployer.undeploy(pluginState.getClassLoaders(), pluginState);
     }
 
-    public synchronized void deploy(Collection<PluginClassLoader> classLoaders) {
-        pluginState = pluginDeployer.deploy(classLoaders, pluginState);
+    public synchronized void deploy(Collection<PluginInfo> pluugins, ClassLoaderFactory classLoaderFactory) {
+        pluginState = pluginDeployer.deploy(pluugins, classLoaderFactory, pluginState);
     }
 
-    public synchronized void redeploy(Collection<PluginClassLoader> remove, Function<PluginClassLoader, PluginClassLoader> replacedClassLoader) {
-        pluginState = pluginDeployer.redeploy(remove, replacedClassLoader, pluginState);
+    public synchronized void redeploy(Collection<PluginClassLoader> remove, ClassLoaderFactory classLoaderFactory) {
+        pluginState = pluginDeployer.redeploy(remove, classLoaderFactory, pluginState);
     }
 
     @Override
