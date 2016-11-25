@@ -40,17 +40,23 @@ public class IndexPagePlugin  {
     private final Filter cssServlet;
     @Export
     private final Filter helloWorldServlet;
+    @Export
+    private final Filter redirect;
 
     public IndexPagePlugin(ServletBuilder servletBuilder) {
-        indexServlet = servletBuilder.resourceServlet("/", getClass().getResource("index.html"));
-        cssServlet = servletBuilder.resourceServlet("/ws.css", getClass().getResource("ws.css"));
+        indexServlet = servletBuilder.resourceServlet(getClass().getResource("index.html"), "/");
+        cssServlet = servletBuilder.resourceServlet(getClass().getResource("ws.css"), "/ws.css");
+
+        redirect = servletBuilder.redirectFrom("/christmastable").to("http://disney.com");
 
         helloWorldServlet = servletBuilder.servlet(new HttpServlet() {
             @Override
             protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-                resp.getWriter().print("halloOo");
+                resp.getWriter().println("halloOo");
+                resp.getWriter().println(req.getServletPath());
+                resp.getWriter().println(req.getPathInfo());
             }
-        }, "/heiverden");
+        }, "/heiverden", "/heiverda*");
     }
 }
 

@@ -31,6 +31,6 @@ public class StatisticsPlugin {
 
     public StatisticsPlugin(ServletBuilder servletBuilder) {
 
-        statsFilter = servletBuilder.filter(new StatisticsFilter(),"/*", FilterPhase.USER);
+        statsFilter = servletBuilder.filter(new StatisticsFilter(), FilterPhase.USER,"/*");
     }
 }

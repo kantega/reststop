@@ -41,7 +41,7 @@ public class WebjarsReststopPlugin {
 
     public WebjarsReststopPlugin(final ServletBuilder servletBuilder, final ReststopPluginManager reststopPluginManager) {
 
-        webjarsFilter = servletBuilder.filter(new WebJarsFilter(reststopPluginManager), "/webjars/*", FilterPhase.USER);
+        webjarsFilter = servletBuilder.filter(new WebJarsFilter(reststopPluginManager), FilterPhase.USER, "/webjars/*");
 
         v = () -> getVersionsForWebJars(reststopPluginManager);
     }

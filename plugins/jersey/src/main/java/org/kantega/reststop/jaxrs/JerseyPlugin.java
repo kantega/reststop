@@ -57,7 +57,7 @@ public class JerseyPlugin implements ApplicationDeployer, ApplicationBuilder {
 
         filter.init(reststop.filterConfig("jersey", new Properties()));
 
-        jerseyFilter = reststop.filter(filter, "/*", FilterPhase.USER);
+        jerseyFilter = reststop.filter(filter, FilterPhase.USER, "/*");
     }
 
     private ServletContainer addJerseyFilter(Application application) {
