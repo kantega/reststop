@@ -29,7 +29,7 @@
 
         <dependency>
             <groupId>org.kantega.reststop</groupId>
-            <artifactId>reststop-core</artifactId>
+            <artifactId>reststop-core2</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

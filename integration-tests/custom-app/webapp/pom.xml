@@ -28,8 +28,12 @@
     <dependencies>
         <dependency>
             <groupId>org.kantega.reststop</groupId>
-            <artifactId>reststop-core</artifactId>
+            <artifactId>reststop-core2</artifactId>
             <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-servlet</artifactId>
         </dependency>
         <dependency>
             <groupId>org.kantega.reststop</groupId>

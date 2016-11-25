@@ -50,7 +50,7 @@ public class DevelopmentPlugin  {
         VelocityEngine velocityEngine = initVelocityEngine();
         velocityEngines.add(velocityEngine);
 
-        filters.add(servletBuilder.filter(new DevelopmentAssetsFilter(), "/dev/assets/*", FilterPhase.PRE_UNMARSHAL));
+        filters.add(servletBuilder.filter(new DevelopmentAssetsFilter(), FilterPhase.PRE_UNMARSHAL, "/dev/assets/*"));
         filters.add(servletBuilder.filter(new RedeployFilter((DefaultReststopPluginManager) pluginManager, servletBuilder, velocityEngine, "true".equals(runTestsOnRedeploy)), "/*", FilterPhase.PRE_UNMARSHAL));
 
     }
