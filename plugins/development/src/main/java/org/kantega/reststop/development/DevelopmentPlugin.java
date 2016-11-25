@@ -103,7 +103,7 @@ public class DevelopmentPlugin  {
             }
         }
 
-        
+
 
         if(!loadedByDevelopmentClassLoader()) {
             listeners.add(new PluginListener() {
@@ -131,8 +131,8 @@ public class DevelopmentPlugin  {
 
 
 
-        filters.add(servletBuilder.filter(new DevelopmentAssetsFilter(), "/dev/assets/*", FilterPhase.PRE_UNMARSHAL));
-        filters.add(servletBuilder.filter(new RedeployFilter(provider, reststop, servletBuilder, velocityEngine, "true".equals(runTestsOnRedeploy)), "/*", FilterPhase.PRE_UNMARSHAL));
+        filters.add(servletBuilder.filter(new DevelopmentAssetsFilter(), FilterPhase.PRE_UNMARSHAL, "/dev/assets/*"));
+        filters.add(servletBuilder.filter(new RedeployFilter(provider, reststop, servletBuilder, velocityEngine, "true".equals(runTestsOnRedeploy)), FilterPhase.PRE_UNMARSHAL, "/*"));
 
     }
 

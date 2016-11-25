@@ -49,7 +49,7 @@ public class WicketPlugin  {
 
             filter.init(servletBuilder.filterConfig("wicket", properties));
 
-            wicketFilter = servletBuilder.filter(filter, filterPath, FilterPhase.USER);
+            wicketFilter = servletBuilder.filter(filter, FilterPhase.USER, filterPath);
 
     }
 

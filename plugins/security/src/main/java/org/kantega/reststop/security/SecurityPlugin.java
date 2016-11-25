@@ -38,7 +38,7 @@ public class SecurityPlugin  {
     private final Filter basicAuthFilter;
 
     public SecurityPlugin(ServletBuilder servletBuilder, ApplicationBuilder applicationBuilder) {
-        basicAuthFilter = servletBuilder.filter(new BasicAuthFilter(), "/*", FilterPhase.AUTHENTICATION);
+        basicAuthFilter = servletBuilder.filter(new BasicAuthFilter(), FilterPhase.AUTHENTICATION, "/*");
         securityApp = applicationBuilder.application().resource(RolesAllowedDynamicFeature.class).build();
     }
 }

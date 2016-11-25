@@ -42,6 +42,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
 
+import static java.util.Arrays.asList;
 import static org.kantega.reststop.classloaderutils.PluginInfo.configure;
 
 /**
@@ -209,17 +210,32 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         @Override
         public Filter filter(Filter filter, String mapping, FilterPhase phase) {
+            return filter(filter, phase, mapping);
+        }
+
+        @Override
+        public Filter filter(Filter filter, FilterPhase phase, String path, String... additionalPaths) {
             if(filter == null ) {
                 throw new IllegalArgumentException("Filter cannot be null");
             }
-            if(mapping == null) {
-                throw new IllegalArgumentException("Mapping for filter " + filter + " cannot be null");
+            if(path == null) {
+                throw new IllegalArgumentException("Paths for filter " + filter + " cannot be null");
             }
-            return new MappingWrappedFilter(filter, mapping, phase);
+            if(additionalPaths == null) {
+                throw new IllegalArgumentException("Additional paths for filter " + filter + " cannot be null");
+            }
+            List<String> mappings = new ArrayList<>(asList(path));
+            mappings.addAll(asList(additionalPaths));
+            return new MappingWrappedFilter(filter, mappings.toArray(new String[mappings.size()]) , phase);
         }
 
         @Override
         public Filter resourceServlet(String path, URL url) {
+            return resourceServlet(url, path);
+        }
+
+        @Override
+        public Filter resourceServlet(URL url, String path, String... additionalPaths) {
             return servlet(new HttpServlet() {
                 @Override
                 protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
@@ -242,29 +258,42 @@ public class ReststopInitializer implements ServletContainerInitializer{
                         }
                     }
                 }
-            }, path);
+            }, path, additionalPaths);
         }
 
         @Override
         public Filter servlet(HttpServlet servlet, String path) {
+            return servlet(servlet, path, new String[0]);
+        }
+
+        @Override
+        public Filter servlet(HttpServlet servlet, String path, String... additionalPaths) {
             if(servlet == null ) {
                 throw new IllegalArgumentException("Servlet parameter cannot be null");
             }
             if(path == null) {
                 throw new IllegalArgumentException("Path for servlet " +servlet + " cannot be null");
             }
-            return filter(new ServletWrapperFilter(servlet, path), path, FilterPhase.USER);
+            if(additionalPaths == null) {
+                throw new IllegalArgumentException("Additional paths for servlet " +servlet + " cannot be null");
+            }
+            return filter(new ServletWrapperFilter(servlet), FilterPhase.USER, path, additionalPaths);
         }
 
 
         @Override
         public Filter redirectServlet(String path, String location) {
-            return servlet(new HttpServlet() {
+            return redirectFrom(path).to(location);
+        }
+
+        @Override
+        public RedirectBuilder redirectFrom(String fromPath, String... additionalFromPaths) {
+            return location -> servlet(new HttpServlet() {
                 @Override
                 protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
                     resp.sendRedirect(location);
                 }
-            }, path);
+            }, fromPath, additionalFromPaths);
         }
 
         @Override
@@ -322,16 +351,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         private static class ServletWrapperFilter implements Filter {
             private final HttpServlet servlet;
-            private final String servletPath;
 
-            public ServletWrapperFilter(final HttpServlet servlet, final String mapping) {
+            public ServletWrapperFilter(final HttpServlet servlet) {
                 this.servlet = servlet;
-                String servletPath = mapping;
-                while(servletPath.endsWith("*") || servletPath.endsWith("/")) {
-                    servletPath = servletPath.substring(0, servletPath.length()-1);
-                }
-                this.servletPath = servletPath;
-
             }
 
             @Override
@@ -344,18 +366,24 @@ public class ReststopInitializer implements ServletContainerInitializer{
                 HttpServletRequest req = (HttpServletRequest) servletRequest;
                 HttpServletResponse resp = (HttpServletResponse) servletResponse;
 
-
-
                 servlet.service(new HttpServletRequestWrapper(req) {
                     @Override
                     public String getServletPath() {
-                        return servletPath;
+                        return getMappedServletPath();
                     }
 
                     @Override
                     public String getPathInfo() {
                         String requestURI = getRequestURI();
-                        return requestURI.substring(super.getContextPath().length() + servletPath.length());
+                        return requestURI.substring(super.getContextPath().length() + getMappedServletPath().length());
+                    }
+
+                    String getMappedServletPath(){
+                        String servletPath = (String) req.getAttribute(MappingWrappedFilter.MATCHED_MAPPING);
+                        while(servletPath.endsWith("*") || servletPath.endsWith("/")) {
+                            servletPath = servletPath.substring(0, servletPath.length()-1);
+                        }
+                        return servletPath;
                     }
                 }, resp);
 
@@ -370,14 +398,15 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
 
 
-    private static class MappingWrappedFilter implements Filter {
+    static class MappingWrappedFilter implements Filter {
+        static final String MATCHED_MAPPING = "MATCHED_MAPPING";
         private final Filter filter;
-        private final String mapping;
+        private final String[] mappings;
         private final FilterPhase phase;
 
-        public MappingWrappedFilter(Filter filter, String mapping, FilterPhase phase) {
+        public MappingWrappedFilter(Filter filter, String[] mappings, FilterPhase phase) {
             this.filter = filter;
-            this.mapping = mapping;
+            this.mappings = mappings;
             this.phase = phase;
         }
 
@@ -399,7 +428,13 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         private boolean mappingMatchesRequest(HttpServletRequest req) {
             String contextRelative = req.getRequestURI().substring(req.getContextPath().length());
-            return mapping.equals(contextRelative) || mapping.endsWith("*") && contextRelative.regionMatches(0, mapping, 0, mapping.length()-1);
+            for (String mapping : mappings) {
+                if(mapping.equals(contextRelative) || mapping.endsWith("*") && contextRelative.regionMatches(0, mapping, 0, mapping.length()-1)){
+                    req.setAttribute(MATCHED_MAPPING, mapping);
+                    return true;
+                }
+            }
+            return false;
         }
 
 
@@ -460,7 +495,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
             filters.add(new ClassLoaderFilter(pluginExport.getClassLoader(), filter));
         }
 
-        filters.add(new ClassLoaderFilter(AssetFilter.class.getClassLoader(), new MappingWrappedFilter(new AssetFilter(pluginManager), "/assets/*", FilterPhase.USER)));
+        filters.add(new ClassLoaderFilter(AssetFilter.class.getClassLoader(), new MappingWrappedFilter(new AssetFilter(pluginManager), new String[]{"/assets/*"}, FilterPhase.USER)));
 
         Collections.sort(filters, new Comparator<ClassLoaderFilter>() {
             @Override

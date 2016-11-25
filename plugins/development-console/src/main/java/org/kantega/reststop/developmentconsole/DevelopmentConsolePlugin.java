@@ -23,7 +23,6 @@ import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
 
 import javax.servlet.*;
-import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -49,8 +48,8 @@ public class DevelopmentConsolePlugin {
         this.pluginManager = pluginManager;
         this.velocityEngine = velocityEngine;
 
-        devConsole = servletBuilder.filter(new DevelopentConsole(), "/dev/", FilterPhase.PRE_UNMARSHAL);
-        redirect = servletBuilder.redirectServlet("/dev", "dev/");
+        devConsole = servletBuilder.filter(new DevelopentConsole(), FilterPhase.PRE_UNMARSHAL, "/dev/");
+        redirect = servletBuilder.redirectFrom("/dev").to("dev/");
     }
 
     public class DevelopentConsole implements Filter {
