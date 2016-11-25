@@ -16,7 +16,6 @@
 
 package org.kantega.reststop.custom.web;
 
-import org.kantega.reststop.api.PluginExport;
 import org.kantega.reststop.api.ReststopPluginManager;
 import org.kantega.reststop.custom.api.GreetingSource;
 

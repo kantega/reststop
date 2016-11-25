@@ -64,7 +64,7 @@ public class DefaultReststopPluginManager implements ReststopPluginManager {
 
     @Override
     public <T> Collection<T> findExports(Class<T> type) {
-        return pluginState.findExports(type);
+        return pluginState.getServices(type);
     }
 
     @Override
