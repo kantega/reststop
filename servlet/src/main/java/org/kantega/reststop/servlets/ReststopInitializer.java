@@ -70,6 +70,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         servletContext.addListener(new ShutdownListener(manager));
 
+        servletBuilder.setManager(manager);
 
         deployPlugins(manager, servletContext, findGlobalConfigFile(servletContext));
 
