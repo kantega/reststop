@@ -25,11 +25,11 @@ import org.kantega.reststop.core2.DefaultReststopPluginManager;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.io.InputStream;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,6 +47,8 @@ public class RedeployFilter implements Filter {
     private final ServletBuilder servletBuilder;
     private final VelocityEngine velocityEngine;
     private final boolean shouldRunTests;
+    private volatile long lastConfigModified = -1;
+    private volatile Properties config;
 
     public RedeployFilter(DefaultReststopPluginManager pluginManager, ServletBuilder servletBuilder, VelocityEngine velocityEngine, boolean shouldRunTests) {
         this.pluginManager = pluginManager;
@@ -55,6 +57,8 @@ public class RedeployFilter implements Filter {
         this.shouldRunTests = shouldRunTests;
         PluginInfo pluginInfo = ((PluginClassLoader) getClass().getClassLoader()).getPluginInfo();
         this.shadowClassLoader = (DevelopmentClassloader) DevelopmentClassLoaderFactory.getInstance().createPluginClassLoader(pluginInfo, getClass().getClassLoader().getParent(), Collections.emptyList());
+        config = readConfig(pluginManager.getConfigFile());
+        configChanged();
     }
 
     @Override
@@ -81,10 +85,12 @@ public class RedeployFilter implements Filter {
             synchronized (this) {
                 staleClassLoaders.addAll(findStaleClassLoaders());
 
-                if (staleClassLoaders.isEmpty()) {
+                Set<String>  changedProps = getModifiedConfigProps();
+
+                if (staleClassLoaders.isEmpty() && changedProps.isEmpty()) {
                     filterChain.doFilter(servletRequest, servletResponse);
                     return;
-                } else {
+                } else if(! staleClassLoaders.isEmpty()){
 
                     for (DevelopmentClassloader classloader : staleClassLoaders) {
                         try {
@@ -175,17 +181,79 @@ public class RedeployFilter implements Filter {
 
                     }
 
+                    servletBuilder.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
+                    return;
+                } else if(!changedProps.isEmpty()) {
+                    if(! changedProps.isEmpty()) {
+                        pluginManager.reconfigure(changedProps);
+                        servletBuilder.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
+                        return;
+                    }
                 }
+
+
             }
-            if (!staleClassLoaders.isEmpty()) {
-                servletBuilder.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
-            } else {
-                filterChain.doFilter(servletRequest, servletResponse);
-            }
+            filterChain.doFilter(servletRequest, servletResponse);
+
         } finally {
             checkingRedeploy = false;
         }
 
+    }
+
+    private Set<String> getModifiedConfigProps() {
+        if(configChanged()) {
+            Properties newConfig = readConfig(pluginManager.getConfigFile());
+            Set<String> changed = findChangedProperties(this.config, newConfig);
+            this.config = newConfig;
+            return changed;
+        }
+        return Collections.emptySet();
+    }
+
+    private Set<String> findChangedProperties(Properties config, Properties newConfig) {
+        Set<String> oldNames = config.stringPropertyNames();
+        Set<String> newNames = newConfig.stringPropertyNames();
+
+        Set<String> allNames = new HashSet<>();
+        allNames.addAll(oldNames);
+        allNames.addAll(newNames);
+
+        Set<String> changed = new HashSet<>();
+
+        for (String name : allNames) {
+            if(!oldNames.contains(name) || !newNames.contains(name) || !config.getProperty(name).equals(newConfig.getProperty(name))) {
+                changed.add(name);
+            }
+        }
+        return changed;
+    }
+
+    private Properties readConfig(File configFile) {
+        try (InputStream is = new FileInputStream(configFile)) {
+            Properties properties = new Properties();
+            properties.load(is);
+            return properties;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    private boolean configChanged() {
+        File configFile = pluginManager.getConfigFile();
+
+        if(lastConfigModified == -1) {
+            lastConfigModified = configFile.lastModified();
+            return false;
+        }
+
+        long currentLastModified = configFile.lastModified();
+        if(currentLastModified > lastConfigModified) {
+            lastConfigModified = currentLastModified;
+            return true;
+        }
+        return false;
     }
 
     public List<DevelopmentClassloader> findStaleClassLoaders() {

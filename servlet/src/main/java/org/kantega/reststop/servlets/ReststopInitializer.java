@@ -61,7 +61,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         staticServices.put(ServletContext.class, servletContext);
         staticServices.put(ServletBuilder.class, servletBuilder);
 
-        DefaultReststopPluginManager manager = new DefaultReststopPluginManager(getClass().getClassLoader(), staticServices);
+        DefaultReststopPluginManager manager = new DefaultReststopPluginManager(getClass().getClassLoader(), findGlobalConfigFile(servletContext), staticServices);
         servletContext.setAttribute("reststopPluginManager", manager);
 
 
@@ -72,15 +72,15 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         servletBuilder.setManager(manager);
 
-        deployPlugins(manager, servletContext, findGlobalConfigFile(servletContext));
+        deployPlugins(manager, servletContext);
 
     }
 
-    private void deployPlugins(DefaultReststopPluginManager manager, ServletContext servletContext, File globalConfigFile) throws ServletException {
+    private void deployPlugins(DefaultReststopPluginManager manager, ServletContext servletContext) throws ServletException {
         List<PluginInfo> plugins = new ArrayList<>();
 
-        plugins.addAll(getExternalPlugins(servletContext, globalConfigFile));
-        plugins.addAll(getWarBundledPlugins(servletContext, globalConfigFile));
+        plugins.addAll(getExternalPlugins(servletContext));
+        plugins.addAll(getWarBundledPlugins(servletContext));
 
         manager.deploy(plugins, new DefaultClassLoaderFactory());
     }
@@ -131,7 +131,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
     }
 
 
-    private List<PluginInfo> getWarBundledPlugins(ServletContext servletContext, File globalConfigFile) {
+    private List<PluginInfo> getWarBundledPlugins(ServletContext servletContext) {
         String pluginsPath = servletContext.getRealPath("/WEB-INF/reststop/plugins.xml");
         String repositoryPath = servletContext.getRealPath("/WEB-INF/reststop/repository/");
         if(pluginsPath != null && repositoryPath != null) {
@@ -142,7 +142,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
                     Document pluginsXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(pluginsFile);
 
                     if(pluginsXml != null) {
-                        return getPluginInfos(globalConfigFile, repoDir, pluginsXml);
+                        return getPluginInfos(repoDir, pluginsXml);
                     }
                 }  catch (SAXException | IOException | ParserConfigurationException e) {
                     throw new RuntimeException(e);
@@ -152,14 +152,13 @@ public class ReststopInitializer implements ServletContainerInitializer{
         return Collections.emptyList();
     }
 
-    private List<PluginInfo> getPluginInfos(File globalConfigFile, File repoDir, Document pluginsXml) {
+    private List<PluginInfo> getPluginInfos(File repoDir, Document pluginsXml) {
         List<PluginInfo> infos = PluginInfo.parse(pluginsXml);
-        PluginInfo.configure(infos, globalConfigFile);
         resolve(infos, repoDir);
         return infos;
     }
 
-    private List<PluginInfo> getExternalPlugins(ServletContext servletContext, File globalConfigFile) throws ServletException {
+    private List<PluginInfo> getExternalPlugins(ServletContext servletContext) throws ServletException {
         Document pluginsXml = (Document) servletContext.getAttribute("pluginsXml");
         String repoPath = initParam(servletContext, "repositoryPath");
         File repoDir = null;
@@ -186,7 +185,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
             }
         }
         if(pluginsXml != null) {
-            return getPluginInfos(globalConfigFile, repoDir, pluginsXml);
+            return getPluginInfos(repoDir, pluginsXml);
         }
         return Collections.emptyList();
     }

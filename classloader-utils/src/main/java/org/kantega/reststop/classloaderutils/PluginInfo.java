@@ -352,38 +352,6 @@ public class PluginInfo extends Artifact {
         return priority;
     }
 
-    public static void configure(List<PluginInfo> pluginInfos, File globalConfigFile) {
-
-        for (PluginInfo info : pluginInfos) {
-
-            File artifact = new File(globalConfigFile.getParentFile(), info.getArtifactId() +".conf");
-            File artifactVersion = new File(globalConfigFile.getParentFile(), info.getArtifactId() +"-" + info.getVersion() +".conf");
-
-            Properties properties = new Properties();
-            properties.putAll(info.getConfig());
-
-            addProperties(properties, globalConfigFile, artifact, artifactVersion);
-
-            info.setConfig(properties);
-        }
 
 
-    }
-
-    private static void addProperties(Properties properties, File... files) {
-        if(files != null) {
-            for (File file : files) {
-                if(file != null && file.exists()) {
-                    Properties prop = new Properties();
-                    try(FileInputStream in = new FileInputStream(file)) {
-                        prop.load(in);
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-
-                    properties.putAll(prop);
-                }
-            }
-        }
-    }
 }

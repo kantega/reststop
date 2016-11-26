@@ -20,11 +20,10 @@ import org.kantega.reststop.api.Config;
 import org.kantega.reststop.api.Export;
 import org.kantega.reststop.api.PluginExport;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
+import org.kantega.reststop.classloaderutils.PluginInfo;
 
 import javax.annotation.PreDestroy;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Supplier;
@@ -38,7 +37,12 @@ import java.util.regex.Pattern;
 public class ReststopPluginLoader {
 
     private static Pattern sysPropPattern = Pattern.compile(".*\\$\\{(.*)\\}.*");
+    private final File configFile;
 
+    public ReststopPluginLoader(File configFile) {
+
+        this.configFile = configFile;
+    }
 
 
     public LoadedPluginClass loadPlugin(PluginClassInfo pluginClassInfo, PluginState pluginState) {
@@ -47,9 +51,11 @@ public class ReststopPluginLoader {
 
         List<Method> preDestroyMethods = findPredestroyMethods(clazz);
 
+        Properties config = readConfig(pluginClassInfo.getClassLoader().getPluginInfo());
+
         final Constructor constructor = clazz.getDeclaredConstructors()[0];
 
-        final Object[] params = getConstructorParameters(constructor, pluginClassInfo.getClassLoader(), pluginState);
+        final Object[] params = getConstructorParameters(constructor, pluginState, config);
 
 
         Object plugin = withClassloaderContext(pluginClassInfo.getClassLoader(), () -> {
@@ -70,6 +76,36 @@ public class ReststopPluginLoader {
         return new LoadedPluginClass(plugin, exports, pluginClassInfo, preDestroyMethods);
     }
 
+    private Properties readConfig(PluginInfo pluginInfo) {
+
+        File artifact = new File(configFile.getParentFile(), pluginInfo.getArtifactId() +".conf");
+        File artifactVersion = new File(configFile.getParentFile(), pluginInfo.getArtifactId() +"-" + pluginInfo.getVersion() +".conf");
+
+        Properties properties = new Properties();
+        properties.putAll(pluginInfo.getConfig());
+
+        addProperties(properties, configFile, artifact, artifactVersion);
+
+        return properties;
+    }
+
+    private static void addProperties(Properties properties, File... files) {
+        if(files != null) {
+            for (File file : files) {
+                if(file != null && file.exists()) {
+                    Properties prop = new Properties();
+                    try(FileInputStream in = new FileInputStream(file)) {
+                        prop.load(in);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+
+                    properties.putAll(prop);
+                }
+            }
+        }
+    }
+
     public Set<Class> findConsumedTypes(Class clazz) {
         Constructor constructor = clazz.getConstructors()[0];
 
@@ -85,6 +121,28 @@ public class ReststopPluginLoader {
         }
 
         return consumedType;
+    }
+
+    public Set<String> findConsumedPropertyNames(Class clazz) {
+        String[] parameterNames = readParameterNames(clazz);
+        Constructor constructor = clazz.getConstructors()[0];
+
+        Set<String> propertyNames = new HashSet<>();
+
+        for (int i = 0; i < constructor.getParameterTypes().length; i++) {
+            if (constructor.getParameters()[i].isAnnotationPresent(Config.class)) {
+                Config config = constructor.getParameters()[i].getAnnotation(Config.class);
+
+                String name = config.property();
+
+                if( name == null || name.trim().isEmpty())  {
+                    name = parameterNames[i];
+                }
+                propertyNames.add(name);
+            }
+        }
+
+        return propertyNames;
     }
 
     private Class unwrapParameterType(Constructor constructor, Class paramClass, int i) {
@@ -207,12 +265,12 @@ public class ReststopPluginLoader {
         }
     }
 
-    private Object[] getConstructorParameters(Constructor constructor, ClassLoader classLoader, PluginState pluginState) {
+    private Object[] getConstructorParameters(Constructor constructor, PluginState pluginState, Properties config) {
 
         String[] parameterNames = readParameterNames(constructor.getDeclaringClass());
         Object[] params = new Object[constructor.getParameterTypes().length];
         for (int i = 0; i < constructor.getParameterTypes().length; i++) {
-            params[i] = findInjectableService(constructor, i, pluginState, classLoader, parameterNames[i]);
+            params[i] = findInjectableService(constructor, i, pluginState, parameterNames[i], config);
 
         }
         return params;
@@ -240,11 +298,11 @@ public class ReststopPluginLoader {
         }
     }
 
-    private static Object findInjectableService(Constructor constructor, int i, PluginState pluginState, ClassLoader classLoader, String parameterName) {
+    private static Object findInjectableService(Constructor constructor, int i, PluginState pluginState, String parameterName, Properties config) {
         Class<?> paramClass = constructor.getParameterTypes()[i];
 
         if(constructor.getParameters()[i].isAnnotationPresent(Config.class)) {
-            return getConfigProperty(constructor.getParameters()[i], parameterName, classLoader);
+            return getConfigProperty(constructor.getParameters()[i], parameterName, config);
         }
 
         if(paramClass == Collection.class) {
@@ -267,10 +325,7 @@ public class ReststopPluginLoader {
         return pluginState.getService(paramClass);
     }
 
-    private static Object getConfigProperty(Parameter param, String parameterName, ClassLoader loader) {
-
-        PluginClassLoader pluginClassLoader = (PluginClassLoader) loader;
-        Properties properties = pluginClassLoader.getPluginInfo().getConfig();
+    private static Object getConfigProperty(Parameter param, String parameterName, Properties properties) {
 
         Config config = param.getAnnotation(Config.class);
 

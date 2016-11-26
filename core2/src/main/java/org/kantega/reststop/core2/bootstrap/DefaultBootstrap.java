@@ -29,8 +29,6 @@ import java.net.MalformedURLException;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
-import static org.kantega.reststop.classloaderutils.PluginInfo.configure;
-
 /**
  *
  */
@@ -44,24 +42,14 @@ public class DefaultBootstrap implements Bootstrap{
     @Override
     public void bootstrap(File globalConfigurationFile, Document pluginsXml, File repositoryDirectory) {
         List<PluginInfo> parsed = PluginInfo.parse(pluginsXml);
-        configure(parsed, globalConfigurationFile);
 
         ClassLoader parentClassLoader = getClass().getClassLoader();
 
-        manager = new DefaultReststopPluginManager(parentClassLoader);
+        manager = new DefaultReststopPluginManager(parentClassLoader, globalConfigurationFile);
 
         ClassLoaderFactory classLoaderFactory = new DefaultClassLoaderFactory(repositoryDirectory);
 
         deployPlugins(parsed, classLoaderFactory);
-
-        /*
-        manager.getPluginClassLoaders().stream()
-                .map(cl -> (PluginClassLoader)cl)
-                .filter(cl -> cl.getPluginInfo().getArtifactId().equals("reststop-cxf-plugin"))
-                .forEach(cl ->
-                        manager.redeploy(Collections.singletonList(cl), classLoaderFactory)
-                );
-                */
 
         try {
             shutdownLatch.await();

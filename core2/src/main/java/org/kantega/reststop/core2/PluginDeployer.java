@@ -18,10 +18,7 @@ package org.kantega.reststop.core2;
 
 import org.kantega.reststop.classloaderutils.*;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -32,11 +29,12 @@ import java.util.stream.Stream;
  */
 public class PluginDeployer {
 
-    private final ReststopPluginLoader pluginLoader = new ReststopPluginLoader();
+    private final ReststopPluginLoader pluginLoader;
     private final ClassLoader parentClassLoader;
 
-    public PluginDeployer(ClassLoader parentClassLoader) {
+    public PluginDeployer(ClassLoader parentClassLoader, File configFile) {
         this.parentClassLoader = parentClassLoader;
+        pluginLoader = new ReststopPluginLoader(configFile);
     }
 
     public PluginState deploy(Collection<PluginInfo> plugins, ClassLoaderFactory factory, PluginState currentPluginState) {
@@ -203,7 +201,9 @@ public class PluginDeployer {
         Class pluginClass = pluginLoader.loadPluginClass(classLoader, className);
         return new PluginClassInfo(classLoader,
                 pluginClass,
-                pluginLoader.findConsumedTypes(pluginClass), pluginLoader.findExportedTypes(pluginClass));
+                pluginLoader.findConsumedPropertyNames(pluginClass),
+                pluginLoader.findConsumedTypes(pluginClass),
+                pluginLoader.findExportedTypes(pluginClass));
     }
 
     private Set<String> readLines(ClassLoader pluginClassLoader, String path) {
@@ -217,5 +217,19 @@ public class PluginDeployer {
         } else {
             return Collections.emptySet();
         }
+    }
+
+    public PluginState reconfigure(Set<String> changedProps, PluginState pluginState) {
+        List<LoadedPluginClass> configuredWith = pluginState.findConfiguredWith(changedProps);
+        Set<Class> exportedTypes = getTypesExportedBy(configuredWith.stream().map(LoadedPluginClass::getPluginClassInfo).collect(Collectors.toList()));
+        List<LoadedPluginClass> consumers = pluginState.findConsumers(exportedTypes);
+
+        List<LoadedPluginClass> undeploys = Stream.concat(configuredWith.stream(), consumers.stream())
+                .distinct()
+                .collect(Collectors.toList());
+
+        pluginState = undeploy(undeploys, pluginState);
+
+        return  deploy(undeploys.stream().map(LoadedPluginClass::getPluginClassInfo).collect(Collectors.toList()), pluginState);
     }
 }

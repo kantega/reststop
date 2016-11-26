@@ -20,7 +20,6 @@ import org.kantega.reststop.api.PluginExport;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -197,5 +196,11 @@ public class PluginState {
         List<PluginClassLoader> classLoaders = new ArrayList<>(this.classLoaders);
         classLoaders.removeAll(remove);
         return new PluginState(plugins, classLoaders, staticServices);
+    }
+
+    public List<LoadedPluginClass> findConfiguredWith(Set<String> changedProps) {
+        return this.plugins.stream()
+                .filter(p -> p.getPluginClassInfo().getPropertyNames().stream().anyMatch(changedProps::contains))
+                .collect(Collectors.toList());
     }
 }

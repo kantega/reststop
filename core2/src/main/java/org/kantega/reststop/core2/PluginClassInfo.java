@@ -28,12 +28,14 @@ public class PluginClassInfo {
 
     private final PluginClassLoader classLoader;
     private final Class pluginClass;
+    private final Set<String> propertyNames;
     private final Set<Class> imports;
     private final Set<Class> exports;
 
-    public PluginClassInfo(PluginClassLoader classLoader, Class pluginClass, Set<Class> imports, Set<Class> exports) {
+    public PluginClassInfo(PluginClassLoader classLoader, Class pluginClass, Set<String> propertyNames, Set<Class> imports, Set<Class> exports) {
         this.classLoader = classLoader;
         this.pluginClass = pluginClass;
+        this.propertyNames = propertyNames;
         this.imports = imports;
         this.exports = exports;
     }
@@ -117,5 +119,7 @@ public class PluginClassInfo {
         return pluginClass;
     }
 
-
+    public Set<String> getPropertyNames() {
+        return propertyNames;
+    }
 }

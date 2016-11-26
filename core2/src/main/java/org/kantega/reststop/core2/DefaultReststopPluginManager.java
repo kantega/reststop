@@ -21,10 +21,8 @@ import org.kantega.reststop.api.ReststopPluginManager;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.File;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -35,16 +33,18 @@ public class DefaultReststopPluginManager implements ReststopPluginManager {
 
 
     private final PluginDeployer pluginDeployer;
+    private final File configFile;
 
     private volatile PluginState pluginState;
 
 
-    public DefaultReststopPluginManager(ClassLoader parentClassLoader) {
-        this(parentClassLoader, Collections.emptyMap());
+    public DefaultReststopPluginManager(ClassLoader parentClassLoader, File configFile) {
+        this(parentClassLoader, configFile, Collections.emptyMap());
     }
 
-    public DefaultReststopPluginManager(ClassLoader parentClassLoader, Map<Class, Object> staticServices) {
-        this.pluginDeployer = new PluginDeployer(parentClassLoader);
+    public DefaultReststopPluginManager(ClassLoader parentClassLoader, File configFile, Map<Class, Object> staticServices) {
+        this.configFile = configFile;
+        this.pluginDeployer = new PluginDeployer(parentClassLoader, configFile);
         Map<Class, Object> services = new HashMap<>(staticServices);
         services.put(ReststopPluginManager.class, this);
         pluginState = new PluginState(services);
@@ -60,6 +60,10 @@ public class DefaultReststopPluginManager implements ReststopPluginManager {
 
     public synchronized void redeploy(Collection<PluginClassLoader> remove, ClassLoaderFactory classLoaderFactory) {
         pluginState = pluginDeployer.redeploy(remove, classLoaderFactory, pluginState);
+    }
+
+    public synchronized void reconfigure(Set<String> changedProps) {
+        pluginState = pluginDeployer.reconfigure(changedProps, pluginState);
     }
 
     @Override
@@ -91,5 +95,9 @@ public class DefaultReststopPluginManager implements ReststopPluginManager {
     @Override
     public <T> Collection<PluginExport<T>> findPluginExports(Class<T> type) {
         return pluginState.findExports((Class)type);
+    }
+
+    public File getConfigFile() {
+        return configFile;
     }
 }
