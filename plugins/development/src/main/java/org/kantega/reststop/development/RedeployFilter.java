@@ -19,6 +19,7 @@ package org.kantega.reststop.development;
 import org.apache.velocity.app.VelocityEngine;
 import org.kantega.reststop.api.ServletBuilder;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
+import org.kantega.reststop.classloaderutils.PluginInfo;
 import org.kantega.reststop.core2.DefaultReststopPluginManager;
 
 import javax.servlet.*;
@@ -27,8 +28,10 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  *
@@ -36,6 +39,7 @@ import java.util.stream.Collectors;
 public class RedeployFilter implements Filter {
 
 
+    private final DevelopmentClassloader shadowClassLoader;
     private volatile boolean checkingRedeploy = false;
 
     private final Object runTestsMonitor = new Object();
@@ -49,6 +53,8 @@ public class RedeployFilter implements Filter {
         this.servletBuilder = servletBuilder;
         this.velocityEngine = velocityEngine;
         this.shouldRunTests = shouldRunTests;
+        PluginInfo pluginInfo = ((PluginClassLoader) getClass().getClassLoader()).getPluginInfo();
+        this.shadowClassLoader = (DevelopmentClassloader) DevelopmentClassLoaderFactory.getInstance().createPluginClassLoader(pluginInfo, getClass().getClassLoader().getParent(), Collections.emptyList());
     }
 
     @Override
@@ -102,7 +108,12 @@ public class RedeployFilter implements Filter {
                             .map(c -> (PluginClassLoader) c)
                             .collect(Collectors.toList());
 
-                    pluginManager.redeploy(stale, factory);
+                    if(stale.contains(shadowClassLoader)) {
+                        pluginManager.redeploy(new ArrayList<>(pluginManager.getPluginClassLoaders()), factory);
+                    } else {
+                        pluginManager.redeploy(stale, factory);
+                    }
+
 
                     if (shouldRunTests) {
                         /*
@@ -178,9 +189,9 @@ public class RedeployFilter implements Filter {
     }
 
     public List<DevelopmentClassloader> findStaleClassLoaders() {
-        return pluginManager.getPluginClassLoaders().stream()
+        return Stream.concat(pluginManager.getPluginClassLoaders().stream()
                 .filter(cl -> cl instanceof DevelopmentClassloader)
-                .map(cl -> (DevelopmentClassloader) cl)
+                .map(cl -> (DevelopmentClassloader) cl), Stream.of(shadowClassLoader))
                 .filter(cl -> cl.isStaleSources() || cl.isFailed())
                 .collect(Collectors.toList());
     }
