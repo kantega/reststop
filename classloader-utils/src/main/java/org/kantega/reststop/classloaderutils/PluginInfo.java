@@ -120,7 +120,7 @@ public class PluginInfo extends Artifact {
                         Element artifactElement = (Element) artifacts.item(a);
                         String filePath = artifactElement.getAttribute("file");
                         File file = null;
-                        if(filePath != null) {
+                        if(filePath != null && !"".equals(filePath)) {
                             file = new File(filePath);
                         }
                         Artifact artifact = new Artifact(artifactElement.getAttribute("groupId"),

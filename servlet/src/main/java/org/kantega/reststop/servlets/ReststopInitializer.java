@@ -192,13 +192,13 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
     private void resolve(List<PluginInfo> infos, File repoDir) {
         for (PluginInfo info: infos) {
-            if(info.getFile() != null) {
+            if(info.getFile() == null) {
                 File pluginJar = getPluginFile(repoDir, info);
                 info.setFile(pluginJar);
             }
 
             for (Artifact artifact : info.getClassPath("runtime")) {
-                if(artifact.getFile() != null) {
+                if(artifact.getFile() == null) {
                     artifact.setFile(getPluginFile(repoDir, artifact));
                 }
             }
