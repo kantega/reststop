@@ -21,11 +21,19 @@ import org.apache.maven.model.Plugin;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.shared.invoker.DefaultInvocationRequest;
+import org.apache.maven.shared.invoker.InvocationRequest;
+import org.apache.maven.shared.invoker.Invoker;
+import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.xml.sax.SAXException;
@@ -38,8 +46,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
+
+import static java.util.Arrays.asList;
 
 /**
  * Creates a new Reststop plugins in an already created Reststop Maven project.
@@ -64,6 +75,20 @@ public class CreatePluginMojo extends AbstractCreateMojo {
 
     @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject mavenProject;
+
+    @Component
+    private Invoker invoker;
+
+    @Component
+    protected RepositorySystem repoSystem;
+
+    @Parameter(defaultValue ="${repositorySystemSession}" ,readonly = true)
+    protected RepositorySystemSession repoSession;
+
+    @Parameter(defaultValue = "${project.remoteProjectRepositories}")
+    protected List<RemoteRepository> remoteRepos;
+
+
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -102,6 +127,10 @@ public class CreatePluginMojo extends AbstractCreateMojo {
                 throw new MojoFailureException("Could not find the webapp directory, resulting in an improper Reststop directory structure, please use create goal.");
             }
 
+            if(rootArtifactId.endsWith("-parent")) {
+                rootArtifactId = rootArtifactId.substring(0, rootArtifactId.indexOf("-parent"));
+            }
+
             Map<String, String> options = getOptions();
             pack = options.get("package").toLowerCase();
             pluginName = options.get("name").toLowerCase();
@@ -117,6 +146,7 @@ public class CreatePluginMojo extends AbstractCreateMojo {
             tokens.put("${groupId}", groupId);
             tokens.put("${name}", pluginName);
             tokens.put("${rootArtifactId}", rootArtifactId);
+            tokens.put("${version}", mavenProject.getVersion());
             createMavenModule(tokens, getClass().getResourceAsStream("dist/template-newplugin-pom.xml"), pluginPomFile);
 
             new File(pluginDir, "src/main/resources").mkdirs();
@@ -131,11 +161,31 @@ public class CreatePluginMojo extends AbstractCreateMojo {
             addNewFilesToGit(pluginsDir, pluginPomFile, pluginClassFile);
 
             getLog().info(String.format("Successfully generated new plugin '%s' in %s.", pluginName, pluginDir));
+
+            if(false) {
+                cleanInstall(pluginDir);
+                Resolver resolver = new Resolver(repoSystem, repoSession, remoteRepos, getLog());
+                new Deployer(resolver, getLog()).deployPlugin(groupId, rootArtifactId + "-" + pluginName, mavenProject.getVersion(), pluginDir);
+            }
+
         } catch (IOException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
 
 
+    }
+
+    private void cleanInstall(File pluginDir) throws MojoExecutionException, MojoFailureException {
+        InvocationRequest request = new DefaultInvocationRequest();
+        request.setPomFile(new File(pluginDir, "pom.xml"));
+        request.setGoals(asList("clean", "install"));
+        request.addShellEnvironment("MAVEN_DEBUG_OPTS", "");
+
+        try {
+            invoker.execute(request);
+        } catch (MavenInvocationException e) {
+            throw new MojoExecutionException("Failed executing mvn clean install on created project", e);
+        }
     }
 
     private void addNewFilesToGit(File pluginsDir, File pluginPomFile, File pluginClassFile) throws IOException {

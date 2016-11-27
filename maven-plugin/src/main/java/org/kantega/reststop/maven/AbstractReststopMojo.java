@@ -16,7 +16,6 @@
 
 package org.kantega.reststop.maven;
 
-import org.apache.maven.model.Exclusion;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -27,14 +26,8 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
-import org.eclipse.aether.collection.CollectRequest;
-import org.eclipse.aether.graph.Dependency;
-import org.eclipse.aether.graph.DependencyFilter;
-import org.eclipse.aether.graph.DependencyNode;
 import org.eclipse.aether.repository.RemoteRepository;
-import org.eclipse.aether.resolution.*;
 import org.eclipse.aether.util.artifact.JavaScopes;
-import org.eclipse.aether.util.filter.DependencyFilterUtils;
 import org.eclipse.jetty.maven.plugin.JettyWebAppContext;
 import org.eclipse.jetty.server.Server;
 import org.kantega.reststop.classloaderutils.CircularDependencyException;
@@ -108,11 +101,9 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
         List<PluginInfo> pluginInfos = getPluginInfos();
 
-        Document document = buildPluginsDocument(prod, pluginInfos);
+        validateCircularDependencies(pluginInfos);
 
-        validateCircularDependencies(document);
-
-        return document;
+        return buildPluginsDocument(prod, pluginInfos);
 
 
     }
@@ -199,89 +190,15 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
     }
 
     private List<PluginInfo> getPluginInfos() throws MojoFailureException, MojoExecutionException {
-        List<PluginInfo> pluginInfos = new ArrayList<>();
-
-        for (Plugin plugin : getPlugins()) {
-            PluginInfo info = plugin.asPluginInfo();
-            pluginInfos.add(info);
-
-            Artifact pluginArtifact = resolveArtifact(plugin.getCoords());
-
-            info.setFile(pluginArtifact.getFile());
-
-            for(String scope : asList(JavaScopes.TEST, JavaScopes.RUNTIME, JavaScopes.COMPILE)) {
-
-                try {
-
-                    ArtifactDescriptorResult descriptorResult = repoSystem.readArtifactDescriptor(repoSession, new ArtifactDescriptorRequest(pluginArtifact, remoteRepos, null));
-
-                    CollectRequest collectRequest = new CollectRequest();
-
-                    for (RemoteRepository repo : remoteRepos) {
-                        collectRequest.addRepository(repo);
-                    }
-                    for (Dependency dependency : descriptorResult.getDependencies()) {
-                        collectRequest.addDependency(dependency);
-                    }
-
-                    collectRequest.setManagedDependencies(descriptorResult.getManagedDependencies());
-
-
-                    if(plugin.getDependencies() != null) {
-                        for (org.kantega.reststop.maven.Dependency dependency : plugin.getDependencies()) {
-                            List<org.eclipse.aether.graph.Exclusion> exclusions = new ArrayList<>();
-
-                            if(dependency.getExclusions() != null) {
-                                for (Exclusion exclusion : dependency.getExclusions()) {
-                                    exclusions.add(new org.eclipse.aether.graph.Exclusion(exclusion.getGroupId(), exclusion.getArtifactId(), "*", "*"));
-                                }
-                            }
-                            Dependency dep = new Dependency(new DefaultArtifact(dependency.getGroupId(),
-                                    dependency.getArtifactId(), dependency.getClassifier(), dependency.getType(), dependency.getVersion()), dependency.getScope(), dependency.isOptional(), exclusions);
-
-                            collectRequest.addDependency(dep);
-
-                        }
-                    }
-
-
-                    DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, new TransitiveFilter(DependencyFilterUtils.classpathFilter(scope)));
-
-                    DependencyResult dependencyResult = repoSystem.resolveDependencies(repoSession, dependencyRequest);
-
-                    if(!dependencyResult.getCollectExceptions().isEmpty()) {
-                        throw new MojoFailureException("Failed resolving plugin dependencies", dependencyResult.getCollectExceptions().get(0));
-                    }
-
-                    for(ArtifactResult result : dependencyResult.getArtifactResults()) {
-                        Artifact artifact = result.getArtifact();
-                        org.kantega.reststop.classloaderutils.Artifact pa  = new org.kantega.reststop.classloaderutils.Artifact();
-                        info.getClassPath(scope).add(pa);
-
-                        pa.setGroupId(artifact.getGroupId());
-                        pa.setArtifactId(artifact.getArtifactId());
-                        pa.setVersion(artifact.getBaseVersion());
-
-                        pa.setFile(artifact.getFile());
-                    }
-
-                } catch (DependencyResolutionException | ArtifactDescriptorException e) {
-                    throw new MojoFailureException("Failed resolving plugin dependencies", e);
-                }
-
-
-            }
-        }
-
+        List<PluginInfo> pluginInfos = new Resolver(repoSystem, repoSession, remoteRepos, getLog()).resolve(getPlugins());
         validateTransitivePluginsMissing(pluginInfos);
         validateNoPluginArtifactsOnRuntimeClasspath(pluginInfos);
         return pluginInfos;
     }
 
-    private void validateCircularDependencies(Document document) throws MojoFailureException {
+    private void validateCircularDependencies(List<PluginInfo> pluginInfos) throws MojoFailureException {
         try {
-            List<PluginInfo> infos = PluginInfo.parse(document);
-            PluginInfo.resolveClassloaderOrder(infos);
+            PluginInfo.resolveClassloaderOrder(pluginInfos);
         } catch (CircularDependencyException e) {
             throw new MojoFailureException(e.getMessage(), e);
         }
@@ -411,36 +328,7 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
 
     protected Artifact resolveArtifact(String coords) throws MojoFailureException, MojoExecutionException {
-        Artifact artifact;
-        try
-        {
-            artifact = new DefaultArtifact(coords);
-        }
-        catch ( IllegalArgumentException e )
-        {
-            throw new MojoFailureException( e.getMessage(), e );
-        }
-
-        ArtifactRequest request = new ArtifactRequest();
-        request.setArtifact( artifact );
-        request.setRepositories( remoteRepos );
-
-        getLog().info( "Resolving artifact " + artifact + " from " + remoteRepos );
-
-        ArtifactResult result;
-        try
-        {
-            result = repoSystem.resolveArtifact( repoSession, request );
-        }
-        catch ( ArtifactResolutionException e )
-        {
-            throw new MojoExecutionException( e.getMessage(), e );
-        }
-
-        getLog().info( "Resolved artifact " + artifact + " to " + result.getArtifact().getFile() + " from "
-                + result.getRepository() );
-
-        return result.getArtifact();
+        return new Resolver(repoSystem, repoSession, remoteRepos, getLog()).resolveArtifact(coords);
     }
 
     protected File getSourceDirectory(Plugin plugin) {
@@ -471,21 +359,5 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
         }
     }
 
-    private class TransitiveFilter implements DependencyFilter {
-        private final DependencyFilter dependencyFilter;
 
-        public TransitiveFilter(DependencyFilter dependencyFilter) {
-            this.dependencyFilter = dependencyFilter;
-        }
-
-        @Override
-        public boolean accept(DependencyNode node, List<DependencyNode> parents) {
-            for (DependencyNode parent : parents) {
-                if(!dependencyFilter.accept(parent, Collections.emptyList())) {
-                    return false;
-                }
-            }
-            return dependencyFilter.accept(node, parents);
-        }
-    }
 }

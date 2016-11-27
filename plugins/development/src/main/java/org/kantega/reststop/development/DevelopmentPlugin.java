@@ -39,20 +39,16 @@ public class DevelopmentPlugin  {
     @Export
     private final Collection<VelocityEngine> velocityEngines = new ArrayList<>();
 
-    private volatile boolean providerStarted = false;
-
-    @Export
-    private final Collection<PluginListener> listeners = new ArrayList<>();
-
     public DevelopmentPlugin(@Config(defaultValue = "true") String runTestsOnRedeploy,
-                             ReststopPluginManager pluginManager, final ServletBuilder servletBuilder, ServletContext servletContext) {
+                             ReststopPluginManager pluginManager, final ServletBuilder servletBuilder) {
 
         VelocityEngine velocityEngine = initVelocityEngine();
         velocityEngines.add(velocityEngine);
 
         filters.add(servletBuilder.filter(new DevelopmentAssetsFilter(), FilterPhase.PRE_UNMARSHAL, "/dev/assets/*"));
-        filters.add(servletBuilder.filter(new RedeployFilter((DefaultReststopPluginManager) pluginManager, servletBuilder, velocityEngine, "true".equals(runTestsOnRedeploy)), "/*", FilterPhase.PRE_UNMARSHAL));
+        filters.add(servletBuilder.filter(new RedeployFilter((DefaultReststopPluginManager) pluginManager, servletBuilder, velocityEngine, "true".equals(runTestsOnRedeploy)), FilterPhase.PRE_UNMARSHAL, "/*" ));
 
+        filters.add(servletBuilder.filter(new RemoteDeployFilter((DefaultReststopPluginManager) pluginManager), FilterPhase.PRE_UNMARSHAL, "/dev/deploy"));
     }
 
 

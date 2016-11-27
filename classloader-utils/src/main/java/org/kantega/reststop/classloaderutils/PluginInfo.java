@@ -47,14 +47,6 @@ public class PluginInfo extends Artifact {
         return classpaths.get(scope);
     }
 
-    public List<File> getClassPathFiles(String scope) {
-        List<File> files = new ArrayList<>();
-        for (Artifact artifact : getClassPath(scope)) {
-            files.add(artifact.getFile());
-        }
-        return files;
-    }
-
     public static List<PluginInfo> parse(Document document) {
         List<PluginInfo> infos = new ArrayList<>();
 
@@ -166,33 +158,6 @@ public class PluginInfo extends Artifact {
             }
         }
         return 0;
-    }
-
-    private Set<String> readLines(String suffix) {
-        Set<String> lines = new HashSet<>();
-
-        if(this.getFile() == null) {
-            return Collections.emptySet();
-        }
-        try (JarFile jar = new JarFile(this.getFile())) {
-            ZipEntry pluginsEntry = jar.getEntry("META-INF/services/ReststopPlugin/simple.txt");
-
-            if(pluginsEntry != null) {
-                Set<String> classes = readLines(jar.getInputStream(pluginsEntry));
-                for (String classname : classes) {
-                    ZipEntry entry = jar.getEntry(classname.replace('.', '/') + "." + suffix);
-                    if (entry != null) {
-                        InputStream inputStream = jar.getInputStream(entry);
-                        lines.addAll(readLines(inputStream));
-                    }
-
-                }
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-        return lines;
     }
 
     private Set<String> readLines(InputStream inputStream) throws IOException {
@@ -346,12 +311,6 @@ public class PluginInfo extends Artifact {
         if(priority == null) {
             priority = readPriority();
         }
-        if(priority == null) {
-            priority = 0;
-        }
         return priority;
     }
-
-
-
 }
