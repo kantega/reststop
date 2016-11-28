@@ -33,10 +33,8 @@
         <module>statistics</module>
         <module>jaxrs-api</module>
         <module>jersey</module>
-        <module>jersey-deploy</module>
         <module>jaxws-api</module>
         <module>cxf</module>
-        <module>cxf-deploy</module>
         <module>cxf-logging</module>
         <module>metrics</module>
         <module>metrics-servlets</module>

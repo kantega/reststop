@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.cxfdeploy;
+package org.kantega.reststop.jaxrs;
 
 import org.kantega.reststop.api.Plugin;
-import org.kantega.reststop.api.PluginExport;
-import org.kantega.reststop.jaxwsapi.EndpointConfiguration;
-import org.kantega.reststop.jaxwsapi.EndpointDeployer;
+import org.kantega.reststop.jaxrsapi.ApplicationDeployer;
 
+import javax.ws.rs.core.Application;
 import java.util.Collection;
 
 /**
  *
  */
 @Plugin
-public class CxfDeployPlugin {
+public class JerseyDeployPlugin {
 
-    public CxfDeployPlugin(EndpointDeployer deployer, Collection<PluginExport<EndpointConfiguration>> endpoints) {
-        deployer.deploy(endpoints);
+    public JerseyDeployPlugin(ApplicationDeployer deployer, Collection<Application> applications) {
+        deployer.deploy(applications);
     }
 }

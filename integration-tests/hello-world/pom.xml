@@ -177,11 +177,6 @@
 
                         <plugin>
                             <groupId>${project.parent.groupId}</groupId>
-                            <artifactId>reststop-jersey-deploy-plugin</artifactId>
-                            <version>${project.parent.version}</version>
-                        </plugin>
-                        <plugin>
-                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-cxf-logging-plugin</artifactId>
                             <version>${project.parent.version}</version>
                         </plugin>
@@ -189,12 +184,6 @@
                         <plugin>
                             <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-cxf-plugin</artifactId>
-                            <version>${project.parent.version}</version>
-                        </plugin>
-
-                        <plugin>
-                            <groupId>${project.parent.groupId}</groupId>
-                            <artifactId>reststop-cxf-deploy-plugin</artifactId>
                             <version>${project.parent.version}</version>
                         </plugin>
 
