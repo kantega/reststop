@@ -59,6 +59,44 @@
                 <groupId>org.kantega.reststop</groupId>
                 <artifactId>reststop-maven-plugin</artifactId>
                 <version>${project.version}</version>
+                <configuration>
+                    <applicationName>custom</applicationName>
+                    <plugins>
+                        <plugin>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>reststop-statistics-plugin</artifactId>
+                            <version>${project.version}</version>
+                        </plugin>
+                        <plugin>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>reststop-security-plugin</artifactId>
+                            <version>${project.version}</version>
+                        </plugin>
+                        <plugin>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>reststop-jersey-plugin</artifactId>
+                            <version>${project.version}</version>
+                        </plugin>
+                        <plugin>
+                            <groupId>org.kantega.reststop</groupId>
+                            <artifactId>reststop-jaxrs-api</artifactId>
+                            <version>${project.version}</version>
+                        </plugin>
+
+
+                        <plugin>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>reststop-custom-app-french</artifactId>
+                            <version>${project.version}</version>
+                        </plugin>
+
+                        <plugin>
+                            <groupId>${project.groupId}</groupId>
+                            <artifactId>reststop-custom-app-german</artifactId>
+                            <version>${project.version}</version>
+                        </plugin>
+                    </plugins>
+                </configuration>
                 <executions>
                     <execution>
                         <id>dist</id>
@@ -69,68 +107,8 @@
                             <packaging>none</packaging>
                             <container>jetty</container>
                         </configuration>
-
-                    </execution>
-                    <execution>
-                        <goals>
-                            <goal>resolve-plugins</goal>
-                        </goals>
-                        <configuration>
-                            <addDevelopmentPlugins>true</addDevelopmentPlugins>
-                            <plugins>
-                                <plugin>
-                                    <groupId>${project.groupId}</groupId>
-                                    <artifactId>reststop-statistics-plugin</artifactId>
-                                    <version>${project.version}</version>
-                                </plugin>
-                                <plugin>
-                                    <groupId>${project.groupId}</groupId>
-                                    <artifactId>reststop-security-plugin</artifactId>
-                                    <version>${project.version}</version>
-                                </plugin>
-                                <plugin>
-                                    <groupId>${project.groupId}</groupId>
-                                    <artifactId>reststop-jersey-plugin</artifactId>
-                                    <version>${project.version}</version>
-                                </plugin>
-                                <plugin>
-                                    <groupId>org.kantega.reststop</groupId>
-                                    <artifactId>reststop-jaxrs-api</artifactId>
-                                    <version>${project.version}</version>
-                                </plugin>
-
-
-                                <plugin>
-                                    <groupId>${project.groupId}</groupId>
-                                    <artifactId>reststop-custom-app-french</artifactId>
-                                    <version>${project.version}</version>
-                                </plugin>
-
-                                <plugin>
-                                    <groupId>${project.groupId}</groupId>
-                                    <artifactId>reststop-custom-app-german</artifactId>
-                                    <version>${project.version}</version>
-                                </plugin>
-                            </plugins>
-                        </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-maven-plugin</artifactId>
-                <version>${jetty.version}</version>
-                <configuration>
-                    <systemProperties>
-                        <systemProperty>
-                            <name>reststopPort</name>
-                            <value>8080</value>
-                        </systemProperty>
-                    </systemProperties>
-                    <webAppConfig>
-                        <overrideDescriptor>${basedir}/src/test/jetty/web-override.xml</overrideDescriptor>
-                    </webAppConfig>
-                </configuration>
             </plugin>
         </plugins>
     </build>

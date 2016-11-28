@@ -61,11 +61,22 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
     @Parameter(defaultValue = "8080")
     private int port;
 
+    @Parameter(defaultValue = "${basedir}/src/main/webapp")
+    protected File webAppSourceDirectory;
+
+    @Parameter(defaultValue = "${project.build.outputDirectory}")
+    protected File classesDirectory;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
-        File war = resolveArtifactFile(warCoords);
+        File war;
+        if("war".equals(mavenProject.getPackaging())) {
+            war = webAppSourceDirectory;
+        } else {
+            war = resolveArtifactFile(warCoords);
+        }
+
 
         startJetty(war);
 
