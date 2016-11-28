@@ -28,6 +28,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -91,6 +92,7 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
 
             JettyWebAppContext context = new JettyWebAppContext();
 
+            context.setServer(server);
             context.addServerClass("org.eclipse.aether.");
             context.setWar(war.getAbsolutePath());
             context.setContextPath(contextPath);
@@ -99,7 +101,7 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
             context.setInitParameter("applicationName", applicationName);
 
             customizeContext(context);
-
+            WebSocketServerContainerInitializer.configureContext( context );
 
             File jettyTmpDir = new File(tempDirectory, war.getName());
             jettyTmpDir.mkdirs();
