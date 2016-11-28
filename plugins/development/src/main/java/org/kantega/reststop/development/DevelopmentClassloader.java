@@ -190,7 +190,13 @@ public class DevelopmentClassloader extends PluginClassLoader{
             return false;
         }
         File target = new File(basedir, "target/classes");
-        return target.exists() && (newest(sourceDir) > newest(target));
+
+        if(!target.exists()) {
+            return false;
+        }
+        long newestSource = newest(sourceDir);
+        long newestClass = newest(target);
+        return newestSource > newestClass || newestClass > created;
     }
 
     public boolean isStaleTests() {
