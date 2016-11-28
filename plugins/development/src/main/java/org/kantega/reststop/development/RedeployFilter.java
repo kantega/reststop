@@ -18,6 +18,7 @@ package org.kantega.reststop.development;
 
 import org.apache.velocity.app.VelocityEngine;
 import org.kantega.reststop.api.ServletBuilder;
+import org.kantega.reststop.classloaderutils.BuildSystem;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
 import org.kantega.reststop.core2.DefaultReststopPluginManager;
@@ -83,14 +84,13 @@ public class RedeployFilter implements Filter {
             List<DevelopmentClassloader> staleClassLoaders = new ArrayList<>();
 
             synchronized (this) {
+
+                List<PluginInfo> needsBuild = needsBuild();
                 staleClassLoaders.addAll(findStaleClassLoaders());
 
                 Set<String>  changedProps = getModifiedConfigProps();
 
-                if (staleClassLoaders.isEmpty() && changedProps.isEmpty()) {
-                    filterChain.doFilter(servletRequest, servletResponse);
-                    return;
-                } else if(! staleClassLoaders.isEmpty()){
+                if(! staleClassLoaders.isEmpty()){
 
                     for (DevelopmentClassloader classloader : staleClassLoaders) {
                         try {
@@ -189,6 +189,27 @@ public class RedeployFilter implements Filter {
                         servletBuilder.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
                         return;
                     }
+                }  else if(!needsBuild.isEmpty()) {
+                    Collection<PluginClassLoader> undeploys = pluginManager.getPluginClassLoaders().stream()
+                            .filter(cl -> needsBuild.stream().anyMatch(pi -> cl.getPluginInfo().getPluginId().equals(pi.getPluginId())))
+                            .collect(Collectors.toList());
+                    pluginManager.undeploy(undeploys);
+
+                    List<PluginInfo> all = pluginManager.getPluginClassLoaders().stream()
+                            .map(PluginClassLoader::getPluginInfo)
+                            .collect(Collectors.toList());
+
+                    for (PluginInfo pluginInfo : needsBuild) {
+                        for (PluginInfo p : pluginInfo.getParents(all)) {
+                            pluginInfo.addDependsOn(p);
+                        }
+                    }
+                    pluginManager.deploy(needsBuild, DevelopmentClassLoaderFactory.getInstance());
+                    servletBuilder.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
+                    return;
+                } else {
+                    filterChain.doFilter(servletRequest, servletResponse);
+                    return;
                 }
 
 
@@ -199,6 +220,19 @@ public class RedeployFilter implements Filter {
             checkingRedeploy = false;
         }
 
+    }
+
+    private List<PluginInfo> needsBuild() {
+        BuildSystem buildSystem = BuildSystem.instance;
+        if(buildSystem == null) {
+            return Collections.emptyList();
+        } else {
+            return pluginManager.getPluginClassLoaders().stream()
+                    .filter(buildSystem::needsRefresh)
+                    .map(PluginClassLoader::getPluginInfo)
+                    .map(buildSystem::refresh)
+                    .collect(Collectors.toList());
+        }
     }
 
     private Set<String> getModifiedConfigProps() {

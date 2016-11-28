@@ -56,70 +56,76 @@ public class Resolver {
 
         info.setFile(pluginArtifact.getFile());
 
-        for(String scope : asList(JavaScopes.TEST, JavaScopes.RUNTIME, JavaScopes.COMPILE)) {
+        try {
+            ArtifactDescriptorResult descriptorResult = repoSystem.readArtifactDescriptor(repoSession, new ArtifactDescriptorRequest(pluginArtifact, remoteRepos, null));
 
-            try {
-
-                ArtifactDescriptorResult descriptorResult = repoSystem.readArtifactDescriptor(repoSession, new ArtifactDescriptorRequest(pluginArtifact, remoteRepos, null));
-
-                CollectRequest collectRequest = new CollectRequest();
-
-                for (RemoteRepository repo : remoteRepos) {
-                    collectRequest.addRepository(repo);
-                }
-                for (org.eclipse.aether.graph.Dependency dependency : descriptorResult.getDependencies()) {
-                    collectRequest.addDependency(dependency);
-                }
-
-                collectRequest.setManagedDependencies(descriptorResult.getManagedDependencies());
+            CollectRequest collectRequest = getCollectRequest(plugin, descriptorResult);
 
 
-                if(plugin.getDependencies() != null) {
-                    for (org.kantega.reststop.maven.Dependency dependency : plugin.getDependencies()) {
-                        List<org.eclipse.aether.graph.Exclusion> exclusions = new ArrayList<>();
-
-                        if(dependency.getExclusions() != null) {
-                            for (Exclusion exclusion : dependency.getExclusions()) {
-                                exclusions.add(new org.eclipse.aether.graph.Exclusion(exclusion.getGroupId(), exclusion.getArtifactId(), "*", "*"));
-                            }
-                        }
-                        org.eclipse.aether.graph.Dependency dep = new org.eclipse.aether.graph.Dependency(new DefaultArtifact(dependency.getGroupId(),
-                                dependency.getArtifactId(), dependency.getClassifier(), dependency.getType(), dependency.getVersion()), dependency.getScope(), dependency.isOptional(), exclusions);
-
-
-                        collectRequest.addDependency(dep);
-
-                    }
-                }
-
-
-                DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, new TransitiveFilter(DependencyFilterUtils.classpathFilter(scope)));
-
-                DependencyResult dependencyResult = repoSystem.resolveDependencies(repoSession, dependencyRequest);
-
-                if(!dependencyResult.getCollectExceptions().isEmpty()) {
-                    throw new MojoFailureException("Failed resolving plugin dependencies", dependencyResult.getCollectExceptions().get(0));
-                }
-
-                for(ArtifactResult result : dependencyResult.getArtifactResults()) {
-                    Artifact artifact = result.getArtifact();
-                    org.kantega.reststop.classloaderutils.Artifact pa  = new org.kantega.reststop.classloaderutils.Artifact();
-                    info.getClassPath(scope).add(pa);
-
-                    pa.setGroupId(artifact.getGroupId());
-                    pa.setArtifactId(artifact.getArtifactId());
-                    pa.setVersion(artifact.getBaseVersion());
-
-                    pa.setFile(artifact.getFile());
-                }
-
-            } catch (DependencyResolutionException | ArtifactDescriptorException e) {
-                throw new MojoFailureException("Failed resolving plugin dependencies", e);
-            }
-
-
+            resolveClasspaths(info, collectRequest);
+        } catch (DependencyResolutionException | ArtifactDescriptorException e) {
+            throw new MojoFailureException("Failed resolving plugin dependencies", e);
         }
         return info;
+    }
+
+    public void resolveClasspaths(PluginInfo info, CollectRequest collectRequest) throws DependencyResolutionException, MojoFailureException {
+        for(String scope : asList(JavaScopes.TEST, JavaScopes.RUNTIME, JavaScopes.COMPILE)) {
+
+            DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, new TransitiveFilter(DependencyFilterUtils.classpathFilter(scope)));
+
+            DependencyResult dependencyResult = repoSystem.resolveDependencies(repoSession, dependencyRequest);
+
+            if(!dependencyResult.getCollectExceptions().isEmpty()) {
+                throw new MojoFailureException("Failed resolving plugin dependencies", dependencyResult.getCollectExceptions().get(0));
+            }
+
+            for(ArtifactResult result : dependencyResult.getArtifactResults()) {
+                Artifact artifact = result.getArtifact();
+                org.kantega.reststop.classloaderutils.Artifact pa  = new org.kantega.reststop.classloaderutils.Artifact();
+                info.getClassPath(scope).add(pa);
+
+                pa.setGroupId(artifact.getGroupId());
+                pa.setArtifactId(artifact.getArtifactId());
+                pa.setVersion(artifact.getBaseVersion());
+
+                pa.setFile(artifact.getFile());
+            }
+
+        }
+    }
+
+    private CollectRequest getCollectRequest(Plugin plugin, ArtifactDescriptorResult descriptorResult) {
+        CollectRequest collectRequest = new CollectRequest();
+
+        for (RemoteRepository repo : remoteRepos) {
+            collectRequest.addRepository(repo);
+        }
+        for (org.eclipse.aether.graph.Dependency dependency : descriptorResult.getDependencies()) {
+            collectRequest.addDependency(dependency);
+        }
+
+        collectRequest.setManagedDependencies(descriptorResult.getManagedDependencies());
+
+
+        if(plugin.getDependencies() != null) {
+            for (Dependency dependency : plugin.getDependencies()) {
+                List<org.eclipse.aether.graph.Exclusion> exclusions = new ArrayList<>();
+
+                if(dependency.getExclusions() != null) {
+                    for (Exclusion exclusion : dependency.getExclusions()) {
+                        exclusions.add(new org.eclipse.aether.graph.Exclusion(exclusion.getGroupId(), exclusion.getArtifactId(), "*", "*"));
+                    }
+                }
+                org.eclipse.aether.graph.Dependency dep = new org.eclipse.aether.graph.Dependency(new DefaultArtifact(dependency.getGroupId(),
+                        dependency.getArtifactId(), dependency.getClassifier(), dependency.getType(), dependency.getVersion()), dependency.getScope(), dependency.isOptional(), exclusions);
+
+
+                collectRequest.addDependency(dep);
+
+            }
+        }
+        return collectRequest;
     }
 
     public Artifact resolveArtifact(String coords) throws MojoFailureException, MojoExecutionException {

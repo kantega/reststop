@@ -192,7 +192,7 @@ public class PluginState {
         return new PluginState(plugins, newClassLoaders, staticServices);
     }
 
-    public PluginState removeClassLoaders(List<PluginClassLoader> remove) {
+    public PluginState removeClassLoaders(Collection<PluginClassLoader> remove) {
         List<PluginClassLoader> classLoaders = new ArrayList<>(this.classLoaders);
         classLoaders.removeAll(remove);
         return new PluginState(plugins, classLoaders, staticServices);

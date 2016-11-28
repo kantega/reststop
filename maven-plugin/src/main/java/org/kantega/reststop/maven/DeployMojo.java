@@ -5,6 +5,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.*;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.shared.invoker.Invoker;
 import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
@@ -30,12 +31,14 @@ public class DeployMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject mavenProject;
 
+    @Component
+    private Invoker invoker;
+
+
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-
-
         Resolver resolver = new Resolver(repoSystem, repoSession, remoteRepos, getLog());
-        new Deployer(resolver, getLog()).deployPlugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion(), mavenProject.getBasedir());
+        new Deployer(resolver, invoker, getLog()).deployPlugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion(), mavenProject.getBasedir());
         getLog().info("Plugin successfully deployed");
     }
 }

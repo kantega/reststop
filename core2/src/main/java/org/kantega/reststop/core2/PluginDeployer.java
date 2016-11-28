@@ -158,7 +158,8 @@ public class PluginDeployer {
     }
 
     public PluginState undeploy(Collection<PluginClassLoader> classLoaders, PluginState currentPluginState) {
-        return undeploy(currentPluginState.getPluginsLoadedBy(classLoaders), currentPluginState);
+        PluginState pluginState = undeploy(currentPluginState.getPluginsLoadedBy(classLoaders), currentPluginState);
+        return pluginState.removeClassLoaders(new ArrayList<>(classLoaders));
     }
 
     private PluginState undeploy(List<LoadedPluginClass> plugins, PluginState currentPluginState) {

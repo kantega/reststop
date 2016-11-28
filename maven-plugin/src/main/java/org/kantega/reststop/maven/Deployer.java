@@ -4,6 +4,10 @@ import org.apache.commons.io.IOUtils;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.shared.invoker.DefaultInvocationRequest;
+import org.apache.maven.shared.invoker.InvocationRequest;
+import org.apache.maven.shared.invoker.Invoker;
+import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.eclipse.aether.util.artifact.JavaScopes;
 import org.kantega.reststop.classloaderutils.Artifact;
 import org.kantega.reststop.classloaderutils.PluginInfo;
@@ -25,10 +29,12 @@ import static java.util.Arrays.asList;
 public class Deployer {
 
     private final Resolver resolver;
+    private final Invoker invoker;
     private final Log log;
 
-    public Deployer(Resolver resolver, Log log) {
+    public Deployer(Resolver resolver, Invoker invoker, Log log) {
         this.resolver = resolver;
+        this.invoker = invoker;
         this.log = log;
     }
 
@@ -93,5 +99,27 @@ public class Deployer {
             sb.append("&");
         }
         sb.append(name).append("=").append(value);
+    }
+
+    public void cleanInstall(File pluginDir) throws MojoExecutionException {
+        maven(pluginDir, "clean", "install");
+    }
+
+
+    public void validate(File pluginDir) throws MojoExecutionException {
+        maven(pluginDir, "validate");
+    }
+
+
+    public void maven(File pluginDir, String... cmd) throws MojoExecutionException {
+        InvocationRequest request = new DefaultInvocationRequest();
+        request.setPomFile(new File(pluginDir, "pom.xml"));
+        request.setGoals(asList(cmd));
+        request.addShellEnvironment("MAVEN_DEBUG_OPTS", "");
+        try {
+            invoker.execute(request);
+        } catch (MavenInvocationException e) {
+            throw new MojoExecutionException("Failed executing mvn clean install on created project", e);
+        }
     }
 }

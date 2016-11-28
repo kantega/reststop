@@ -163,9 +163,10 @@ public class CreatePluginMojo extends AbstractCreateMojo {
             getLog().info(String.format("Successfully generated new plugin '%s' in %s.", pluginName, pluginDir));
 
             if(false) {
-                cleanInstall(pluginDir);
                 Resolver resolver = new Resolver(repoSystem, repoSession, remoteRepos, getLog());
-                new Deployer(resolver, getLog()).deployPlugin(groupId, rootArtifactId + "-" + pluginName, mavenProject.getVersion(), pluginDir);
+                Deployer deployer = new Deployer(resolver, invoker, getLog());
+                deployer.cleanInstall(pluginDir);
+                deployer.deployPlugin(groupId, rootArtifactId + "-" + pluginName, mavenProject.getVersion(), pluginDir);
             }
 
         } catch (IOException e) {
@@ -173,19 +174,6 @@ public class CreatePluginMojo extends AbstractCreateMojo {
         }
 
 
-    }
-
-    private void cleanInstall(File pluginDir) throws MojoExecutionException, MojoFailureException {
-        InvocationRequest request = new DefaultInvocationRequest();
-        request.setPomFile(new File(pluginDir, "pom.xml"));
-        request.setGoals(asList("clean", "install"));
-        request.addShellEnvironment("MAVEN_DEBUG_OPTS", "");
-
-        try {
-            invoker.execute(request);
-        } catch (MavenInvocationException e) {
-            throw new MojoExecutionException("Failed executing mvn clean install on created project", e);
-        }
     }
 
     private void addNewFilesToGit(File pluginsDir, File pluginPomFile, File pluginClassFile) throws IOException {

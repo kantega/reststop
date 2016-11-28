@@ -50,6 +50,9 @@ public class DefaultReststopPluginManager implements ReststopPluginManager {
         pluginState = new PluginState(services);
     }
 
+    public synchronized void undeploy(Collection<PluginClassLoader> classloaders) {
+        pluginState = pluginDeployer.undeploy(classloaders, pluginState);
+    }
     public synchronized void stop() {
         pluginState = pluginDeployer.undeploy(pluginState.getClassLoaders(), pluginState);
     }
