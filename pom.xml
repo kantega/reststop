@@ -70,7 +70,7 @@
         <module>classloader-utils</module>
         <module>annotation-processor</module>
         <module>api</module>
-        <module>core2</module>
+        <module>core</module>
         <module>servlet</module>
         <module>webapp</module>
         <module>maven-plugin</module>
@@ -128,7 +128,7 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
-                <artifactId>reststop-core2</artifactId>
+                <artifactId>reststop-core</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

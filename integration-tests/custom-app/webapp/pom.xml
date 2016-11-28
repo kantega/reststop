@@ -28,7 +28,7 @@
     <dependencies>
         <dependency>
             <groupId>org.kantega.reststop</groupId>
-            <artifactId>reststop-core2</artifactId>
+            <artifactId>reststop-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>

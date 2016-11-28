@@ -2,7 +2,7 @@ package org.kantega.reststop.development;
 
 import org.kantega.reststop.classloaderutils.Artifact;
 import org.kantega.reststop.classloaderutils.PluginInfo;
-import org.kantega.reststop.core2.DefaultReststopPluginManager;
+import org.kantega.reststop.core.DefaultReststopPluginManager;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;

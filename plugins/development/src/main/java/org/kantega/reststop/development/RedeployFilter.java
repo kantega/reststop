@@ -21,7 +21,7 @@ import org.kantega.reststop.api.ServletBuilder;
 import org.kantega.reststop.classloaderutils.BuildSystem;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
-import org.kantega.reststop.core2.DefaultReststopPluginManager;
+import org.kantega.reststop.core.DefaultReststopPluginManager;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;

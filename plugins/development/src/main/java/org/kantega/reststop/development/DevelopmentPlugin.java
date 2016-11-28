@@ -19,11 +19,10 @@ package org.kantega.reststop.development;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.kantega.reststop.api.*;
-import org.kantega.reststop.core2.DefaultReststopPluginManager;
+import org.kantega.reststop.core.DefaultReststopPluginManager;
 import org.kantega.reststop.development.velocity.SectionDirective;
 
 import javax.servlet.Filter;
-import javax.servlet.ServletContext;
 import java.util.ArrayList;
 import java.util.Collection;
 

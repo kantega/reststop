@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.core2;
+package org.kantega.reststop.core;
 
 /**
  *

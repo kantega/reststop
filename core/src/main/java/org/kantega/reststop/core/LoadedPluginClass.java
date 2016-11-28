@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.core2;
+package org.kantega.reststop.core;
 
 import org.kantega.reststop.api.PluginExport;
 
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 /**
  *

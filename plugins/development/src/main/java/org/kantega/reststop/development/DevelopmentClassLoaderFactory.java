@@ -3,7 +3,7 @@ package org.kantega.reststop.development;
 import org.kantega.reststop.classloaderutils.Artifact;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
-import org.kantega.reststop.core2.ClassLoaderFactory;
+import org.kantega.reststop.core.ClassLoaderFactory;
 
 import java.io.File;
 import java.util.ArrayList;

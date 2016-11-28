@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.core2.bootstrap;
+package org.kantega.reststop.core.bootstrap;
 
 import org.kantega.reststop.bootstrap.Bootstrap;
 import org.kantega.reststop.classloaderutils.Artifact;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
-import org.kantega.reststop.core2.ClassLoaderFactory;
-import org.kantega.reststop.core2.DefaultReststopPluginManager;
+import org.kantega.reststop.core.ClassLoaderFactory;
+import org.kantega.reststop.core.DefaultReststopPluginManager;
 import org.w3c.dom.Document;
 
 import java.io.File;
