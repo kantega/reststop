@@ -90,11 +90,11 @@
                             <version>${project.version}</version>
                         </plugin>
 
-                        <plugin>
+                       <!--<plugin>
                             <groupId>${project.groupId}</groupId>
                             <artifactId>reststop-custom-app-german</artifactId>
                             <version>${project.version}</version>
-                        </plugin>
+                        </plugin>-->
                     </plugins>
                 </configuration>
                 <executions>

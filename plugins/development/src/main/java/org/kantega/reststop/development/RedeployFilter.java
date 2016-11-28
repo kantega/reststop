@@ -83,12 +83,37 @@ public class RedeployFilter implements Filter {
 
             List<DevelopmentClassloader> staleClassLoaders = new ArrayList<>();
 
+            List<PluginInfo> needsBuild = new ArrayList<>();
+
+            Set<String>  changedProps = new HashSet<>();
+
             synchronized (this) {
 
-                List<PluginInfo> needsBuild = needsBuild();
+
+                needsBuild.addAll(needsBuild());
+
+                if(!needsBuild.isEmpty()) {
+                    Collection<PluginClassLoader> undeploys = pluginManager.getPluginClassLoaders().stream()
+                            .filter(cl -> needsBuild.stream().anyMatch(pi -> cl.getPluginInfo().getPluginId().equals(pi.getPluginId())))
+                            .collect(Collectors.toList());
+                    pluginManager.undeploy(undeploys);
+
+                    List<PluginInfo> all = pluginManager.getPluginClassLoaders().stream()
+                            .map(PluginClassLoader::getPluginInfo)
+                            .collect(Collectors.toList());
+
+                    for (PluginInfo pluginInfo : needsBuild) {
+                        for (PluginInfo p : pluginInfo.getParents(all)) {
+                            pluginInfo.addDependsOn(p);
+                        }
+                    }
+                    pluginManager.deploy(needsBuild, DevelopmentClassLoaderFactory.getInstance());
+                }
+
+
                 staleClassLoaders.addAll(findStaleClassLoaders());
 
-                Set<String>  changedProps = getModifiedConfigProps();
+
 
                 if(! staleClassLoaders.isEmpty()){
 
@@ -181,40 +206,24 @@ public class RedeployFilter implements Filter {
 
                     }
 
-                    servletBuilder.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
-                    return;
-                } else if(!changedProps.isEmpty()) {
-                    if(! changedProps.isEmpty()) {
-                        pluginManager.reconfigure(changedProps);
-                        servletBuilder.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
-                        return;
-                    }
-                }  else if(!needsBuild.isEmpty()) {
-                    Collection<PluginClassLoader> undeploys = pluginManager.getPluginClassLoaders().stream()
-                            .filter(cl -> needsBuild.stream().anyMatch(pi -> cl.getPluginInfo().getPluginId().equals(pi.getPluginId())))
-                            .collect(Collectors.toList());
-                    pluginManager.undeploy(undeploys);
-
-                    List<PluginInfo> all = pluginManager.getPluginClassLoaders().stream()
-                            .map(PluginClassLoader::getPluginInfo)
-                            .collect(Collectors.toList());
-
-                    for (PluginInfo pluginInfo : needsBuild) {
-                        for (PluginInfo p : pluginInfo.getParents(all)) {
-                            pluginInfo.addDependsOn(p);
-                        }
-                    }
-                    pluginManager.deploy(needsBuild, DevelopmentClassLoaderFactory.getInstance());
-                    servletBuilder.newFilterChain(filterChain).doFilter(servletRequest, servletResponse);
-                    return;
-                } else {
-                    filterChain.doFilter(servletRequest, servletResponse);
-                    return;
                 }
 
+                changedProps.addAll(getModifiedConfigProps());
+
+                if(!changedProps.isEmpty()) {
+                    if(! changedProps.isEmpty()) {
+                        pluginManager.reconfigure(changedProps);
+                    }
+                }
 
             }
-            filterChain.doFilter(servletRequest, servletResponse);
+
+            if(!needsBuild.isEmpty() || !staleClassLoaders.isEmpty() || !changedProps.isEmpty()) {
+                servletBuilder.newFilterChain(filterChain).doFilter(req, resp);
+            } else {
+                filterChain.doFilter(servletRequest, servletResponse);
+                return;
+            }
 
         } finally {
             checkingRedeploy = false;
