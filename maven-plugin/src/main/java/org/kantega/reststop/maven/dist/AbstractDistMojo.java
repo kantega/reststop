@@ -206,7 +206,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         File pluginsXmlFile = new File(distDirectory, "plugins.xml");
         writePluginsXml(pluginsXmlFile, manager, pluginsXmlContent);
         try {
-            Files.copy(pluginsXmlFile.toPath(), new File(mavenProject.getBasedir(), "target/plugins.xml").toPath());
+            Files.copy(pluginsXmlFile.toPath(), new File(mavenProject.getBasedir(), "target/plugins.xml").toPath(), StandardCopyOption.REPLACE_EXISTING);
         } catch (IOException e) {
             throw new MojoFailureException("Failed to copy plugins.xml", e);
         }
