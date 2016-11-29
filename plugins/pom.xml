@@ -27,6 +27,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>assets</module>
         <module>security</module>
         <module>development</module>
         <module>development-console</module>

@@ -49,10 +49,6 @@ public class ConfDocMojo extends AbstractReststopMojo {
     @Parameter(defaultValue = "${basedir}/src/config")
     private File configDir;
 
-
-    @Parameter(defaultValue = "${plugin.version}")
-    private String pluginVersion;
-
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
 
