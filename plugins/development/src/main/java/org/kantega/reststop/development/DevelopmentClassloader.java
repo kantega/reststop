@@ -38,6 +38,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.function.Predicate;
 import java.util.jar.Manifest;
 
 import static java.util.Arrays.asList;
@@ -194,21 +195,21 @@ public class DevelopmentClassloader extends PluginClassLoader{
         if(!target.exists()) {
             return false;
         }
-        long newestSource = newest(sourceDir);
-        long newestClass = newest(target);
+        long newestSource = newest(sourceDir, p -> p.getFileName().toString().endsWith(".java"));
+        long newestClass = newest(target, p -> p.getFileName().toString().endsWith(".class"));
         return newestSource > newestClass || newestClass > created;
     }
 
     public boolean isStaleTests() {
         File sources = new File(basedir, "src/test/java");
-        return sources.exists() && newest(sources) > lastTestCompile;
+        return sources.exists() && newest(sources, p -> p.getFileName().toString().endsWith(".java")) > lastTestCompile;
     }
 
-    private long newest(File directory) {
+    private long newest(File directory, Predicate<Path> filter) {
         if(! directory.exists()) {
             return 0;
         }
-        NewestFileVisitor visitor = new NewestFileVisitor();
+        NewestFileVisitor visitor = new NewestFileVisitor(filter);
         try {
             Files.walkFileTree(directory.toPath(), visitor);
         } catch (IOException e) {
@@ -309,11 +310,18 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
     private class NewestFileVisitor extends SimpleFileVisitor<Path> {
 
+        private final Predicate<Path> matcher;
         private long newest;
+
+        public NewestFileVisitor(Predicate<Path> matcher) {
+            this.matcher = matcher;
+        }
 
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-            newest = Math.max(file.toFile().lastModified(), newest);
+            if(matcher.test(file)) {
+                newest = Math.max(file.toFile().lastModified(), newest);
+            }
             return FileVisitResult.CONTINUE;
         }
 
@@ -353,7 +361,7 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
 
     private void compileJava(File sourceDirectory, File outputDirectory, List<File> classpath, StandardJavaFileManager manager) {
-        List<File> sourceFiles = getCompilationUnits(sourceDirectory, newest(outputDirectory));
+        List<File> sourceFiles = getCompilationUnits(sourceDirectory, newest(outputDirectory, p -> p.getFileName().toString().endsWith(".class")));
 
         if (!sourceFiles.isEmpty()) {
 

@@ -37,13 +37,6 @@ public class PluginDeployer {
         pluginLoader = new ReststopPluginLoader(configFile);
     }
 
-    public PluginState deploy(Collection<PluginInfo> plugins, ClassLoaderFactory factory, PluginState currentPluginState) {
-        List<PluginClassLoader> newClassLoaders = newClassLoaders(plugins, currentPluginState, factory);
-        PluginState pluginState = deploy(findPlugins(newClassLoaders), currentPluginState);
-        pluginState = pluginState.addPluginClassLoaders(newClassLoaders);
-        return pluginState;
-    }
-
     private PluginState deploy(List<PluginClassInfo> plugins,PluginState currentPluginState) {
 
         List<PluginClassInfo> startupOrder = PluginClassInfo.resolveStartupOrder(plugins);
@@ -55,16 +48,28 @@ public class PluginDeployer {
         return pluginState;
     }
 
-    public PluginState redeploy(Collection<PluginClassLoader> removeRequest, ClassLoaderFactory classLoaderFactory, PluginState currentPluginState) {
+    public PluginState deploy(Collection<PluginInfo> plugins, ClassLoaderFactory classLoaderFactory, PluginState currentPluginState) {
 
-        List<PluginClassLoader> remove = currentPluginState.getTransitiveClosure(removeRequest);
+        Map<String, PluginInfo> byId = plugins.stream().collect(Collectors.toMap(PluginInfo::getPluginId, Function.identity()));
+
+        List<PluginClassLoader> replaceRequest = currentPluginState.getClassLoaders().stream()
+                .filter(cl -> byId.containsKey(cl.getPluginInfo().getPluginId()))
+                .collect(Collectors.toList());
+
+        List<PluginInfo> addRequest = plugins.stream()
+                .filter(p -> ! currentPluginState.getClassLoaders().stream().anyMatch(cl -> cl.getPluginInfo().getPluginId().equals(p.getPluginId())))
+                .collect(Collectors.toList());
+
+
+        List<PluginClassLoader> remove = currentPluginState.getTransitiveClosure(replaceRequest);
 
         List<LoadedPluginClass> removedPlugins = currentPluginState.getPluginsLoadedBy(remove);
 
-        List<PluginInfo> removedPluginInfo = remove.stream().
-                map(PluginClassLoader::getPluginInfo).collect(Collectors.toList());
+        List<PluginInfo> newClassLoaderPluginInfos = Stream.concat(remove.stream().map(PluginClassLoader::getPluginInfo).map(p -> byId.get(p.getPluginId())),
+                addRequest.stream()).collect(Collectors.toList());
 
-        List<PluginClassLoader> newClassLoaders = newClassLoaders(removedPluginInfo, currentPluginState, classLoaderFactory);
+
+        List<PluginClassLoader> newClassLoaders = newClassLoaders(newClassLoaderPluginInfos, currentPluginState, classLoaderFactory);
         List<PluginClassInfo> newPlugins = findPlugins(newClassLoaders);
 
         List<LoadedPluginClass> affectedPlugins = currentPluginState.findConsumers(getAffectedTypes(removedPlugins, newPlugins));

@@ -93,10 +93,6 @@ public class RedeployFilter implements Filter {
                 needsBuild.addAll(needsBuild());
 
                 if(!needsBuild.isEmpty()) {
-                    Collection<PluginClassLoader> undeploys = pluginManager.getPluginClassLoaders().stream()
-                            .filter(cl -> needsBuild.stream().anyMatch(pi -> cl.getPluginInfo().getPluginId().equals(pi.getPluginId())))
-                            .collect(Collectors.toList());
-                    pluginManager.undeploy(undeploys);
 
                     List<PluginInfo> all = pluginManager.getPluginClassLoaders().stream()
                             .map(PluginClassLoader::getPluginInfo)
@@ -120,6 +116,7 @@ public class RedeployFilter implements Filter {
                     for (DevelopmentClassloader classloader : staleClassLoaders) {
                         try {
 
+                            classloader.setFailed(true);
                             classloader.compileSources();
                             classloader.copySourceResorces();
                             classloader.compileJavaTests();
@@ -135,14 +132,16 @@ public class RedeployFilter implements Filter {
 
                     DevelopmentClassLoaderFactory factory = DevelopmentClassLoaderFactory.getInstance();
 
-                    Collection<PluginClassLoader> stale = staleClassLoaders.stream()
+                    Collection<PluginInfo> stale = staleClassLoaders.stream()
                             .map(c -> (PluginClassLoader) c)
+                            .map(PluginClassLoader::getPluginInfo)
                             .collect(Collectors.toList());
 
                     if(stale.contains(shadowClassLoader)) {
-                        pluginManager.redeploy(new ArrayList<>(pluginManager.getPluginClassLoaders()), factory);
+                        List<PluginInfo> all = pluginManager.getPluginClassLoaders().stream().map(PluginClassLoader::getPluginInfo).collect(Collectors.toList());
+                        pluginManager.deploy(all, factory);
                     } else {
-                        pluginManager.redeploy(stale, factory);
+                        pluginManager.deploy(stale, factory);
                     }
 
 
