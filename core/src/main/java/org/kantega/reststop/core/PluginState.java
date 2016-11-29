@@ -18,8 +18,10 @@ package org.kantega.reststop.core;
 
 import org.kantega.reststop.api.PluginExport;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
+import org.kantega.reststop.classloaderutils.PluginInfo;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -34,6 +36,7 @@ public class PluginState {
     private final Map<Class, Object> staticServices;
 
     // Computed for lookup
+    private final Map<String, PluginInfo> pluginInfosById;
     private final Map<Object, ClassLoader> byClassLoader;
     private final Map<Class, List<PluginExport>> exports;
     private final Map<Class, List<Object>> services;
@@ -71,6 +74,10 @@ public class PluginState {
         this.allPlugins = Collections.unmodifiableList(plugins.stream()
                 .map(LoadedPluginClass::getPlugin)
                 .collect(Collectors.toList()));
+
+        pluginInfosById = classLoaders.stream()
+                .map(PluginClassLoader::getPluginInfo)
+                .collect(Collectors.toMap(PluginInfo::getPluginId, Function.identity()));
     }
 
 
@@ -105,6 +112,10 @@ public class PluginState {
 
     public Collection<PluginClassLoader> getClassLoaders() {
         return classLoaders;
+    }
+
+    public Map<String, PluginInfo> getPluginInfosById() {
+        return pluginInfosById;
     }
 
 

@@ -57,7 +57,7 @@ public class PluginDeployer {
                 .collect(Collectors.toList());
 
         List<PluginInfo> addRequest = plugins.stream()
-                .filter(p -> ! currentPluginState.getClassLoaders().stream().anyMatch(cl -> cl.getPluginInfo().getPluginId().equals(p.getPluginId())))
+                .filter(p -> ! currentPluginState.getPluginInfosById().containsKey(p.getPluginId()))
                 .collect(Collectors.toList());
 
 
@@ -162,9 +162,16 @@ public class PluginDeployer {
         return newPlugins.stream().map(PluginClassInfo::getExports).flatMap(Set::stream).collect(Collectors.toSet());
     }
 
-    public PluginState undeploy(Collection<PluginClassLoader> classLoaders, PluginState currentPluginState) {
-        PluginState pluginState = undeploy(currentPluginState.getPluginsLoadedBy(classLoaders), currentPluginState);
-        return pluginState.removeClassLoaders(new ArrayList<>(classLoaders));
+    public PluginState undeploy(Collection<PluginInfo> plugins, PluginState currentPluginState) {
+        List<PluginClassLoader> classLoaders = currentPluginState.getClassLoaders().stream()
+                .filter(cl -> plugins.stream().anyMatch(p -> cl.getPluginInfo().getPluginId().equals(p.getPluginId())))
+                .collect(Collectors.toList());
+
+        List<PluginClassLoader> transitiveClosure = currentPluginState.getTransitiveClosure(classLoaders);
+
+        PluginState pluginState = undeploy(currentPluginState.getPluginsLoadedBy(transitiveClosure), currentPluginState);
+
+        return pluginState.removeClassLoaders(new ArrayList<>(transitiveClosure));
     }
 
     private PluginState undeploy(List<LoadedPluginClass> plugins, PluginState currentPluginState) {
