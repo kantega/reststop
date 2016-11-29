@@ -84,9 +84,6 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
     @Parameter (defaultValue = "${plugin.version}")
     protected String pluginVersion;
 
-    @Parameter( defaultValue = "true")
-    private boolean addAssetsPlugin;
-
 
     protected void customizeContext(JettyWebAppContext context) {
 
@@ -293,11 +290,6 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
         if(this.basePlugins != null) {
             plugins.addAll(this.basePlugins);
         }
-        if(addAssetsPlugin) {
-            Plugin assetsPlugin = new Plugin("org.kantega.reststop", "reststop-assets-plugin", pluginVersion);
-            plugins.add(assetsPlugin);
-        }
-
 
         return plugins;
     }
