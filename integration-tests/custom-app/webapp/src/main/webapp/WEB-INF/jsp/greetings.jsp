@@ -12,7 +12,7 @@
 <body>
 <h1>Greetings:</h1>
 <p>
-    These are the messages of the currently installed CustomAppPlugins:
+    These are the messages of the currently installed GreetingSources:
 </p>
 <ul>
     <c:forEach items="${greetings}" var="greeting">
