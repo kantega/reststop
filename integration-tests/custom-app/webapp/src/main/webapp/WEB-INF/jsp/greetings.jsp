@@ -22,12 +22,6 @@
     </c:forEach>
 </ul>
 
-<h2>Custom (app) plugins:</h2>
-<ul>
-    <c:forEach items="${appPlugins}" var="plugin">
-        <li>${plugin}</li>
-    </c:forEach>
-</ul>
 
 <h2>Reststop plugins:</h2>
 <ul>
