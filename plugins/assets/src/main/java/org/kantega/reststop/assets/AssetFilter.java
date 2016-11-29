@@ -17,9 +17,13 @@ import java.net.URL;
  */
 public class AssetFilter implements Filter {
     private final ReststopPluginManager manager;
+    private final String classpathPrefix;
+    private final String filterMapping;
 
-    public AssetFilter(ReststopPluginManager manager) {
+    public AssetFilter(ReststopPluginManager manager, String classpathPrefix, String filterMapping) {
         this.manager = manager;
+        this.classpathPrefix = classpathPrefix;
+        this.filterMapping = filterMapping;
     }
 
     @Override
@@ -35,7 +39,7 @@ public class AssetFilter implements Filter {
 
         String contextRelative = req.getRequestURI().substring(req.getContextPath().length());
 
-        final String path = "assets/" +contextRelative.substring("/assets/".length());
+        final String path = classpathPrefix +contextRelative.substring(filterMapping.length());
 
         for(ClassLoader loader : manager.getPluginClassLoaders()) {
 

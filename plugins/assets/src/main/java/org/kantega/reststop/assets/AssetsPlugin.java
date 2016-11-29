@@ -13,7 +13,11 @@ public class AssetsPlugin {
     @Export
     private final Filter assetFilter;
 
-    public AssetsPlugin(ServletBuilder servletBuilder, ReststopPluginManager reststopPluginManager) {
-        assetFilter = servletBuilder.filter(new AssetFilter(reststopPluginManager), FilterPhase.USER, "/assets/*");
+    public AssetsPlugin(ServletBuilder servletBuilder, ReststopPluginManager reststopPluginManager,
+                        @Config(defaultValue = "/assets/") String assetFilterMapping,
+                        @Config(defaultValue = "assets/") String assetFilterClassPathPrefix) {
+        AssetFilter filter = new AssetFilter(reststopPluginManager, assetFilterClassPathPrefix, assetFilterMapping);
+
+        assetFilter = servletBuilder.filter(filter, FilterPhase.USER, assetFilterMapping +"*");
     }
 }
