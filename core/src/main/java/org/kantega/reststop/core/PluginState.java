@@ -114,7 +114,8 @@ public class PluginState {
     }
 
     public <T> Collection<T> getServices(Class<T> type) {
-        return (Collection<T>) services.get(type);
+        Collection<T> services = (Collection<T>) this.services.get(type);
+        return services == null ? Collections.emptyList() : services;
     }
 
     public boolean hasService(Class<?> type) {
@@ -123,7 +124,7 @@ public class PluginState {
 
     public <T> T getService(Class<T> type) {
         List<Object> objects = services.get(type);
-        return objects.isEmpty() ? null : (T) objects.get(0);
+        return objects == null || objects.isEmpty() ? null : (T) objects.get(0);
     }
 
     public List<LoadedPluginClass> getPluginsLoadedBy(Collection<PluginClassLoader> classLoaders) {
