@@ -37,6 +37,13 @@
 
         <dependency>
             <groupId>${project.parent.groupId}</groupId>
+            <artifactId>reststop-servlet-api</artifactId>
+            <scope>provided</scope>
+            <version>${project.parent.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.parent.groupId}</groupId>
             <artifactId>reststop-jaxrs-api</artifactId>
             <scope>provided</scope>
             <version>${project.parent.version}</version>
@@ -254,6 +261,11 @@
                                     <groupId>org.slf4j</groupId>
                                     <artifactId>slf4j-simple</artifactId>
                                     <version>${slf4j.version}</version>
+                                </dependency>
+                                <dependency>
+                                    <groupId>${project.parent.groupId}</groupId>
+                                    <artifactId>reststop-servlet-api</artifactId>
+                                    <version>${project.parent.version}</version>
                                 </dependency>
                                 <dependency>
                                     <groupId>javax.servlet</groupId>

@@ -23,6 +23,8 @@ import org.glassfish.jersey.servlet.ServletProperties;
 import org.kantega.reststop.api.*;
 import org.kantega.reststop.jaxrsapi.ApplicationBuilder;
 import org.kantega.reststop.jaxrsapi.ApplicationDeployer;
+import org.kantega.reststop.servlet.api.FilterPhase;
+import org.kantega.reststop.servlet.api.ServletBuilder;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;

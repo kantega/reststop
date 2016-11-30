@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.api;
+package org.kantega.reststop.servlet.api;
 
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;

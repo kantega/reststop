@@ -21,6 +21,8 @@ import org.apache.velocity.app.VelocityEngine;
 import org.kantega.reststop.api.*;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
+import org.kantega.reststop.servlet.api.FilterPhase;
+import org.kantega.reststop.servlet.api.ServletBuilder;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;

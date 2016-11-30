@@ -17,7 +17,7 @@
 package org.kantega.reststop.development;
 
 import org.apache.velocity.app.VelocityEngine;
-import org.kantega.reststop.api.ServletBuilder;
+import org.kantega.reststop.servlet.api.ServletBuilder;
 import org.kantega.reststop.classloaderutils.BuildSystem;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;

@@ -21,6 +21,8 @@ import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.kantega.reststop.api.*;
 import org.kantega.reststop.core.DefaultReststopPluginManager;
 import org.kantega.reststop.development.velocity.SectionDirective;
+import org.kantega.reststop.servlet.api.FilterPhase;
+import org.kantega.reststop.servlet.api.ServletBuilder;
 
 import javax.servlet.Filter;
 import java.util.ArrayList;

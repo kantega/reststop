@@ -16,10 +16,10 @@
 
 package org.kantega.reststop.servlets;
 
-import org.kantega.reststop.api.FilterPhase;
+import org.kantega.reststop.servlet.api.FilterPhase;
 import org.kantega.reststop.api.PluginExport;
 import org.kantega.reststop.api.ReststopPluginManager;
-import org.kantega.reststop.api.ServletBuilder;
+import org.kantega.reststop.servlet.api.ServletBuilder;
 import org.kantega.reststop.classloaderutils.Artifact;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
@@ -40,7 +40,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
 

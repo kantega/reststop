@@ -22,6 +22,7 @@ import org.kantega.reststop.api.*;
 import org.kantega.reststop.jaxwsapi.EndpointConfiguration;
 import org.kantega.reststop.jaxwsapi.EndpointConfigurationBuilder;
 import org.kantega.reststop.jaxwsapi.EndpointDeployer;
+import org.kantega.reststop.servlet.api.ServletBuilder;
 
 import javax.annotation.PreDestroy;
 import javax.servlet.Filter;

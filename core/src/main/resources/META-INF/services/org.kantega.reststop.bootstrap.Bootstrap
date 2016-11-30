@@ -1,1 +1,1 @@
-core.bootstrap.DefaultBootstrap
+org.kantega.reststop.core.bootstrap.DefaultBootstrap

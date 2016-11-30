@@ -19,6 +19,8 @@ package org.kantega.reststop.wicket;
 import org.apache.wicket.protocol.http.WebApplication;
 import org.apache.wicket.protocol.http.WicketFilter;
 import org.kantega.reststop.api.*;
+import org.kantega.reststop.servlet.api.FilterPhase;
+import org.kantega.reststop.servlet.api.ServletBuilder;
 
 import javax.annotation.PreDestroy;
 import javax.servlet.Filter;

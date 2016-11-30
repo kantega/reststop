@@ -18,7 +18,7 @@ package org.kantega.reststop.helloworld.springmvc;
 
 import org.kantega.reststop.api.Export;
 import org.kantega.reststop.api.Plugin;
-import org.kantega.reststop.api.ServletBuilder;
+import org.kantega.reststop.servlet.api.ServletBuilder;
 import org.springframework.web.context.support.AnnotationConfigWebApplicationContext;
 import org.springframework.web.servlet.DispatcherServlet;
 
