@@ -17,10 +17,7 @@
 package org.kantega.reststop.api;
 
 
-import org.kantega.reststop.classloaderutils.PluginClassLoader;
-
 import java.util.Collection;
-import java.util.List;
 
 /**
  *
@@ -33,7 +30,7 @@ public interface ReststopPluginManager {
 
     ClassLoader getClassLoader(Object plugin);
 
-    Collection<PluginClassLoader> getPluginClassLoaders();
+    Collection<ClassLoader> getPluginClassLoaders();
 
     <T> Collection<T> findExports(Class<T> type);
     <T> Collection<PluginExport<T>> findPluginExports(Class<T> type);

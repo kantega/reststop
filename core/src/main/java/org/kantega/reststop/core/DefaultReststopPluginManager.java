@@ -86,8 +86,8 @@ public class DefaultReststopPluginManager implements ReststopPluginManager {
     }
 
     @Override
-    public Collection<PluginClassLoader> getPluginClassLoaders() {
-        return pluginState.getClassLoaders();
+    public Collection<ClassLoader> getPluginClassLoaders() {
+        return new ArrayList<>(pluginState.getClassLoaders());
     }
 
     @Override

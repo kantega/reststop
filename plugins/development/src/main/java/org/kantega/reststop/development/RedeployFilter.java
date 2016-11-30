@@ -95,6 +95,8 @@ public class RedeployFilter implements Filter {
                 if(!needsBuild.isEmpty()) {
 
                     List<PluginInfo> all = pluginManager.getPluginClassLoaders().stream()
+                            .filter(cl -> cl instanceof PluginClassLoader)
+                            .map(cl -> (PluginClassLoader)cl)
                             .map(PluginClassLoader::getPluginInfo)
                             .collect(Collectors.toList());
 
@@ -138,7 +140,11 @@ public class RedeployFilter implements Filter {
                             .collect(Collectors.toList());
 
                     if(stale.contains(shadowClassLoader)) {
-                        List<PluginInfo> all = pluginManager.getPluginClassLoaders().stream().map(PluginClassLoader::getPluginInfo).collect(Collectors.toList());
+                        List<PluginInfo> all = pluginManager.getPluginClassLoaders().stream()
+                                .filter(cl -> cl instanceof PluginClassLoader)
+                                .map(cl -> (PluginClassLoader)cl)
+                                .map(PluginClassLoader::getPluginInfo)
+                                .collect(Collectors.toList());
                         pluginManager.deploy(all, factory);
                     } else {
                         pluginManager.deploy(stale, factory);
@@ -236,6 +242,8 @@ public class RedeployFilter implements Filter {
             return Collections.emptyList();
         } else {
             return pluginManager.getPluginClassLoaders().stream()
+                    .filter(cl -> cl instanceof PluginClassLoader)
+                    .map(cl -> (PluginClassLoader)cl)
                     .filter(buildSystem::needsRefresh)
                     .map(PluginClassLoader::getPluginInfo)
                     .map(buildSystem::refresh)
