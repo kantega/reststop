@@ -65,7 +65,11 @@ public class PluginDeployer {
 
         List<LoadedPluginClass> removedPlugins = currentPluginState.getPluginsLoadedBy(remove);
 
-        List<PluginInfo> newClassLoaderPluginInfos = Stream.concat(remove.stream().map(PluginClassLoader::getPluginInfo).map(p -> byId.get(p.getPluginId())),
+        Stream<PluginInfo> replaced = remove.stream()
+                .map(PluginClassLoader::getPluginInfo)
+                .map(p -> byId.getOrDefault(p.getPluginId(), p));
+
+        List<PluginInfo> newClassLoaderPluginInfos = Stream.concat(replaced,
                 addRequest.stream()).collect(Collectors.toList());
 
 
