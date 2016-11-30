@@ -120,6 +120,11 @@
                         </plugin>
                         <plugin>
                             <groupId>${project.parent.groupId}</groupId>
+                            <artifactId>reststop-servlet-deploy-plugin</artifactId>
+                            <version>${project.parent.version}</version>
+                        </plugin>
+                        <plugin>
+                            <groupId>${project.parent.groupId}</groupId>
                             <artifactId>reststop-metrics-plugin</artifactId>
                             <version>${project.parent.version}</version>
                         </plugin>

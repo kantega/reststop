@@ -46,6 +46,7 @@
     	<module>wsdl-test</module>
         <module>webjars</module>
         <module>jetty</module>
+        <module>servlet-deploy</module>
     </modules>
     <dependencies>
         <dependency>

@@ -21,6 +21,7 @@ import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.kantega.reststop.api.*;
 import org.kantega.reststop.servlet.api.ServletBuilder;
+import org.kantega.reststop.servlet.api.ServletDeployer;
 import org.kantega.reststop.servlets.ReststopInitializer;
 
 import javax.annotation.PreDestroy;
@@ -36,16 +37,21 @@ public class JettyPlugin {
 
     @Export final ServletBuilder servletBuilder;
     @Export final ServletContext servletContext;
+    @Export final ServletDeployer servletDeployer;
+
     private final Server server;
 
-    public JettyPlugin(ReststopPluginManager pluginManager, @Config(defaultValue = "8080") int jettyPort)throws Exception {
+    public JettyPlugin(@Config(defaultValue = "8080") int jettyPort)throws Exception {
 
         server = new Server(jettyPort);
 
         ServletContextHandler handler = new ServletContextHandler();
 
 
-        handler.addFilter(new FilterHolder(new ReststopInitializer.PluginDelegatingFilter(pluginManager)), "/*", EnumSet.of(DispatcherType.REQUEST));
+        ReststopInitializer.PluginDelegatingFilter filter = new ReststopInitializer.PluginDelegatingFilter();
+
+        servletDeployer = filter;
+        handler.addFilter(new FilterHolder(filter), "/*", EnumSet.of(DispatcherType.REQUEST));
         server.setHandler(handler);
 
         try {
@@ -57,8 +63,8 @@ public class JettyPlugin {
 
         servletContext =  handler.getServletContext();
 
-        ReststopInitializer.DefaultServletBuilder defaultServletBuilder = new ReststopInitializer.DefaultServletBuilder(servletContext);
-        defaultServletBuilder.setManager(pluginManager);
+        ReststopInitializer.DefaultServletBuilder defaultServletBuilder = new ReststopInitializer.DefaultServletBuilder(servletContext, filter);
+
         servletBuilder = defaultServletBuilder;
     }
 

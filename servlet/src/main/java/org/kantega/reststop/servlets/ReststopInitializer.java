@@ -16,15 +16,15 @@
 
 package org.kantega.reststop.servlets;
 
-import org.kantega.reststop.servlet.api.FilterPhase;
 import org.kantega.reststop.api.PluginExport;
-import org.kantega.reststop.api.ReststopPluginManager;
-import org.kantega.reststop.servlet.api.ServletBuilder;
 import org.kantega.reststop.classloaderutils.Artifact;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
 import org.kantega.reststop.core.ClassLoaderFactory;
 import org.kantega.reststop.core.DefaultReststopPluginManager;
+import org.kantega.reststop.servlet.api.FilterPhase;
+import org.kantega.reststop.servlet.api.ServletBuilder;
+import org.kantega.reststop.servlet.api.ServletDeployer;
 import org.w3c.dom.Document;
 import org.xml.sax.SAXException;
 
@@ -54,22 +54,26 @@ public class ReststopInitializer implements ServletContainerInitializer{
     @Override
     public void onStartup(Set<Class<?>> classes, ServletContext servletContext) throws ServletException {
 
-        DefaultServletBuilder servletBuilder = new DefaultServletBuilder(servletContext);
+
+        PluginDelegatingFilter pluginDelegatingFilter = new PluginDelegatingFilter();
+
+        DefaultServletBuilder servletBuilder = new DefaultServletBuilder(servletContext, pluginDelegatingFilter);
 
         Map<Class, Object> staticServices = new HashMap<>();
         staticServices.put(ServletContext.class, servletContext);
         staticServices.put(ServletBuilder.class, servletBuilder);
+        staticServices.put(ServletDeployer.class, pluginDelegatingFilter);
 
         DefaultReststopPluginManager manager = new DefaultReststopPluginManager(getClass().getClassLoader(), findGlobalConfigFile(servletContext), staticServices);
         servletContext.setAttribute("reststopPluginManager", manager);
 
 
-        servletContext.addFilter(PluginDelegatingFilter.class.getName(), new PluginDelegatingFilter(manager))
+
+        servletContext.addFilter(PluginDelegatingFilter.class.getName(), pluginDelegatingFilter)
                 .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
 
         servletContext.addListener(new ShutdownListener(manager));
 
-        servletBuilder.setManager(manager);
 
         deployPlugins(manager, servletContext);
 
@@ -220,15 +224,11 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
     public static class DefaultServletBuilder implements ServletBuilder {
         private final ServletContext servletContext;
-        private ReststopPluginManager manager;
+        private PluginDelegatingFilter pluginDelegatingFilter;
 
-        public DefaultServletBuilder(ServletContext servletContext) {
+        public DefaultServletBuilder(ServletContext servletContext, PluginDelegatingFilter pluginDelegatingFilter) {
             this.servletContext = servletContext;
-        }
-
-
-        public void setManager(ReststopPluginManager manager) {
-            this.manager = manager;
+            this.pluginDelegatingFilter = pluginDelegatingFilter;
         }
 
         @Override
@@ -332,7 +332,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         public FilterChain newFilterChain(FilterChain filterChain) {
 
             PluginFilterChain orig = (PluginFilterChain) filterChain;
-            return buildFilterChain(orig.getRequest(), orig.getFilterChain(), manager);
+            return buildFilterChain(orig.getRequest(), orig.getFilterChain(), pluginDelegatingFilter.filters);
         }
 
         private static class PropertiesWebConfig implements ServletConfig, FilterConfig  {
@@ -468,12 +468,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
     }
 
-    public static class PluginDelegatingFilter implements Filter {
-        private final ReststopPluginManager manager;
+    public static class PluginDelegatingFilter implements Filter, ServletDeployer {
 
-        public PluginDelegatingFilter(ReststopPluginManager manager) {
-            this.manager = manager;
-        }
+        private volatile Collection<PluginExport<Filter>> filters = Collections.emptyList();
 
         @Override
         public void init(FilterConfig filterConfig) throws ServletException {
@@ -484,7 +481,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
 
             servletResponse.setCharacterEncoding("utf-8");
-            buildFilterChain((HttpServletRequest) servletRequest, filterChain, manager).doFilter(servletRequest, servletResponse);
+            buildFilterChain((HttpServletRequest) servletRequest, filterChain, filters).doFilter(servletRequest, servletResponse);
         }
 
 
@@ -492,6 +489,11 @@ public class ReststopInitializer implements ServletContainerInitializer{
         @Override
         public void destroy() {
 
+        }
+
+        @Override
+        public void deploy(Collection<PluginExport<Filter>> filters) {
+            this.filters = filters;
         }
     }
 
@@ -504,10 +506,10 @@ public class ReststopInitializer implements ServletContainerInitializer{
             this.filter = filter;
         }
     }
-    private static FilterChain buildFilterChain(HttpServletRequest request, FilterChain filterChain, ReststopPluginManager pluginManager) {
+    private static FilterChain buildFilterChain(HttpServletRequest request, FilterChain filterChain, Collection<PluginExport<Filter>> deployedFilters) {
         List<ClassLoaderFilter> filters = new ArrayList<>();
 
-        for (PluginExport<Filter> pluginExport : pluginManager.findPluginExports(Filter.class)) {
+        for (PluginExport<Filter> pluginExport : deployedFilters) {
             Filter filter = pluginExport.getExport();
             if(filter instanceof MappingWrappedFilter) {
                 MappingWrappedFilter mwf = (MappingWrappedFilter) filter;
