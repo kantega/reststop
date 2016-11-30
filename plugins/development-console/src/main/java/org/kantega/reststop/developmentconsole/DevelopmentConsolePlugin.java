@@ -47,8 +47,10 @@ public class DevelopmentConsolePlugin {
 
     @Export
     private final Filter redirect;
+    private final Collection<PluginClassLoader> classLoaders;
 
-    public DevelopmentConsolePlugin(ServletBuilder servletBuilder, ReststopPluginManager pluginManager, VelocityEngine velocityEngine) {
+    public DevelopmentConsolePlugin(ServletBuilder servletBuilder, Collection<PluginClassLoader> classLoaders, ReststopPluginManager pluginManager, VelocityEngine velocityEngine) {
+        this.classLoaders = classLoaders;
         this.pluginManager = pluginManager;
         this.velocityEngine = velocityEngine;
 
@@ -75,33 +77,30 @@ public class DevelopmentConsolePlugin {
 
             VelocityContext context = new VelocityContext();
             context.put("contextPath", req.getContextPath());
-            context.put("pluginClassloaders", getPluginClassLoaders(pluginManager));
+            context.put("pluginClassloaders", getPluginClassLoaders());
             context.put("dateTool", new DateTool());
             context.put("obfTool", new ObfTool());
             context.put("consoleTool", new ConsoleTool());
 
 
-            context.put("pluginInfos", getPluginInfos(pluginManager));
+            context.put("pluginInfos", getPluginInfos());
             velocityEngine.getTemplate("templates/console.vm").merge(context, resp.getWriter());
         }
 
-        private List<PluginInfo> getPluginInfos(ReststopPluginManager pluginManager) {
+        private List<PluginInfo> getPluginInfos() {
             List<PluginInfo> infos = new ArrayList<>();
-            for (ClassLoader classLoader : pluginManager.getPluginClassLoaders()) {
-                if(classLoader instanceof PluginClassLoader) {
-                    PluginClassLoader loader = (PluginClassLoader) classLoader;
-                    infos.add(loader.getPluginInfo());
-                }
+            for (PluginClassLoader classLoader : classLoaders) {
+                infos.add(classLoader.getPluginInfo());
             }
             return infos;
         }
 
-        private Map<ClassLoader, Collection<Object>> getPluginClassLoaders(ReststopPluginManager pluginManager) {
+        private Map<ClassLoader, Collection<Object>> getPluginClassLoaders() {
             Map<ClassLoader, Collection<Object>> map = new IdentityHashMap<>();
 
             Map<PluginInfo, ClassLoader> infos = new IdentityHashMap<>();
 
-            for (ClassLoader classLoader : pluginManager.getPluginClassLoaders()) {
+            for (ClassLoader classLoader : classLoaders) {
                 if ( classLoader instanceof PluginClassLoader && !map.containsKey(classLoader)) {
                     map.put(classLoader, new ArrayList<>());
                     infos.put(((PluginClassLoader) classLoader).getPluginInfo(), classLoader);
