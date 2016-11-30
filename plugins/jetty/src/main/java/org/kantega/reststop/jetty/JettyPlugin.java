@@ -40,7 +40,7 @@ public class JettyPlugin {
 
     public JettyPlugin(ReststopPluginManager pluginManager, @Config(defaultValue = "8080") int jettyPort)throws Exception {
 
-        server = new Server(1700);
+        server = new Server(jettyPort);
 
         ServletContextHandler handler = new ServletContextHandler();
 

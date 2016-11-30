@@ -28,7 +28,8 @@ import java.util.Properties;
  *
  */
 @Plugin
-public class HelloworldJaxRsPlugin  {
+public class
+HelloworldJaxRsPlugin  {
 
 
     @Export

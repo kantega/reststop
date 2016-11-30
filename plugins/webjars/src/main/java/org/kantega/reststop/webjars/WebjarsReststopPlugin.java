@@ -17,6 +17,7 @@
 package org.kantega.reststop.webjars;
 
 import org.kantega.reststop.api.*;
+import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.servlet.api.FilterPhase;
 import org.kantega.reststop.servlet.api.ServletBuilder;
 
@@ -41,14 +42,14 @@ public class WebjarsReststopPlugin {
 
     private Map<String, String> versions;
 
-    public WebjarsReststopPlugin(final ServletBuilder servletBuilder, final ReststopPluginManager reststopPluginManager) {
+    public WebjarsReststopPlugin(final ServletBuilder servletBuilder, final Collection<PluginClassLoader> classLoaders) {
 
-        webjarsFilter = servletBuilder.filter(new WebJarsFilter(reststopPluginManager), FilterPhase.USER, "/webjars/*");
+        webjarsFilter = servletBuilder.filter(new WebJarsFilter(classLoaders), FilterPhase.USER, "/webjars/*");
 
-        v = () -> getVersionsForWebJars(reststopPluginManager);
+        v = () -> getVersionsForWebJars(classLoaders);
     }
 
-    private synchronized Map<String, String> getVersionsForWebJars(ReststopPluginManager reststopPluginManager) {
+    private synchronized Map<String, String> getVersionsForWebJars(Collection<PluginClassLoader> classLoaders) {
 
         if (versions == null) {
             versions = new HashMap<>();
@@ -56,7 +57,7 @@ public class WebjarsReststopPlugin {
             Set<String> webjars = new HashSet<>();
 
             try {
-                for (ClassLoader loader : reststopPluginManager.getPluginClassLoaders()) {
+                for (PluginClassLoader loader : classLoaders) {
                     Enumeration<URL> resources = loader.getResources("META-INF/resources/webjars/");
                     while (resources.hasMoreElements()) {
                         URL webJar = resources.nextElement();

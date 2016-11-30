@@ -1,6 +1,6 @@
 package org.kantega.reststop.assets;
 
-import org.kantega.reststop.api.ReststopPluginManager;
+import org.kantega.reststop.classloaderutils.PluginClassLoader;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -11,17 +11,19 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Collection;
 
 /**
  *
  */
 public class AssetFilter implements Filter {
-    private final ReststopPluginManager manager;
+
+    private final Collection<PluginClassLoader> pluginClassLoaders;
     private final String classpathPrefix;
     private final String filterMapping;
 
-    public AssetFilter(ReststopPluginManager manager, String classpathPrefix, String filterMapping) {
-        this.manager = manager;
+    public AssetFilter(Collection<PluginClassLoader> pluginClassLoaders, String classpathPrefix, String filterMapping) {
+        this.pluginClassLoaders = pluginClassLoaders;
         this.classpathPrefix = classpathPrefix;
         this.filterMapping = filterMapping;
     }
@@ -41,7 +43,7 @@ public class AssetFilter implements Filter {
 
         final String path = classpathPrefix +contextRelative.substring(filterMapping.length());
 
-        for(ClassLoader loader : manager.getPluginClassLoaders()) {
+        for(PluginClassLoader loader : pluginClassLoaders) {
 
 
 

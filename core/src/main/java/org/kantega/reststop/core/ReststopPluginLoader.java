@@ -316,7 +316,11 @@ public class ReststopPluginLoader {
                 throw new IllegalArgumentException("Unknown nested parameterized raw type " + nestedParameterizedType.getRawType() + " for constructor in " + constructor.getDeclaringClass());
             } else {
                 Class type = (Class) parameterizedType.getActualTypeArguments()[0];
-                return pluginState.getServices(type);
+                if(type == PluginClassLoader.class) {
+                    return pluginState.getClassLoaders();
+                } else {
+                    return pluginState.getServices(type);
+                }
             }
         }
         if (!pluginState.hasService(paramClass)) {

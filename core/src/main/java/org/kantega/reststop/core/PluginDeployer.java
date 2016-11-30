@@ -76,7 +76,10 @@ public class PluginDeployer {
         List<PluginClassLoader> newClassLoaders = newClassLoaders(newClassLoaderPluginInfos, currentPluginState, classLoaderFactory);
         List<PluginClassInfo> newPlugins = findPlugins(newClassLoaders);
 
-        List<LoadedPluginClass> affectedPlugins = currentPluginState.findConsumers(getAffectedTypes(removedPlugins, newPlugins));
+        Set<Class> affectedTypes = getAffectedTypes(removedPlugins, newPlugins);
+        affectedTypes.add(PluginClassLoader.class);
+
+        List<LoadedPluginClass> affectedPlugins = currentPluginState.findConsumers(affectedTypes);
 
         List<PluginClassInfo> affecteButNotRemovedPlugins = affectedPlugins.stream()
                 .filter(p -> ! remove.contains(p.getPluginClassInfo().getClassLoader()))
@@ -96,9 +99,9 @@ public class PluginDeployer {
 
         pluginState = pluginState.removeClassLoaders(remove);
 
-        pluginState = deploy(deploys, pluginState);
-
         pluginState = pluginState.addPluginClassLoaders(newClassLoaders);
+
+        pluginState = deploy(deploys, pluginState);
 
 
         return pluginState;

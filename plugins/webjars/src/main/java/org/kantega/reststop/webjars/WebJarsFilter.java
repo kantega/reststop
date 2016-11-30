@@ -16,7 +16,7 @@
 
 package org.kantega.reststop.webjars;
 
-import org.kantega.reststop.api.ReststopPluginManager;
+import org.kantega.reststop.classloaderutils.PluginClassLoader;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
+import java.util.Collection;
 
 /**
  * Scans META-INF/resource of all plugins for webjars related resources, and then adds them to response.
@@ -34,10 +35,11 @@ import java.net.URL;
 public class WebJarsFilter implements Filter {
 
 
-    private final ReststopPluginManager reststopPluginManager;
+    private final Collection<PluginClassLoader> classloaders;
 
-    public WebJarsFilter(ReststopPluginManager reststopPluginManager) {
-        this.reststopPluginManager = reststopPluginManager;
+    public WebJarsFilter(Collection<PluginClassLoader> classloaders) {
+
+        this.classloaders = classloaders;
     }
 
     @Override
@@ -54,7 +56,7 @@ public class WebJarsFilter implements Filter {
         String contextRelative = req.getRequestURI().substring(req.getContextPath().length());
 
         String path = "META-INF/resources" + contextRelative;
-        for(ClassLoader loader : reststopPluginManager.getPluginClassLoaders()){
+        for(PluginClassLoader loader : classloaders){
 
             URL resource = loader.getResource(path);
 
