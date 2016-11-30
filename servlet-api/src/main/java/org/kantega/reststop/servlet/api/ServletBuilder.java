@@ -32,28 +32,14 @@ public interface ServletBuilder {
     FilterChain newFilterChain(FilterChain filterChain);
 
     ServletConfig servletConfig(String name, Properties properties);
+
     FilterConfig filterConfig(String name, Properties properties);
-
-    @Deprecated
-    Filter servlet(HttpServlet servlet, String path);
-
-    Filter servlet(HttpServlet servlet, String path, String... additionalPaths);
-
-    @Deprecated
-    Filter filter(Filter filter, String mapping, FilterPhase phase);
 
     Filter filter(Filter filter, FilterPhase phase, String path, String... additionalPaths);
 
-
-    @Deprecated
-    Filter resourceServlet(String path, URL url);
+    Filter servlet(HttpServlet servlet, String path, String... additionalPaths);
 
     Filter resourceServlet(URL url, String path, String... additionalPaths);
-
-
-    @Deprecated
-    Filter redirectServlet(String path, String location);
-
 
     RedirectBuilder redirectFrom(String fromPath, String... additionalFromPaths);
 

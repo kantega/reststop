@@ -53,7 +53,7 @@ public class WicketPlugin  {
 
             realWicketfilter.init(servletBuilder.filterConfig("wicket", properties));
 
-            wicketFilter = servletBuilder.filter(realWicketfilter, filterPath, FilterPhase.USER);
+            wicketFilter = servletBuilder.filter(realWicketfilter, FilterPhase.USER, filterPath);
 
     }
 

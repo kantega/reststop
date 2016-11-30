@@ -232,11 +232,6 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
 
         @Override
-        public Filter filter(Filter filter, String mapping, FilterPhase phase) {
-            return filter(filter, phase, mapping);
-        }
-
-        @Override
         public Filter filter(Filter filter, FilterPhase phase, String path, String... additionalPaths) {
             if(filter == null ) {
                 throw new IllegalArgumentException("Filter cannot be null");
@@ -250,11 +245,6 @@ public class ReststopInitializer implements ServletContainerInitializer{
             List<String> mappings = new ArrayList<>(Collections.singletonList(path));
             mappings.addAll(asList(additionalPaths));
             return new MappingWrappedFilter(filter, mappings.toArray(new String[mappings.size()]) , phase);
-        }
-
-        @Override
-        public Filter resourceServlet(String path, URL url) {
-            return resourceServlet(url, path);
         }
 
         @Override
@@ -285,11 +275,6 @@ public class ReststopInitializer implements ServletContainerInitializer{
         }
 
         @Override
-        public Filter servlet(HttpServlet servlet, String path) {
-            return servlet(servlet, path, new String[0]);
-        }
-
-        @Override
         public Filter servlet(HttpServlet servlet, String path, String... additionalPaths) {
             if(servlet == null ) {
                 throw new IllegalArgumentException("Servlet parameter cannot be null");
@@ -303,11 +288,6 @@ public class ReststopInitializer implements ServletContainerInitializer{
             return filter(new ServletWrapperFilter(servlet), FilterPhase.USER, path, additionalPaths);
         }
 
-
-        @Override
-        public Filter redirectServlet(String path, String location) {
-            return redirectFrom(path).to(location);
-        }
 
         @Override
         public RedirectBuilder redirectFrom(String fromPath, String... additionalFromPaths) {
