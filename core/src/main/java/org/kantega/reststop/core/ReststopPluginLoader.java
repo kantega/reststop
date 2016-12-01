@@ -133,6 +133,9 @@ public class ReststopPluginLoader {
             if (constructor.getParameters()[i].isAnnotationPresent(Config.class)) {
                 Config config = constructor.getParameters()[i].getAnnotation(Config.class);
 
+                if(constructor.getParameters()[i].getType() == Properties.class) {
+                    continue;
+                }
                 String name = config.property();
 
                 if( name == null || name.trim().isEmpty())  {
@@ -143,6 +146,20 @@ public class ReststopPluginLoader {
         }
 
         return propertyNames;
+    }
+
+    public boolean isConsumingAllProperties(Class clazz) {
+        Constructor constructor = clazz.getConstructors()[0];
+
+        for (int i = 0; i < constructor.getParameterTypes().length; i++) {
+            if (constructor.getParameters()[i].isAnnotationPresent(Config.class)) {
+                if(constructor.getParameters()[i].getType() == Properties.class) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private Class unwrapParameterType(Constructor constructor, Class paramClass, int i) {

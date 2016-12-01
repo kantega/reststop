@@ -212,7 +212,16 @@ public class PluginState {
 
     public List<LoadedPluginClass> findConfiguredWith(Set<String> changedProps) {
         return this.plugins.stream()
-                .filter(p -> p.getPluginClassInfo().getPropertyNames().stream().anyMatch(changedProps::contains))
+                .filter(p -> isConfiguredWith(changedProps, p))
                 .collect(Collectors.toList());
+    }
+
+    private boolean isConfiguredWith(Set<String> changedProps, LoadedPluginClass p) {
+        if(p.getPluginClassInfo().getPropertyNames().stream().anyMatch(changedProps::contains)) {
+            return true;
+        } else if(p.getPluginClassInfo().isConsumingAllProperties()) {
+            return true;
+        }
+        return false;
     }
 }

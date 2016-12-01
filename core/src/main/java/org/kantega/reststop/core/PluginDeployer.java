@@ -222,6 +222,7 @@ public class PluginDeployer {
         return new PluginClassInfo(classLoader,
                 pluginClass,
                 pluginLoader.findConsumedPropertyNames(pluginClass),
+                pluginLoader.isConsumingAllProperties(pluginClass),
                 pluginLoader.findConsumedTypes(pluginClass),
                 pluginLoader.findExportedTypes(pluginClass));
     }

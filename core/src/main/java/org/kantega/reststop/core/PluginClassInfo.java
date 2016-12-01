@@ -29,13 +29,15 @@ public class PluginClassInfo {
     private final PluginClassLoader classLoader;
     private final Class pluginClass;
     private final Set<String> propertyNames;
+    private final boolean consumingAllProperties;
     private final Set<Class> imports;
     private final Set<Class> exports;
 
-    public PluginClassInfo(PluginClassLoader classLoader, Class pluginClass, Set<String> propertyNames, Set<Class> imports, Set<Class> exports) {
+    public PluginClassInfo(PluginClassLoader classLoader, Class pluginClass, Set<String> propertyNames, boolean consumingAllProperties, Set<Class> imports, Set<Class> exports) {
         this.classLoader = classLoader;
         this.pluginClass = pluginClass;
         this.propertyNames = propertyNames;
+        this.consumingAllProperties = consumingAllProperties;
         this.imports = imports;
         this.exports = exports;
     }
@@ -121,5 +123,9 @@ public class PluginClassInfo {
 
     public Set<String> getPropertyNames() {
         return propertyNames;
+    }
+
+    public boolean isConsumingAllProperties() {
+        return consumingAllProperties;
     }
 }
