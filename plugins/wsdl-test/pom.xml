@@ -27,20 +27,4 @@
 
     <artifactId>reststop-wsdl-test-plugin</artifactId>
 
-    <dependencies>
-
-        <dependency>
-            <groupId>javax.servlet</groupId>
-            <artifactId>javax.servlet-api</artifactId>
-        </dependency>
-
-
-        <dependency>
-            <groupId>com.github.redfish4ktc.soapui</groupId>
-            <artifactId>soapui</artifactId>
-            <version>4.0.1.0</version>
-        </dependency>
-
-
-    </dependencies>
 </project>
