@@ -18,12 +18,10 @@ package org.kantega.reststop.core;
 
 import org.kantega.reststop.api.PluginExport;
 import org.kantega.reststop.api.ReststopPluginManager;
-import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
 
 import java.io.File;
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  *
@@ -57,8 +55,8 @@ public class DefaultReststopPluginManager implements ReststopPluginManager {
         pluginState = pluginDeployer.undeploy(classloaders, pluginState);
     }
 
-    public synchronized void reconfigure(Set<String> changedProps) {
-        pluginState = pluginDeployer.reconfigure(changedProps, pluginState);
+    public synchronized void restart(List<LoadedPluginClass> plugins) {
+        pluginState = pluginDeployer.restart(plugins, pluginState);
     }
 
     public synchronized void stop() {
@@ -97,5 +95,9 @@ public class DefaultReststopPluginManager implements ReststopPluginManager {
 
     public File getConfigFile() {
         return configFile;
+    }
+
+    public PluginState getPluginState() {
+        return pluginState;
     }
 }

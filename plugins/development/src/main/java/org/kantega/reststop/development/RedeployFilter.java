@@ -17,6 +17,9 @@
 package org.kantega.reststop.development;
 
 import org.apache.velocity.app.VelocityEngine;
+import org.kantega.reststop.core.LoadedPluginClass;
+import org.kantega.reststop.core.PluginClassInfo;
+import org.kantega.reststop.core.PluginState;
 import org.kantega.reststop.servlet.api.ServletBuilder;
 import org.kantega.reststop.classloaderutils.BuildSystem;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
@@ -217,7 +220,19 @@ public class RedeployFilter implements Filter {
 
                 if(!changedProps.isEmpty()) {
                     if(! changedProps.isEmpty()) {
-                        pluginManager.reconfigure(changedProps);
+
+                        PluginState pluginState = pluginManager.getPluginState();
+
+                        List<LoadedPluginClass> configuredWith = pluginState.findConfiguredWith(changedProps);
+                        Set<Class> exportedTypes = getTypesExportedBy(configuredWith.stream().map(LoadedPluginClass::getPluginClassInfo).collect(Collectors.toList()));
+                        List<LoadedPluginClass> consumers = pluginState.findConsumers(exportedTypes);
+
+                        List<LoadedPluginClass> restarts = Stream.concat(configuredWith.stream(), consumers.stream())
+                                .distinct()
+                                .collect(Collectors.toList());
+
+
+                        pluginManager.restart(restarts);
                     }
                 }
 
@@ -236,6 +251,9 @@ public class RedeployFilter implements Filter {
 
     }
 
+    private Set<Class> getTypesExportedBy(List<PluginClassInfo> newPlugins) {
+        return newPlugins.stream().map(PluginClassInfo::getExports).flatMap(Set::stream).collect(Collectors.toSet());
+    }
     private List<PluginInfo> needsBuild() {
         BuildSystem buildSystem = BuildSystem.instance;
         if(buildSystem == null) {

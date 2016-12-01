@@ -239,17 +239,8 @@ public class PluginDeployer {
         }
     }
 
-    public PluginState reconfigure(Set<String> changedProps, PluginState pluginState) {
-        List<LoadedPluginClass> configuredWith = pluginState.findConfiguredWith(changedProps);
-        Set<Class> exportedTypes = getTypesExportedBy(configuredWith.stream().map(LoadedPluginClass::getPluginClassInfo).collect(Collectors.toList()));
-        List<LoadedPluginClass> consumers = pluginState.findConsumers(exportedTypes);
-
-        List<LoadedPluginClass> undeploys = Stream.concat(configuredWith.stream(), consumers.stream())
-                .distinct()
-                .collect(Collectors.toList());
-
-        pluginState = undeploy(undeploys, pluginState);
-
-        return  deploy(undeploys.stream().map(LoadedPluginClass::getPluginClassInfo).collect(Collectors.toList()), pluginState);
+    public PluginState restart(List<LoadedPluginClass> plugins, PluginState pluginState) {
+        pluginState = undeploy(plugins, pluginState);
+        return  deploy(plugins.stream().map(LoadedPluginClass::getPluginClassInfo).collect(Collectors.toList()), pluginState);
     }
 }
