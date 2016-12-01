@@ -17,6 +17,7 @@
 package org.kantega.reststop.maven;
 
 import org.apache.maven.model.Dependency;
+import org.apache.maven.model.DependencyManagement;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.building.*;
 import org.apache.maven.plugin.MojoExecutionException;
@@ -27,6 +28,7 @@ import org.apache.maven.shared.invoker.Invoker;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
 import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.graph.Exclusion;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.aether.resolution.DependencyResolutionException;
 import org.eclipse.jetty.maven.plugin.JettyWebAppContext;
@@ -154,13 +156,27 @@ public class RunMojo extends AbstractReststopRunMojo {
                 for (Dependency dependency : model.getDependencies()) {
                     collectRequest.addDependency(mavenDep2AetherDep(dependency));
                 }
+                DependencyManagement depm = model.getDependencyManagement();
+                if(depm != null) {
+                    for (Dependency dependency : depm.getDependencies()) {
+                        collectRequest = collectRequest.addManagedDependency(mavenDep2AetherDep(dependency));
+                    }
+                }
 
                 return collectRequest;
             }
 
             private org.eclipse.aether.graph.Dependency mavenDep2AetherDep(Dependency dependency) {
                 Artifact artifact = new DefaultArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getClassifier(), dependency.getType(), dependency.getVersion());
-                return new org.eclipse.aether.graph.Dependency(artifact, dependency.getScope());
+                org.eclipse.aether.graph.Dependency aetherDep = new org.eclipse.aether.graph.Dependency(artifact, dependency.getScope());
+                if(dependency.getExclusions() != null) {
+                    List<Exclusion> exclusions = new ArrayList<>();
+                    dependency.getExclusions().forEach( e -> {
+                        exclusions.add(new Exclusion(e.getGroupId(), e.getArtifactId(), "*", "*"));
+                    });
+                    aetherDep = aetherDep.setExclusions(exclusions);
+                }
+                return aetherDep;
             }
 
             private Model buildModel(File pomFile) {
