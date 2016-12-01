@@ -42,6 +42,7 @@ import java.io.OutputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
@@ -312,7 +313,7 @@ public class ReststopInitializer implements ServletContainerInitializer{
         public FilterChain newFilterChain(FilterChain filterChain) {
 
             PluginFilterChain orig = (PluginFilterChain) filterChain;
-            return buildFilterChain(orig.getRequest(), orig.getFilterChain(), pluginDelegatingFilter.filters);
+            return pluginDelegatingFilter.buildFilterChain(orig.getRequest(), orig.getFilterChain());
         }
 
         private static class PropertiesWebConfig implements ServletConfig, FilterConfig  {
@@ -452,6 +453,8 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         private volatile Collection<PluginExport<Filter>> filters = Collections.emptyList();
 
+        private final Comparator<PluginExport<Filter>> comparator =
+                Comparator.comparing(e -> (e.getExport() instanceof MappingWrappedFilter) ? ((MappingWrappedFilter)e.getExport()).phase.ordinal() : FilterPhase.USER.ordinal());
         @Override
         public void init(FilterConfig filterConfig) throws ServletException {
 
@@ -461,11 +464,24 @@ public class ReststopInitializer implements ServletContainerInitializer{
         public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
 
             servletResponse.setCharacterEncoding("utf-8");
-            buildFilterChain((HttpServletRequest) servletRequest, filterChain, filters).doFilter(servletRequest, servletResponse);
+            buildFilterChain((HttpServletRequest) servletRequest, filterChain).doFilter(servletRequest, servletResponse);
         }
 
 
+        protected FilterChain buildFilterChain(HttpServletRequest request, FilterChain filterChain) {
+            Iterator<PluginExport<Filter>> matchingFilters = this.filters.stream()
+                    .filter(e -> isMatching(request, e))
+                    .iterator();
+            return new PluginFilterChain(request, matchingFilters, filterChain);
+        }
 
+        private boolean isMatching(HttpServletRequest request, PluginExport<Filter> filterExport) {
+            if(filterExport.getExport() instanceof MappingWrappedFilter) {
+                return ((MappingWrappedFilter)filterExport.getExport()).mappingMatchesRequest(request);
+            } else {
+                return true;
+            }
+        }
         @Override
         public void destroy() {
 
@@ -473,67 +489,37 @@ public class ReststopInitializer implements ServletContainerInitializer{
 
         @Override
         public void deploy(Collection<PluginExport<Filter>> filters) {
-            this.filters = filters;
+            this.filters = filters.stream()
+                    .sorted(comparator)
+                    .collect(Collectors.toList());
         }
     }
 
-    private static class ClassLoaderFilter {
-        final ClassLoader classLoader;
-        final Filter filter;
-
-        private ClassLoaderFilter(ClassLoader classLoader, Filter filter) {
-            this.classLoader = classLoader;
-            this.filter = filter;
-        }
-    }
-    private static FilterChain buildFilterChain(HttpServletRequest request, FilterChain filterChain, Collection<PluginExport<Filter>> deployedFilters) {
-        List<ClassLoaderFilter> filters = new ArrayList<>();
-
-        for (PluginExport<Filter> pluginExport : deployedFilters) {
-            Filter filter = pluginExport.getExport();
-            if(filter instanceof MappingWrappedFilter) {
-                MappingWrappedFilter mwf = (MappingWrappedFilter) filter;
-                if(! mwf.mappingMatchesRequest(request)) {
-                    continue;
-                }
-            }
-            filters.add(new ClassLoaderFilter(pluginExport.getClassLoader(), filter));
-        }
-
-        Collections.sort(filters, new Comparator<ClassLoaderFilter>() {
-            @Override
-            public int compare(ClassLoaderFilter o1, ClassLoaderFilter o2) {
-                FilterPhase phase1 = o1.filter instanceof MappingWrappedFilter ? ((MappingWrappedFilter)o1.filter).phase : FilterPhase.USER;
-                FilterPhase phase2 = o2.filter instanceof MappingWrappedFilter ? ((MappingWrappedFilter)o2.filter).phase : FilterPhase.USER;
-                return phase1.ordinal() - phase2.ordinal();
-            }
-        });
-        return new PluginFilterChain(request, filters, filterChain);
-    }
     private static class PluginFilterChain implements FilterChain {
-        private final List<ClassLoaderFilter> filters;
         private final FilterChain filterChain;
-        private int filterIndex;
         private final HttpServletRequest request;
+        private final Iterator<PluginExport<Filter>> filters;
 
-        public PluginFilterChain(HttpServletRequest request, List<ClassLoaderFilter> filters, FilterChain filterChain) {
+        public PluginFilterChain(HttpServletRequest request, Iterator<PluginExport<Filter>> filters, FilterChain filterChain) {
             this.request = request;
             this.filters = filters;
             this.filterChain = filterChain;
         }
         public void doFilter(ServletRequest request, ServletResponse response) throws IOException, ServletException {
-            if(filterIndex == filters.size()) {
-                filterChain.doFilter(request, response);
-            } else {
-                ClassLoader loader = Thread.currentThread().getContextClassLoader();
+            if(filters.hasNext()) {
+                PluginExport<Filter> filterExport = filters.next();
 
+                Filter filter = filterExport.getExport() instanceof MappingWrappedFilter ? ((MappingWrappedFilter)filterExport.getExport()).filter : filterExport.getExport();
+
+                ClassLoader loader = Thread.currentThread().getContextClassLoader();
                 try {
-                    ClassLoaderFilter classLoaderFilter = filters.get(filterIndex++);
-                    Thread.currentThread().setContextClassLoader(classLoaderFilter.classLoader);
-                    classLoaderFilter.filter.doFilter(request, response, this);
+                    Thread.currentThread().setContextClassLoader(filterExport.getClassLoader());
+                    filter.doFilter(request, response, this);
                 } finally {
                     Thread.currentThread().setContextClassLoader(loader);
                 }
+            } else {
+                filterChain.doFilter(request, response);
             }
         }
 
