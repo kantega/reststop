@@ -101,7 +101,6 @@ public class DevelopmentConsolePlugin {
         private Map<ClassLoader, Collection<Object>> getPluginClassLoaders(PluginState pluginState) {
             Map<ClassLoader, Collection<Object>> map = new IdentityHashMap<>();
 
-            System.out.println("HELLO");
             Map<PluginInfo, ClassLoader> infos = new IdentityHashMap<>();
 
             for (ClassLoader classLoader : pluginState.getClassLoaders()) {
