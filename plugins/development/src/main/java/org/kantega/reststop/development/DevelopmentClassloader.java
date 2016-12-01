@@ -52,7 +52,7 @@ public class DevelopmentClassloader extends PluginClassLoader{
     private final int version;
     private final List<File> testClasspath;
 
-    private final static JavaCompiler compiler;
+    public final static JavaCompiler compiler;
 
     static {
         compiler = ToolProvider.getSystemJavaCompiler();
@@ -320,7 +320,7 @@ public class DevelopmentClassloader extends PluginClassLoader{
         }
     }
 
-    public void compileSources() {
+    public void compileSources(StandardJavaFileManager standardFileManager) {
 
         if(basedir == null) {
             return;
@@ -330,11 +330,11 @@ public class DevelopmentClassloader extends PluginClassLoader{
         List<File> classpath = compileClasspath;
 
 
-        compileJava(sourceDirectory, outputDirectory, classpath);
+        compileJava(sourceDirectory, outputDirectory, classpath, standardFileManager);
 
     }
 
-    public void compileJavaTests() {
+    public void compileJavaTests(StandardJavaFileManager standardFileManager) {
         if(basedir == null) {
             return;
         }
@@ -343,14 +343,14 @@ public class DevelopmentClassloader extends PluginClassLoader{
             File outputDirectory = new File(basedir, "target/test-classes");
             List<File> classpath = testClasspath;
 
-            compileJava(sourceDirectory, outputDirectory, classpath);
+            compileJava(sourceDirectory, outputDirectory, classpath, standardFileManager);
 
             lastTestCompile = System.currentTimeMillis();
         }
     }
 
 
-    private void compileJava(File sourceDirectory, File outputDirectory, List<File> classpath) {
+    private void compileJava(File sourceDirectory, File outputDirectory, List<File> classpath, StandardJavaFileManager fileManager) {
         List<File> sourceFiles = getCompilationUnits(sourceDirectory, newest(outputDirectory, p -> p.getFileName().toString().endsWith(".class")));
 
         if (!sourceFiles.isEmpty()) {
@@ -362,27 +362,15 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
             outputDirectory.mkdirs();
 
-            List<String> options = asList("-g", "-classpath", cp, "-d", outputDirectory.getAbsolutePath());
+            List<String> options = new ArrayList<>(asList("-g", "-classpath", cp, "-d", outputDirectory.getAbsolutePath()));
 
-            StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
             JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, diagnostics, options, null, fileManager.getJavaFileObjectsFromFiles(sourceFiles));
 
-            try {
-                long before = System.currentTimeMillis();
-                boolean success = task.call();
-                System.out.println("Compilation took: " + (System.currentTimeMillis()- before));
-                if (!success) {
-                    throw new JavaCompilationException(diagnostics.getDiagnostics());
-                }
-            } finally {
-                try {
-                    fileManager.close();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+
+            boolean success = task.call();
+            if (!success) {
+                throw new JavaCompilationException(diagnostics.getDiagnostics());
             }
-
-
         }
     }
 

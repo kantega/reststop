@@ -29,6 +29,7 @@ import org.kantega.reststop.core.DefaultReststopPluginManager;
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.tools.StandardJavaFileManager;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -118,21 +119,32 @@ public class RedeployFilter implements Filter {
 
                 if(! staleClassLoaders.isEmpty()){
 
-                    for (DevelopmentClassloader classloader : staleClassLoaders) {
-                        try {
+                    StandardJavaFileManager fileManager = DevelopmentClassloader.compiler.getStandardFileManager(null, null, null);
 
-                            classloader.setFailed(true);
-                            classloader.compileSources();
-                            classloader.copySourceResorces();
-                            classloader.compileJavaTests();
-                            classloader.copyTestResources();
+                    try {
+                        for (DevelopmentClassloader classloader : staleClassLoaders) {
+                            try {
+
+                                classloader.setFailed(true);
+
+                                classloader.compileSources(fileManager);
+                                classloader.copySourceResorces();
+                                classloader.compileJavaTests(fileManager);
+                                classloader.copyTestResources();
 
 
-                        } catch (JavaCompilationException e) {
-                            new ErrorReporter(velocityEngine, classloader.getBasedir()).addCompilationException(e).render(req, resp);
-                            return;
+                            } catch (JavaCompilationException e) {
+                                new ErrorReporter(velocityEngine, classloader.getBasedir()).addCompilationException(e).render(req, resp);
+                                return;
+                            }
+
                         }
-
+                    } finally {
+                        try {
+                            fileManager.close();
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
 
                     DevelopmentClassLoaderFactory factory = DevelopmentClassLoaderFactory.getInstance();
