@@ -46,5 +46,10 @@
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-core</artifactId>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 </project>

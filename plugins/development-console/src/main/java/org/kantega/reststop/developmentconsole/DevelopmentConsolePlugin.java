@@ -23,6 +23,8 @@ import org.kantega.reststop.api.Plugin;
 import org.kantega.reststop.api.ReststopPluginManager;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
+import org.kantega.reststop.core.DefaultReststopPluginManager;
+import org.kantega.reststop.core.PluginState;
 import org.kantega.reststop.servlet.api.FilterPhase;
 import org.kantega.reststop.servlet.api.ServletBuilder;
 
@@ -75,39 +77,41 @@ public class DevelopmentConsolePlugin {
 
             resp.setContentType("text/html");
 
+            PluginState pluginState = ((DefaultReststopPluginManager) pluginManager).getPluginState();
             VelocityContext context = new VelocityContext();
             context.put("contextPath", req.getContextPath());
-            context.put("pluginClassloaders", getPluginClassLoaders());
+            context.put("pluginClassloaders", getPluginClassLoaders(pluginState));
             context.put("dateTool", new DateTool());
             context.put("obfTool", new ObfTool());
             context.put("consoleTool", new ConsoleTool());
 
 
-            context.put("pluginInfos", getPluginInfos());
+            context.put("pluginInfos", getPluginInfos(pluginState));
             velocityEngine.getTemplate("templates/console.vm").merge(context, resp.getWriter());
         }
 
-        private List<PluginInfo> getPluginInfos() {
+        private List<PluginInfo> getPluginInfos(PluginState pluginState) {
             List<PluginInfo> infos = new ArrayList<>();
-            for (PluginClassLoader classLoader : classLoaders) {
+            for (PluginClassLoader classLoader : pluginState.getClassLoaders()) {
                 infos.add(classLoader.getPluginInfo());
             }
             return infos;
         }
 
-        private Map<ClassLoader, Collection<Object>> getPluginClassLoaders() {
+        private Map<ClassLoader, Collection<Object>> getPluginClassLoaders(PluginState pluginState) {
             Map<ClassLoader, Collection<Object>> map = new IdentityHashMap<>();
 
+            System.out.println("HELLO");
             Map<PluginInfo, ClassLoader> infos = new IdentityHashMap<>();
 
-            for (ClassLoader classLoader : classLoaders) {
+            for (ClassLoader classLoader : pluginState.getClassLoaders()) {
                 if ( classLoader instanceof PluginClassLoader && !map.containsKey(classLoader)) {
                     map.put(classLoader, new ArrayList<>());
                     infos.put(((PluginClassLoader) classLoader).getPluginInfo(), classLoader);
                 }
             }
-            for (Object plugin : pluginManager.getPlugins()) {
-                map.get(pluginManager.getClassLoader(plugin)).add(plugin);
+            for (Object plugin : pluginState.getPlugins()) {
+                map.get(pluginState.getClassLoader(plugin)).add(plugin);
             }
 
             List<PluginInfo> sorted = PluginInfo.resolveClassloaderOrder(new ArrayList<>(infos.keySet()));
