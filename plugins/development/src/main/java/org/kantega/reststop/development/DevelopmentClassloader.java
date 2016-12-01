@@ -25,7 +25,6 @@ import org.kantega.reststop.classloaderutils.PluginInfo;
 import javax.tools.*;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -35,11 +34,9 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Predicate;
-import java.util.jar.Manifest;
 
 import static java.util.Arrays.asList;
 
@@ -56,9 +53,6 @@ public class DevelopmentClassloader extends PluginClassLoader{
     private final List<File> testClasspath;
 
     private final static JavaCompiler compiler;
-    private final StandardJavaFileManager fileManager;
-
-    private final StandardJavaFileManager testFileManager;
 
     static {
         compiler = ToolProvider.getSystemJavaCompiler();
@@ -97,10 +91,6 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
         this.created = System.currentTimeMillis();
         this.lastTestCompile = this.created;
-
-        fileManager = compiler.getStandardFileManager(null, null, null);
-
-        testFileManager = compiler.getStandardFileManager(null, null, null);
 
     }
 
@@ -340,7 +330,7 @@ public class DevelopmentClassloader extends PluginClassLoader{
         List<File> classpath = compileClasspath;
 
 
-        compileJava(sourceDirectory, outputDirectory, classpath, fileManager);
+        compileJava(sourceDirectory, outputDirectory, classpath);
 
     }
 
@@ -353,14 +343,14 @@ public class DevelopmentClassloader extends PluginClassLoader{
             File outputDirectory = new File(basedir, "target/test-classes");
             List<File> classpath = testClasspath;
 
-            compileJava(sourceDirectory, outputDirectory, classpath, testFileManager);
+            compileJava(sourceDirectory, outputDirectory, classpath);
 
             lastTestCompile = System.currentTimeMillis();
         }
     }
 
 
-    private void compileJava(File sourceDirectory, File outputDirectory, List<File> classpath, StandardJavaFileManager manager) {
+    private void compileJava(File sourceDirectory, File outputDirectory, List<File> classpath) {
         List<File> sourceFiles = getCompilationUnits(sourceDirectory, newest(outputDirectory, p -> p.getFileName().toString().endsWith(".class")));
 
         if (!sourceFiles.isEmpty()) {
@@ -374,13 +364,25 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
             List<String> options = asList("-g", "-classpath", cp, "-d", outputDirectory.getAbsolutePath());
 
-            JavaCompiler.CompilationTask task = compiler.getTask(null, manager, diagnostics, options, null, fileManager.getJavaFileObjectsFromFiles(sourceFiles));
+            StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
+            JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, diagnostics, options, null, fileManager.getJavaFileObjectsFromFiles(sourceFiles));
 
-            boolean success = task.call();
-
-            if (!success) {
-                throw new JavaCompilationException(diagnostics.getDiagnostics());
+            try {
+                long before = System.currentTimeMillis();
+                boolean success = task.call();
+                System.out.println("Compilation took: " + (System.currentTimeMillis()- before));
+                if (!success) {
+                    throw new JavaCompilationException(diagnostics.getDiagnostics());
+                }
+            } finally {
+                try {
+                    fileManager.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
+
+
         }
     }
 
