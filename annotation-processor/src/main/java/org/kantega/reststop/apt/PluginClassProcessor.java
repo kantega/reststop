@@ -31,6 +31,7 @@ import javax.tools.StandardLocation;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import java.io.*;
+import java.nio.file.NoSuchFileException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -58,7 +59,7 @@ public class PluginClassProcessor extends AbstractProcessor {
             pluginClasses.addAll(Arrays.asList(content.split("\n")));
             pluginClasses.remove("");
 
-        } catch (FileNotFoundException e) {
+        } catch (FileNotFoundException | NoSuchFileException e) {
             //Ignore
         } catch (IOException e) {
             throw new RuntimeException(e);
