@@ -364,6 +364,9 @@ public class DevelopmentClassloader extends PluginClassLoader{
 
             List<String> options = new ArrayList<>(asList("-g", "-classpath", cp, "-d", outputDirectory.getAbsolutePath()));
 
+            if(!"1.8".equals(System.getProperty("java.specification.version"))) {
+                options.add("--add-modules=java.xml.ws");
+            }
             JavaCompiler.CompilationTask task = compiler.getTask(null, fileManager, diagnostics, options, null, fileManager.getJavaFileObjectsFromFiles(sourceFiles));
 
 
