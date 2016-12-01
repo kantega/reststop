@@ -11,6 +11,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Collection;
 
 /**
@@ -60,20 +61,49 @@ public class AssetFilter implements Filter {
             }
 
             if(resource != null) {
+
                 String mimeType = req.getServletContext().getMimeType(path.substring(path.lastIndexOf("/") + 1));
                 if(mimeType != null) {
                     resp.setContentType(mimeType);
                 }
 
-                try (InputStream in = resource.openStream()) {
-                    copy(in, servletResponse.getOutputStream());
+                URLConnection urlConnection = resource.openConnection();
+
+                if(isUnmodified(urlConnection, req, resp)) {
+                    return;
+                } else {
+
+                    long contentLength = urlConnection.getContentLengthLong();
+
+                    if (contentLength != -1) {
+                        resp.setContentLengthLong(contentLength);
+                    }
+
+                    try (InputStream in = urlConnection.getInputStream()) {
+                        copy(in, servletResponse.getOutputStream());
+                    }
+                    return;
                 }
-                return;
             }
         }
 
         filterChain.doFilter(servletRequest, servletResponse);
     }
+
+    private boolean isUnmodified(URLConnection urlConnection, HttpServletRequest req, HttpServletResponse resp) throws IOException {
+        long lastModified = urlConnection.getLastModified();
+        if(lastModified != 0) {
+            resp.addDateHeader("Last-Modified", lastModified);
+            long ifModifiedSince = req.getDateHeader("If-Modified-Since");
+            if(ifModifiedSince != -1 && lastModified <= ifModifiedSince) {
+                resp.setStatus(HttpServletResponse.SC_NOT_MODIFIED);
+                return true;
+            }
+
+        }
+        return false;
+    }
+
 
     private boolean isDirectoryResource(URL resource, ClassLoader loader, String path) {
 
