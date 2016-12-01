@@ -162,17 +162,19 @@ public class ErrorReporter {
             sb.append("kind:").append("\"").append(diagnostic.getKind())
                     .append("\"\n,");
 
-            String filename = diagnostic.getSource().getName();
+            if(diagnostic.getSource() != null) {
+                String filename = diagnostic.getSource().getName();
 
-            sb.append("sourceLines:").append(readSourceLines(new File(filename))).append("\n,");
+                sb.append("sourceLines:").append(readSourceLines(new File(filename))).append("\n,");
 
 
-            filename = basedir.toPath().relativize(new File(filename).toPath()).toString();
+                filename = basedir.toPath().relativize(new File(filename).toPath()).toString();
 
-            sb.append("source:").append("\"").append(filename)
-                    .append("\"\n,");
-            sb.append("lineNumber:").append("\"").append(diagnostic.getLineNumber())
-                    .append("\"\n,");
+                sb.append("source:").append("\"").append(filename)
+                        .append("\"\n,");
+                sb.append("lineNumber:").append("\"").append(diagnostic.getLineNumber())
+                        .append("\"\n,");
+            }
             sb.append("message:").append("\"").append(escapeJavascript(diagnostic.getMessage(Locale.getDefault())))
                     .append("\"\n");
 

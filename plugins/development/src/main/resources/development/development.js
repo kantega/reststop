@@ -23,22 +23,25 @@ window.addEventListener("load", function () {
 
             container.appendChild(message);
 
-            var lines = document.createElement("pre");
-            lines.setAttribute("class", "sourceCode");
+            if(typeof(diag.sourceLines) !== "undefined") {
+                var lines = document.createElement("pre");
+                lines.setAttribute("class", "sourceCode");
 
-            for (var l = 0; l < diag.sourceLines.length; l++) {
-                var line = document.createElement("span");
-                var lid = "exline" + i + d + l;
-                line.setAttribute("id", lid);
-                if (l + 1 == diag.lineNumber) {
-                    line.setAttribute("class", "error")
+                for (var l = 0; l < diag.sourceLines.length; l++) {
+                    var line = document.createElement("span");
+                    var lid = "exline" + i + d + l;
+                    line.setAttribute("id", lid);
+                    if (l + 1 == diag.lineNumber) {
+                        line.setAttribute("class", "error")
+                    }
+                    line.innerHTML = diag.sourceLines[l] + "\n";
+                    lines.appendChild(line);
                 }
-                line.innerHTML = diag.sourceLines[l] + "\n";
-                lines.appendChild(line);
+
+
+                container.appendChild(lines);
+
             }
-
-            container.appendChild(lines);
-
             lines.scrollTop = document.getElementById("exline" + i + d + (diag.lineNumber - 1)).offsetTop;
 
         }
