@@ -38,13 +38,13 @@ public class DevelopmentPlugin  {
     private final Collection<Filter> filters  = new ArrayList<>();
 
     @Export
-    private final Collection<VelocityEngine> velocityEngines = new ArrayList<>();
+    private final VelocityEngine velocityEngine;
 
     public DevelopmentPlugin(@Config(defaultValue = "true") String runTestsOnRedeploy,
                              ReststopPluginManager pluginManager, final ServletBuilder servletBuilder) {
 
-        VelocityEngine velocityEngine = initVelocityEngine();
-        velocityEngines.add(velocityEngine);
+        velocityEngine = initVelocityEngine();
+
 
         filters.add(servletBuilder.filter(new DevelopmentAssetsFilter(), FilterPhase.PRE_UNMARSHAL, "/dev/assets/*"));
         filters.add(servletBuilder.filter(new RedeployFilter((DefaultReststopPluginManager) pluginManager, servletBuilder, velocityEngine, "true".equals(runTestsOnRedeploy)), FilterPhase.PRE_UNMARSHAL, "/*" ));
