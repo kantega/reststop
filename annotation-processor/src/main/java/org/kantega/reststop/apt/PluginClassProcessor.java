@@ -131,8 +131,15 @@ public class PluginClassProcessor extends AbstractProcessor {
 
                     } else if(enclosedElement.getKind() == ElementKind.FIELD) {
                         if(enclosedElement.getAnnotation(Export.class) != null) {
+                            if(enclosedElement.asType() instanceof ErrorType) {
+                                continue;
+                            }
                             if (isCollection(enclosedElement.asType())) {
-                                exports.add(((DeclaredType) enclosedElement.asType()).getTypeArguments().get(0).toString());
+                                TypeMirror typeArgument = ((DeclaredType) enclosedElement.asType()).getTypeArguments().get(0);
+                                if(typeArgument instanceof ErrorType) {
+                                    continue;
+                                }
+                                exports.add(typeArgument.toString());
                             } else {
                                 exports.add(enclosedElement.asType().toString());
                             }
