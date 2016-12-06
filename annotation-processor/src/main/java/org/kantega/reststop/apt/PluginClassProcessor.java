@@ -25,6 +25,7 @@ import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
@@ -89,6 +90,9 @@ public class PluginClassProcessor extends AbstractProcessor {
                         List<? extends VariableElement> parameters = constructor.getParameters();
 
                         for (VariableElement parameter : parameters) {
+                            if(parameter.asType() instanceof ErrorType) {
+                                continue;
+                            }
                             Name simpleName = parameter.getSimpleName();
                             parameterNames.add(simpleName.toString());
                             Config configAnnotation = parameter.getAnnotation(Config.class);
@@ -210,8 +214,10 @@ public class PluginClassProcessor extends AbstractProcessor {
 
 
     private boolean isCollection(TypeMirror t) {
+        TypeMirror erasure = processingEnv.getTypeUtils().erasure(t);
+        TypeMirror collectionErasure = processingEnv.getTypeUtils().erasure(processingEnv.getElementUtils().getTypeElement("java.util.Collection").asType());
         return processingEnv.getTypeUtils().isSameType(
-                processingEnv.getTypeUtils().erasure(t),
-                processingEnv.getTypeUtils().erasure(processingEnv.getElementUtils().getTypeElement("java.util.Collection").asType()));
+                erasure,
+                collectionErasure);
     }
 }
