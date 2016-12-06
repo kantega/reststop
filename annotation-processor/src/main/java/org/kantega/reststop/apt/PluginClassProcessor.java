@@ -101,6 +101,9 @@ public class PluginClassProcessor extends AbstractProcessor {
                                     DeclaredType type  = (DeclaredType) parameter.asType();
                                     DeclaredType typeArgument = (DeclaredType) type.getTypeArguments().get(0);
 
+                                    if(typeArgument instanceof ErrorType) {
+                                        continue;
+                                    }
                                     if(isPluginExport(typeArgument)) {
                                         imports.add(typeArgument.getTypeArguments().get(0).toString());
                                     } else {
