@@ -17,10 +17,12 @@
 package org.kantega.reststop.developmentconsole;
 
 import org.kantega.reststop.api.Export;
+import org.kantega.reststop.classloaderutils.Artifact;
 import org.kantega.reststop.classloaderutils.DelegateClassLoader;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
 
+import java.io.File;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.Map;
@@ -52,5 +54,13 @@ public class ConsoleTool {
             return false;
         }
 
+    }
+
+    public long runtimeSize(PluginClassLoader classLoader) {
+
+        return classLoader.getPluginInfo().getClassPath("runtime").stream()
+                .map(Artifact::getFile)
+                .mapToLong(File::length)
+                .sum();
     }
 }

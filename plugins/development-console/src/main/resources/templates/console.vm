@@ -85,6 +85,8 @@
 
                 #if($classloader.key.pluginInfo.getClassPath("runtime").size() > 0)
                     Runtime classpath:
+                    #set($length =$consoleTool.runtimeSize($classloader.key)/1024)
+                    (${length}k)
                     <ul>
                         #foreach($artifact in $classloader.key.pluginInfo.getClassPath("runtime"))
                             <li>$artifact.pluginId
