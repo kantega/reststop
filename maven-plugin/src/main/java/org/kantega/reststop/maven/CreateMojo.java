@@ -88,6 +88,7 @@ public class CreateMojo extends AbstractCreateMojo {
             tokensApi.put("${name}", "api");
             tokensApi.put("${artifactId}", artifactId);
             tokensApi.put("${rootArtifactId}", artifactId);
+            tokensApi.put("${version}", mavenProject.getVersion());
             createMavenModule(tokensApi, getClass().getResourceAsStream("dist/template-newplugin-pom.xml"), new File(apiPluginDir, "pom.xml"));
 
             new File(apiPluginDir, "src/main/resources").mkdirs();
