@@ -19,7 +19,9 @@ package org.kantega.reststop.development;
 import org.apache.velocity.app.VelocityEngine;
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader;
 import org.kantega.reststop.api.*;
+import org.kantega.reststop.api.config.Config;
 import org.kantega.reststop.core.DefaultReststopPluginManager;
+import org.kantega.reststop.core.PluginMutator;
 import org.kantega.reststop.development.velocity.SectionDirective;
 import org.kantega.reststop.servlet.api.FilterPhase;
 import org.kantega.reststop.servlet.api.ServletBuilder;
@@ -41,13 +43,13 @@ public class DevelopmentPlugin  {
     private final VelocityEngine velocityEngine;
 
     public DevelopmentPlugin(@Config(defaultValue = "true") String runTestsOnRedeploy,
-                             ReststopPluginManager pluginManager, final ServletBuilder servletBuilder) {
+                             ReststopPluginManager pluginManager, final ServletBuilder servletBuilder, Collection<PluginMutator> mutators) {
 
         velocityEngine = initVelocityEngine();
 
 
         filters.add(servletBuilder.filter(new DevelopmentAssetsFilter(), FilterPhase.PRE_UNMARSHAL, "/dev/assets/*"));
-        filters.add(servletBuilder.filter(new RedeployFilter((DefaultReststopPluginManager) pluginManager, servletBuilder, velocityEngine, "true".equals(runTestsOnRedeploy)), FilterPhase.PRE_UNMARSHAL, "/*" ));
+        filters.add(servletBuilder.filter(new RedeployFilter((DefaultReststopPluginManager) pluginManager, servletBuilder, velocityEngine, "true".equals(runTestsOnRedeploy), mutators), FilterPhase.PRE_UNMARSHAL, "/*" ));
 
         filters.add(servletBuilder.filter(new RemoteDeployFilter((DefaultReststopPluginManager) pluginManager), FilterPhase.PRE_UNMARSHAL, "/dev/deploy"));
     }

@@ -16,7 +16,7 @@
 
 package org.kantega.reststop.helloworld.jaxrs;
 
-import org.kantega.reststop.api.Config;
+import org.kantega.reststop.api.config.Config;
 import org.kantega.reststop.api.Export;
 import org.kantega.reststop.api.Plugin;
 import org.kantega.reststop.jaxrsapi.ApplicationBuilder;
@@ -38,7 +38,7 @@ HelloworldJaxRsPlugin  {
     public HelloworldJaxRsPlugin(
             @Config(property = "minus.one.byte") byte minusOneByte,
             @Config short fourShort,
-            @Config(defaultValue = "5") short fiveInt,
+            @Config(defaultValue = "5") int fiveInt,
             @Config long sixLong,
             @Config float oneFloat,
             @Config double onePointOneDouble,

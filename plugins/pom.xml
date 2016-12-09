@@ -27,6 +27,7 @@
     <packaging>pom</packaging>
 
     <modules>
+        <module>config</module>
         <module>assets</module>
         <module>security</module>
         <module>development</module>
@@ -57,6 +58,12 @@
 
         <dependency>
             <groupId>${project.groupId}</groupId>
+            <artifactId>reststop-config-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
             <artifactId>reststop-servlet-api</artifactId>
             <scope>provided</scope>
         </dependency>
@@ -64,6 +71,12 @@
         <dependency>
             <groupId>${project.groupId}</groupId>
             <artifactId>reststop-annotation-processor</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>${project.groupId}</groupId>
+            <artifactId>reststop-config-annotation-processor</artifactId>
             <scope>provided</scope>
         </dependency>
     </dependencies>

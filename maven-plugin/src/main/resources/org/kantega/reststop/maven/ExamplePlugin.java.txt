@@ -1,6 +1,6 @@
 package org.kantega.reststop.maven;
 
-import org.kantega.reststop.api.Config;
+import org.kantega.reststop.api.config.Config;
 import org.kantega.reststop.api.Plugin;
 import org.kantega.reststop.api.Export;
 import org.kantega.reststop.jaxrsapi.ApplicationBuilder;

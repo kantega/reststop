@@ -19,8 +19,10 @@ package org.kantega.reststop.core;
 import org.kantega.reststop.api.PluginExport;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 /**
  *
@@ -29,13 +31,15 @@ public class LoadedPluginClass {
     private final Object plugin;
     private final PluginClassInfo pluginClassInfo;
     private final List<Method> preDestroyMethods;
+    private final Map<Parameter, Injector> injectors;
     private final Collection<PluginExport> exports;
 
-    public LoadedPluginClass(Object plugin, Collection<PluginExport> exports, PluginClassInfo pluginClassInfo, List<Method> preDestroyMethods) {
+    public LoadedPluginClass(Object plugin, Collection<PluginExport> exports, PluginClassInfo pluginClassInfo, List<Method> preDestroyMethods, Map<Parameter, Injector> injectors) {
         this.plugin = plugin;
         this.exports = exports;
         this.pluginClassInfo = pluginClassInfo;
         this.preDestroyMethods = preDestroyMethods;
+        this.injectors = injectors;
     }
 
     public Object getPlugin() {
@@ -57,5 +61,9 @@ public class LoadedPluginClass {
     @Override
     public String toString() {
         return "{ class: " +getPluginClassInfo().getPluginClass().getName() +", plugin: " + getPluginClassInfo().getClassLoader().getPluginInfo().getPluginId() + " }";
+    }
+
+    public Map<Parameter, Injector> getInjectors() {
+        return injectors;
     }
 }

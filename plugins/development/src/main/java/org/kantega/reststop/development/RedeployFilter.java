@@ -17,14 +17,11 @@
 package org.kantega.reststop.development;
 
 import org.apache.velocity.app.VelocityEngine;
-import org.kantega.reststop.core.LoadedPluginClass;
-import org.kantega.reststop.core.PluginClassInfo;
-import org.kantega.reststop.core.PluginState;
+import org.kantega.reststop.core.*;
 import org.kantega.reststop.servlet.api.ServletBuilder;
 import org.kantega.reststop.classloaderutils.BuildSystem;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
-import org.kantega.reststop.core.DefaultReststopPluginManager;
 
 import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
@@ -52,18 +49,17 @@ public class RedeployFilter implements Filter {
     private final ServletBuilder servletBuilder;
     private final VelocityEngine velocityEngine;
     private final boolean shouldRunTests;
-    private volatile long lastConfigModified = -1;
-    private volatile Properties config;
+    private Collection<PluginMutator> mutators;
 
-    public RedeployFilter(DefaultReststopPluginManager pluginManager, ServletBuilder servletBuilder, VelocityEngine velocityEngine, boolean shouldRunTests) {
+    public RedeployFilter(DefaultReststopPluginManager pluginManager, ServletBuilder servletBuilder, VelocityEngine velocityEngine, boolean shouldRunTests, Collection<PluginMutator> mutators) {
         this.pluginManager = pluginManager;
         this.servletBuilder = servletBuilder;
         this.velocityEngine = velocityEngine;
         this.shouldRunTests = shouldRunTests;
+        this.mutators = mutators;
         PluginInfo pluginInfo = ((PluginClassLoader) getClass().getClassLoader()).getPluginInfo();
         this.shadowClassLoader = (DevelopmentClassloader) DevelopmentClassLoaderFactory.getInstance().createPluginClassLoader(pluginInfo, getClass().getClassLoader().getParent(), Collections.emptyList());
-        config = readConfig(pluginManager.getConfigFile());
-        configChanged();
+
     }
 
     @Override
@@ -89,7 +85,7 @@ public class RedeployFilter implements Filter {
 
             List<PluginInfo> needsBuild = new ArrayList<>();
 
-            Set<String>  changedProps = new HashSet<>();
+            List<PluginMutator>  activeMutators = new ArrayList<>();
 
             synchronized (this) {
 
@@ -228,29 +224,13 @@ public class RedeployFilter implements Filter {
 
                 }
 
-                changedProps.addAll(getModifiedConfigProps());
-
-                if(!changedProps.isEmpty()) {
-                    if(! changedProps.isEmpty()) {
-
-                        PluginState pluginState = pluginManager.getPluginState();
-
-                        List<LoadedPluginClass> configuredWith = pluginState.findConfiguredWith(changedProps);
-                        Set<Class> exportedTypes = getTypesExportedBy(configuredWith.stream().map(LoadedPluginClass::getPluginClassInfo).collect(Collectors.toList()));
-                        List<LoadedPluginClass> consumers = pluginState.findConsumers(exportedTypes);
-
-                        List<LoadedPluginClass> restarts = Stream.concat(configuredWith.stream(), consumers.stream())
-                                .distinct()
-                                .collect(Collectors.toList());
-
-
-                        pluginManager.restart(restarts);
-                    }
-                }
+                mutators.stream()
+                        .filter(PluginMutator::possibleUpdatePluginState)
+                        .forEach(activeMutators::add);
 
             }
 
-            if(!needsBuild.isEmpty() || !staleClassLoaders.isEmpty() || !changedProps.isEmpty()) {
+            if(!needsBuild.isEmpty() || !staleClassLoaders.isEmpty() || ! activeMutators.isEmpty()) {
                 servletBuilder.newFilterChain(filterChain).doFilter(req, resp);
             } else {
                 filterChain.doFilter(servletRequest, servletResponse);
@@ -281,60 +261,11 @@ public class RedeployFilter implements Filter {
         }
     }
 
-    private Set<String> getModifiedConfigProps() {
-        if(configChanged()) {
-            Properties newConfig = readConfig(pluginManager.getConfigFile());
-            Set<String> changed = findChangedProperties(this.config, newConfig);
-            this.config = newConfig;
-            return changed;
-        }
-        return Collections.emptySet();
-    }
 
-    private Set<String> findChangedProperties(Properties config, Properties newConfig) {
-        Set<String> oldNames = config.stringPropertyNames();
-        Set<String> newNames = newConfig.stringPropertyNames();
 
-        Set<String> allNames = new HashSet<>();
-        allNames.addAll(oldNames);
-        allNames.addAll(newNames);
 
-        Set<String> changed = new HashSet<>();
 
-        for (String name : allNames) {
-            if(!oldNames.contains(name) || !newNames.contains(name) || !config.getProperty(name).equals(newConfig.getProperty(name))) {
-                changed.add(name);
-            }
-        }
-        return changed;
-    }
 
-    private Properties readConfig(File configFile) {
-        try (InputStream is = new FileInputStream(configFile)) {
-            Properties properties = new Properties();
-            properties.load(is);
-            return properties;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
-    private boolean configChanged() {
-        File configFile = pluginManager.getConfigFile();
-
-        if(lastConfigModified == -1) {
-            lastConfigModified = configFile.lastModified();
-            return false;
-        }
-
-        long currentLastModified = configFile.lastModified();
-        if(currentLastModified > lastConfigModified) {
-            lastConfigModified = currentLastModified;
-            return true;
-        }
-        return false;
-    }
 
     public List<DevelopmentClassloader> findStaleClassLoaders() {
         return Stream.concat(pluginManager.getPluginClassLoaders().stream()

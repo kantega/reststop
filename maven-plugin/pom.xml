@@ -40,6 +40,11 @@
         </dependency>
         <dependency>
             <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-config-api</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.kantega.reststop</groupId>
             <artifactId>reststop-servlet-api</artifactId>
         </dependency>
         <dependency>

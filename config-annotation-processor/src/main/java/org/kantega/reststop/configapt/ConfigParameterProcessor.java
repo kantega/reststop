@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.apt;
+package org.kantega.reststop.configapt;
 
 import org.kantega.reststop.api.Plugin;
 
@@ -32,7 +32,7 @@ import java.util.Set;
 /**
  *
  */
-@SupportedAnnotationTypes("org.kantega.reststop.api.Config")
+@SupportedAnnotationTypes("org.kantega.reststop.api.config.Config")
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class ConfigParameterProcessor extends AbstractProcessor {
 

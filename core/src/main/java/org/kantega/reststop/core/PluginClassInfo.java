@@ -28,18 +28,16 @@ public class PluginClassInfo {
 
     private final PluginClassLoader classLoader;
     private final Class pluginClass;
-    private final Set<String> propertyNames;
-    private final boolean consumingAllProperties;
     private final Set<Class> imports;
     private final Set<Class> exports;
+    private final String[] parameterNames;
 
-    public PluginClassInfo(PluginClassLoader classLoader, Class pluginClass, Set<String> propertyNames, boolean consumingAllProperties, Set<Class> imports, Set<Class> exports) {
+    public PluginClassInfo(PluginClassLoader classLoader, Class pluginClass, Set<Class> imports, Set<Class> exports, String[] parameterNames) {
         this.classLoader = classLoader;
         this.pluginClass = pluginClass;
-        this.propertyNames = propertyNames;
-        this.consumingAllProperties = consumingAllProperties;
         this.imports = imports;
         this.exports = exports;
+        this.parameterNames = parameterNames;
     }
 
     public static List<PluginClassInfo> resolveStartupOrder(List<PluginClassInfo> pluginClasses) {
@@ -121,11 +119,7 @@ public class PluginClassInfo {
         return pluginClass;
     }
 
-    public Set<String> getPropertyNames() {
-        return propertyNames;
-    }
-
-    public boolean isConsumingAllProperties() {
-        return consumingAllProperties;
+    public String[] getParameterNames() {
+        return parameterNames;
     }
 }

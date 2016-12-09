@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.api;
+package org.kantega.reststop.api.config;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

@@ -19,6 +19,7 @@ package org.kantega.reststop.cxf;
 import org.apache.cxf.transport.servlet.CXFNonSpringServlet;
 import org.apache.cxf.wsdl.WSDLManager;
 import org.kantega.reststop.api.*;
+import org.kantega.reststop.api.config.Config;
 import org.kantega.reststop.jaxwsapi.EndpointConfiguration;
 import org.kantega.reststop.jaxwsapi.EndpointConfigurationBuilder;
 import org.kantega.reststop.jaxwsapi.EndpointDeployer;

@@ -23,14 +23,21 @@
         <version>3.0-SNAPSHOT</version>
     </parent>
 
-    <artifactId>reststop-annotation-processor</artifactId>
+    <artifactId>reststop-config-annotation-processor</artifactId>
 
     <dependencies>
         <dependency>
             <groupId>org.kantega.reststop</groupId>
             <artifactId>reststop-api</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-config-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-classloader-utils</artifactId>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

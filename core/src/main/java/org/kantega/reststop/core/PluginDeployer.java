@@ -34,7 +34,7 @@ public class PluginDeployer {
 
     public PluginDeployer(ClassLoader parentClassLoader, File configFile) {
         this.parentClassLoader = parentClassLoader;
-        pluginLoader = new ReststopPluginLoader(configFile);
+        pluginLoader = new ReststopPluginLoader();
     }
 
     private PluginState deploy(List<PluginClassInfo> plugins,PluginState currentPluginState) {
@@ -221,10 +221,9 @@ public class PluginDeployer {
         Class pluginClass = pluginLoader.loadPluginClass(classLoader, className);
         return new PluginClassInfo(classLoader,
                 pluginClass,
-                pluginLoader.findConsumedPropertyNames(pluginClass),
-                pluginLoader.isConsumingAllProperties(pluginClass),
                 pluginLoader.findConsumedTypes(pluginClass),
-                pluginLoader.findExportedTypes(pluginClass));
+                pluginLoader.findExportedTypes(pluginClass),
+                pluginLoader.readParameterNames(pluginClass));
     }
 
     private Set<String> readLines(ClassLoader pluginClassLoader, String path) {

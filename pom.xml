@@ -70,6 +70,8 @@
         <module>classloader-utils</module>
         <module>annotation-processor</module>
         <module>api</module>
+        <module>config-api</module>
+        <module>config-annotation-processor</module>
         <module>servlet-api</module>
         <module>core</module>
         <module>servlet</module>
@@ -108,12 +110,22 @@
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
+                <artifactId>reststop-config-api</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
                 <artifactId>reststop-servlet-api</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>reststop-annotation-processor</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>reststop-config-annotation-processor</artifactId>
                 <version>${project.version}</version>
             </dependency>
             <dependency>

@@ -20,6 +20,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.kantega.reststop.api.*;
+import org.kantega.reststop.api.config.Config;
 import org.kantega.reststop.servlet.api.ServletBuilder;
 import org.kantega.reststop.servlet.api.ServletDeployer;
 import org.kantega.reststop.servlets.ReststopInitializer;
