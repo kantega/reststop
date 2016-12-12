@@ -20,21 +20,24 @@ import org.glassfish.jersey.jackson.JacksonFeature;
 import org.glassfish.jersey.server.ResourceConfig;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.glassfish.jersey.servlet.ServletProperties;
-import org.kantega.reststop.api.*;
+import org.kantega.reststop.api.Export;
+import org.kantega.reststop.api.Plugin;
 import org.kantega.reststop.jaxrsapi.ApplicationBuilder;
 import org.kantega.reststop.jaxrsapi.ApplicationDeployer;
 import org.kantega.reststop.servlet.api.FilterPhase;
 import org.kantega.reststop.servlet.api.ServletBuilder;
 
-import javax.servlet.Filter;
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
+import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Application;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
+import java.lang.reflect.Proxy;
 import java.util.*;
+
+import static java.util.Collections.emptyList;
+import static java.util.Collections.singletonList;
 
 /**
  *
@@ -54,12 +57,22 @@ public class JerseyPlugin implements ApplicationDeployer, ApplicationBuilder {
 
     public JerseyPlugin(final ServletBuilder reststop) throws ServletException {
 
-        filter = addJerseyFilter(new ReststopApplication(Collections.emptyList()));
+        filter = addJerseyFilter(new ReststopApplication(emptyList()));
 
-        filter.init(reststop.filterConfig("jersey", new Properties()));
+        String pathMapping = "/*";
+        filter.init(createFilterConfig(reststop, pathMapping));
 
-        jerseyFilter = reststop.filter(filter, FilterPhase.USER, "/*");
+        jerseyFilter = reststop.filter(filter, FilterPhase.USER, pathMapping);
     }
+
+    private FilterConfig createFilterConfig(ServletBuilder reststop, String pathMapping) {
+        String filterName = "jersey";
+        FilterConfig filterConfig = reststop.filterConfig(filterName, new Properties());
+
+        return new MappingAwareFilterConfig(filterConfig, filterName, pathMapping);
+    }
+
+
 
     private ServletContainer addJerseyFilter(Application application) {
         ResourceConfig resourceConfig = getResourceConfig(application);
@@ -135,5 +148,98 @@ public class JerseyPlugin implements ApplicationDeployer, ApplicationBuilder {
                 };
             }
         };
+    }
+
+    private static class MappingAwareFilterConfig implements FilterConfig {
+        private final FilterConfig filterConfig;
+        private final ServletContext servletContext;
+
+        MappingAwareFilterConfig(FilterConfig filterConfig, String filterName, String pathMapping) {
+            this.filterConfig = filterConfig;
+            this.servletContext = createMappingAwareServletContext(filterConfig.getServletContext(), filterName, pathMapping);
+        }
+
+        @Override
+        public String getFilterName() {
+            return filterConfig.getFilterName();
+        }
+
+        @Override
+        public ServletContext getServletContext() {
+            return servletContext;
+        }
+
+        @Override
+        public String getInitParameter(String name) {
+            return filterConfig.getInitParameter(name);
+        }
+
+        @Override
+        public Enumeration<String> getInitParameterNames() {
+            return filterConfig.getInitParameterNames();
+        }
+
+        private ServletContext createMappingAwareServletContext(ServletContext filterConfig, String filterName, String pathMapping) {
+            return (ServletContext) Proxy.newProxyInstance(getClass().getClassLoader(), new Class[]{ServletContext.class}, (proxy1, method, args) -> {
+                if(method.getName().equals("getFilterRegistration") && args.length == 1 && filterName.equals(args[0])) {
+                    return createFilterRegistration(pathMapping);
+                }
+                return method.invoke(filterConfig, args);
+            });
+        }
+
+        private FilterRegistration createFilterRegistration(final String pathMapping) {
+            return new FilterRegistration() {
+                @Override
+                public void addMappingForServletNames(EnumSet<DispatcherType> dispatcherTypes, boolean isMatchAfter, String... servletNames) {
+                    throw new IllegalStateException("This method should not be called");
+                }
+
+                @Override
+                public Collection<String> getServletNameMappings() {
+                    throw new IllegalStateException("This method should not be called");
+                }
+
+                @Override
+                public void addMappingForUrlPatterns(EnumSet<DispatcherType> dispatcherTypes, boolean isMatchAfter, String... urlPatterns) {
+                    throw new IllegalStateException("This method should not be called");
+                }
+
+                @Override
+                public Collection<String> getUrlPatternMappings() {
+                    return singletonList(pathMapping);
+                }
+
+                @Override
+                public String getName() {
+                    throw new IllegalStateException("This method should not be called");
+                }
+
+                @Override
+                public String getClassName() {
+                    throw new IllegalStateException("This method should not be called");
+                }
+
+                @Override
+                public boolean setInitParameter(String name, String value) {
+                    throw new IllegalStateException("This method should not be called");
+                }
+
+                @Override
+                public String getInitParameter(String name) {
+                    throw new IllegalStateException("This method should not be called");
+                }
+
+                @Override
+                public Set<String> setInitParameters(Map<String, String> initParameters) {
+                    throw new IllegalStateException("This method should not be called");
+                }
+
+                @Override
+                public Map<String, String> getInitParameters() {
+                    throw new IllegalStateException("This method should not be called");
+                }
+            };
+        }
     }
 }
