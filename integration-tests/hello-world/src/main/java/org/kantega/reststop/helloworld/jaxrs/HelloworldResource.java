@@ -16,7 +16,6 @@
 
 package org.kantega.reststop.helloworld.jaxrs;
 
-import javax.annotation.security.RolesAllowed;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.ws.rs.*;
@@ -29,7 +28,6 @@ public class HelloworldResource {
 
     @GET
     @Produces({"application/json", "application/xml", })
-    @RolesAllowed("manager")
     public Hello hello(@NotNull @PathParam(value = "lang") String lang, @NotNull @Size(min = 2) @QueryParam("yo") String greet) {
 
 

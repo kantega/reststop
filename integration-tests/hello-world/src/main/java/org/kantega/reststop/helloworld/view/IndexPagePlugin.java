@@ -52,11 +52,11 @@ public class IndexPagePlugin  {
         helloWorldServlet = servletBuilder.servlet(new HttpServlet() {
             @Override
             protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
-                resp.getWriter().println("halloOo");
+                resp.getWriter().println("Hallo");
                 resp.getWriter().println(req.getServletPath());
                 resp.getWriter().println(req.getPathInfo());
             }
-        }, "/heiverden", "/heiverda*");
+        }, "/heiverden", "/heiver*");
     }
 }
 

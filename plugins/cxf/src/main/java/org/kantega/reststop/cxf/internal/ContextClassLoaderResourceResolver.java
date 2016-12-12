@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.cxf;
+package org.kantega.reststop.cxf.internal;
 
 import org.apache.cxf.Bus;
 import org.apache.cxf.resource.ResourceManager;
 import org.apache.cxf.resource.ResourceResolver;
+import org.kantega.reststop.cxf.CxfPlugin;
 
 import java.io.InputStream;
 import java.net.URL;

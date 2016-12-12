@@ -133,6 +133,11 @@
                 <version>${project.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.kantega.reststop</groupId>
+                <artifactId>reststop-bootstrap</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>reststop-servlet</artifactId>
                 <version>${project.version}</version>
@@ -212,11 +217,15 @@
             <plugins>
                 <plugin>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.6.0</version>
+                    <version>3.6.1-SNAPSHOT</version>
                     <configuration>
-                        <source>1.8</source>
-                        <target>1.8</target>
+                        <source>1.9</source>
+                        <target>1.9</target>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-war-plugin</artifactId>
+                    <version>3.0.0</version>
                 </plugin>
             </plugins>
         </pluginManagement>

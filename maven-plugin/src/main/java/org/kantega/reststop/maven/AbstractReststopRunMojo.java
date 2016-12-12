@@ -28,6 +28,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.webapp.Configuration;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -96,7 +97,17 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
 
 
             Server server = new Server(port);
-            ServerSupport.configureDefaultConfigurationClasses(server);
+
+            server.setAttribute(Configuration.ATTR, new String[] {
+                    "org.eclipse.jetty.maven.plugin.MavenWebInfConfiguration",
+                    "org.eclipse.jetty.webapp.WebXmlConfiguration",
+                    "org.eclipse.jetty.webapp.MetaInfConfiguration",
+                    "org.eclipse.jetty.webapp.FragmentConfiguration",
+                    "org.eclipse.jetty.plus.webapp.EnvConfiguration",
+                    "org.eclipse.jetty.plus.webapp.PlusConfiguration",
+                    "org.eclipse.jetty.annotations.AnnotationConfiguration",
+                    "org.eclipse.jetty.webapp.JettyWebXmlConfiguration"
+            });
 
             mavenProject.setContextValue("jettyServer", server);
 

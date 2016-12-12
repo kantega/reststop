@@ -315,6 +315,12 @@
                     <skip>true</skip>
                 </configuration>
             </plugin>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <compilerArgument>--processor-module-path=${user.home}/.m2/repository/org/kantega/reststop/reststop-annotation-processor/${project.parent.version}/reststop-annotation-processor-${project.parent.version}.jar:${user.home}/.m2/repository/org/kantega/reststop/reststop-api/${project.parent.version}/reststop-api-${project.parent.version}.jar:${user.home}/.m2/repository/org/kantega/reststop/reststop-classloader-utils/${project.parent.version}/reststop-classloader-utils-${project.parent.version}.jar</compilerArgument>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 

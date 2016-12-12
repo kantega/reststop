@@ -27,19 +27,19 @@ import javax.xml.bind.annotation.XmlElement;
 @XmlAccessorType(XmlAccessType.NONE)
 public class PluginConfigParam {
     @XmlAttribute(name = "name")
-    private String paramName;
+    public String paramName;
 
     @XmlAttribute(name = "type")
-    private String type;
+    public String type;
 
     @XmlAttribute(name = "default-value")
-    private String defaultValue;
+    public String defaultValue;
 
     @XmlElement(name = "doc")
-    private String doc;
+    public String doc;
 
     @XmlAttribute(name = "required")
-    private boolean required;
+    public boolean required;
 
     public PluginConfigParam(String paramName, String type, String defaultValue, String doc, boolean required) {
         this.paramName = paramName;

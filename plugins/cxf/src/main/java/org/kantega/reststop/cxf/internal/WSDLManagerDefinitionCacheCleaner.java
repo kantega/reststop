@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.kantega.reststop.cxf;
+package org.kantega.reststop.cxf.internal;
 
 import org.apache.cxf.Bus;
 import org.apache.cxf.wsdl.WSDLManager;

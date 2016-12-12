@@ -16,10 +16,6 @@
 
 package org.kantega.reststop.helloworld.jaxrs;
 
-import org.kantega.reststop.helloworld.jaxrs.Helloworld;
-import org.kantega.reststop.helloworld.jaxrs.HelloworldResource;
-
-import javax.annotation.security.RolesAllowed;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -36,7 +32,6 @@ public class HelloWorldRootResource {
 
     @GET
     @Produces({"application/json", "application/xml", })
-    @RolesAllowed("manager")
     public Helloworld hello() {
         Helloworld languages = new Helloworld();
         for(String altLang : asList("no", "se", "en", "fr"))  {
