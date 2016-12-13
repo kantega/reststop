@@ -22,6 +22,7 @@ import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
+import java.security.Principal;
 
 /**
  *
@@ -47,6 +48,11 @@ public class BasicAuthFilter implements Filter {
                     @Override
                     public String getRemoteUser() {
                         return usernameAndPassword[0];
+                    }
+
+                    @Override
+                    public Principal getUserPrincipal() {
+                        return () -> usernameAndPassword[0];
                     }
 
                     @Override
