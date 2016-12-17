@@ -35,6 +35,9 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.List;
+
+import static java.util.Arrays.asList;
 
 /**
  *
@@ -102,7 +105,22 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
 
             JettyWebAppContext context = new JettyWebAppContext();
 
-            context.addServerClass("org.eclipse.aether.");
+            List<String> serverClasses = asList(
+                    "org.eclipse.aether.",
+                    "com.sun.codemodel.",
+                    "com.jcraft.",
+                    "org.apache.commons.",
+                    "org.apache.ant.",
+                    "org.apache.http.",
+                    "org.apache.maven.",
+                    "org.codehaus.plexus.",
+                    "org.sonatype.plexus.",
+                    "org.eclipse.jgit.",
+                    "org.twdata.",
+                    "com.googlecode.");
+            serverClasses.forEach(context::addServerClass);
+            getLog().info("Added system classes: " + serverClasses);
+
             context.setWar(war.getAbsolutePath());
             context.setContextPath(contextPath);
             context.getServletContext().setAttribute("pluginsXml", createPluginXmlDocument(false));
