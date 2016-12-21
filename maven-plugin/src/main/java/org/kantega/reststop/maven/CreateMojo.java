@@ -88,7 +88,8 @@ public class CreateMojo extends AbstractCreateMojo {
             tokensApi.put("${name}", "api");
             tokensApi.put("${artifactId}", artifactId);
             tokensApi.put("${rootArtifactId}", artifactId);
-            tokensApi.put("${version}", mavenProject.getVersion());
+            String projectVersion = "1.0-SNAPSHOT";
+            tokensApi.put("${version}", projectVersion);
             createMavenModule(tokensApi, getClass().getResourceAsStream("dist/template-newplugin-pom.xml"), new File(apiPluginDir, "pom.xml"));
 
             new File(apiPluginDir, "src/main/resources").mkdirs();
@@ -152,7 +153,7 @@ public class CreateMojo extends AbstractCreateMojo {
 
         InvocationRequest request2 = new DefaultInvocationRequest();
         request2.setPomFile(webappPom);
-        request2.setGoals(asList("jetty:run"));
+        request2.setGoals(asList("reststop:run"));
 
         try {
             invoker.execute(request2);
