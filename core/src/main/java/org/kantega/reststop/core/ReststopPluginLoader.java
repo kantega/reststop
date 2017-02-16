@@ -278,7 +278,7 @@ public class ReststopPluginLoader {
 
             return clazz;
         } catch (ClassNotFoundException e) {
-            throw new IllegalArgumentException("Cannot find plugin class" + className, e);
+            throw new IllegalArgumentException("Cannot find plugin class " + className, e);
         }
     }
 
