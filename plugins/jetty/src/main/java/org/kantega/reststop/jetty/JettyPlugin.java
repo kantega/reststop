@@ -45,7 +45,7 @@ public class JettyPlugin {
 
         server = new Server(jettyPort);
 
-        ServletContextHandler handler = new ServletContextHandler();
+        ServletContextHandler handler = new ServletContextHandler(ServletContextHandler.SESSIONS);
 
 
         ReststopInitializer.PluginDelegatingFilter filter = new ReststopInitializer.PluginDelegatingFilter();
