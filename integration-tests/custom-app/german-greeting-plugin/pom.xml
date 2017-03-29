@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.kantega.reststop</groupId>
         <artifactId>reststop-custom-app</artifactId>
-        <version>3.1</version>
+        <version>3.2-SNAPSHOT</version>
     </parent>
     <artifactId>reststop-custom-app-german</artifactId>
     <packaging>jar</packaging>
