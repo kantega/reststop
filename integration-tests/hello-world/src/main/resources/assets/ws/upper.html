@@ -1,0 +1,27 @@
+<html>
+
+<script>
+    window.addEventListener("load", function (e) {
+
+        var ws = new WebSocket("ws://" + window.location.host + "/toupper");
+
+        ws.onmessage =  function (msg) {
+            var p = document.createElement("p");
+            p.textContent = msg.data;
+            document.body.appendChild(p);
+        }
+
+        var input = document.querySelector("input");
+        input.addEventListener("keydown", function (e) {
+            if(e.keyCode == 13) {
+                ws.send(input.value);
+                input.value = "";
+            }
+        })
+
+    })
+</script>
+<h1>Upper</h1>
+
+<input>
+</html>

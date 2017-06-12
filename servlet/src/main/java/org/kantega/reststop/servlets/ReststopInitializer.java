@@ -69,9 +69,9 @@ public class ReststopInitializer implements ServletContainerInitializer{
         servletContext.setAttribute("reststopPluginManager", manager);
 
 
-
-        servletContext.addFilter(PluginDelegatingFilter.class.getName(), pluginDelegatingFilter)
-                .addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
+        FilterRegistration.Dynamic registration = servletContext.addFilter(PluginDelegatingFilter.class.getName(), pluginDelegatingFilter);
+        registration.setAsyncSupported(true);
+        registration.addMappingForUrlPatterns(EnumSet.of(DispatcherType.REQUEST), true, "/*");
 
         servletContext.addListener(new ShutdownListener(manager));
 
