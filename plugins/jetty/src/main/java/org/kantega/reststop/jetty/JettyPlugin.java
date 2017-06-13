@@ -19,6 +19,7 @@ package org.kantega.reststop.jetty;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
 import org.kantega.reststop.api.*;
 import org.kantega.reststop.servlet.api.ServletBuilder;
 import org.kantega.reststop.servlet.api.ServletDeployer;
@@ -53,6 +54,8 @@ public class JettyPlugin {
         servletDeployer = filter;
         handler.addFilter(new FilterHolder(filter), "/*", EnumSet.of(DispatcherType.REQUEST));
         server.setHandler(handler);
+
+        WebSocketServerContainerInitializer.configureContext(handler);
 
         try {
             server.start();

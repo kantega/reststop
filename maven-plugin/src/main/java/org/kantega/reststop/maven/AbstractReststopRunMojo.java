@@ -28,6 +28,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
+import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -154,6 +155,9 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
             FileUtils.writeStringToFile(reststopPortFile, reststopPort);
 
             handlers.addHandler(context);
+
+            WebSocketServerContainerInitializer.configureContext(context);
+
             context.start();
 
             afterServerStart(server, actualPort);
