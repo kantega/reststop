@@ -122,6 +122,8 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
             serverClasses.forEach(context::addServerClass);
             getLog().info("Added system classes: " + serverClasses);
 
+            context.prependServerClass("-org.eclipse.jetty.http.pathmap.");
+
             context.setWar(war.getAbsolutePath());
             context.setContextPath(contextPath);
             context.getServletContext().setAttribute("pluginsXml", createPluginXmlDocument(false));
