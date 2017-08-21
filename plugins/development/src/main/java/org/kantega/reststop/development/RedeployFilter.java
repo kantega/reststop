@@ -119,31 +119,29 @@ public class RedeployFilter implements Filter {
 
                 if(! staleClassLoaders.isEmpty()){
 
-                    StandardJavaFileManager fileManager = DevelopmentClassloader.compiler.getStandardFileManager(null, null, null);
+                    for (DevelopmentClassloader classloader : staleClassLoaders) {
 
-                    try {
-                        for (DevelopmentClassloader classloader : staleClassLoaders) {
-                            try {
+                        StandardJavaFileManager fileManager = DevelopmentClassloader.compiler.getStandardFileManager(null, null, null);
 
-                                classloader.setFailed(true);
-
-                                classloader.compileSources(fileManager);
-                                classloader.copySourceResorces();
-                                classloader.compileJavaTests(fileManager);
-                                classloader.copyTestResources();
-
-
-                            } catch (JavaCompilationException e) {
-                                new ErrorReporter(velocityEngine, classloader.getBasedir()).addCompilationException(e).render(req, resp);
-                                return;
-                            }
-
-                        }
-                    } finally {
                         try {
-                            fileManager.close();
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
+
+                            classloader.setFailed(true);
+
+                            classloader.compileSources(fileManager);
+                            classloader.copySourceResorces();
+                            classloader.compileJavaTests(fileManager);
+                            classloader.copyTestResources();
+
+
+                        } catch (JavaCompilationException e) {
+                            new ErrorReporter(velocityEngine, classloader.getBasedir()).addCompilationException(e).render(req, resp);
+                            return;
+                        } finally {
+                            try {
+                                fileManager.close();
+                            } catch (IOException e) {
+                                throw new RuntimeException(e);
+                            }
                         }
                     }
 
