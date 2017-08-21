@@ -28,7 +28,9 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.eclipse.jetty.server.handler.HandlerCollection;
-import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
+import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.websocket.jsr356.server.ServerContainer;
+import org.eclipse.jetty.websocket.server.WebSocketUpgradeFilter;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -156,7 +158,7 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
 
             handlers.addHandler(context);
 
-            WebSocketServerContainerInitializer.configureContext(context);
+            configureWebSocket(context);
 
             context.start();
 
@@ -166,6 +168,24 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
             throw new MojoExecutionException("Failed starting Jetty ", e);
         }
     }
+
+    public static ServerContainer configureWebSocket(ServletContextHandler context) throws ServletException
+    {
+
+        // Create Filter
+        WebSocketUpgradeFilter filter = WebSocketUpgradeFilter.configureContext(context);
+
+        // Create the Jetty ServerContainer implementation
+        ServerContainer jettyContainer = new RedeployableServerContainer(filter,filter.getFactory(),context.getServer().getThreadPool());
+        context.addBean(jettyContainer, true);
+
+        // Store a reference to the ServerContainer per javax.websocket spec 1.0 final section 6.4 Programmatic Server Deployment
+        context.setAttribute(javax.websocket.server.ServerContainer.class.getName(),jettyContainer);
+
+        return jettyContainer;
+    }
+
+
 
     private int nextAvailablePort(int first) {
         int port = first;
