@@ -20,6 +20,10 @@ import javax.annotation.security.RolesAllowed;
 import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 import javax.ws.rs.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  *
@@ -30,9 +34,22 @@ public class HelloworldResource {
     @GET
     @Produces({"application/json", "application/xml", })
     @RolesAllowed("manager")
-    public Hello hello(@NotNull @PathParam(value = "lang") String lang, @NotNull @Size(min = 2) @QueryParam("yo") String greet) {
+    public Hello hello(@NotNull @PathParam(value = "lang") String lang,
+                       @NotNull @Size(min = 2) @QueryParam("yo") String greet) {
 
+        return getHello(lang);
+    }
 
+    @GET
+    @Produces({"application/json", "application/xml", })
+    @RolesAllowed("manager")
+    @Path("async")
+    public CompletionStage<Hello> asyncHello(@NotNull @PathParam(value = "lang") String lang,
+                                             @NotNull @Size(min = 2) @QueryParam("yo") String greet){
+            return CompletableFuture.supplyAsync(() -> getHello(lang));
+    }
+
+    private Hello getHello(String lang) {
         String message = "Hello world";
 
         switch(lang) {

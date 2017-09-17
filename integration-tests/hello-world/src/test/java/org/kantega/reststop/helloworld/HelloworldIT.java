@@ -36,17 +36,27 @@ public class HelloworldIT {
 
     @Test
     public void shouldReturnHelloWorld() throws IOException, URISyntaxException {
+        String path = "/helloworld/en?yo=hello";
 
+        assertIsHello(path);
+    }
 
+    @Test
+    public void asyncShouldReturnHelloWorld() throws IOException, URISyntaxException {
+        String path = "/helloworld/en/async?yo=hello";
+
+        assertIsHello(path);
+    }
+
+    private void assertIsHello(String path) throws IOException {
         String reststopPort = readPort();
-        HttpURLConnection connection = (HttpURLConnection) new URL("http://localhost:" + reststopPort + "/helloworld/en?yo=hello").openConnection();
+        HttpURLConnection connection = (HttpURLConnection) new URL("http://localhost:" + reststopPort + path).openConnection();
         connection.setRequestProperty("Authorization", "Basic " + DatatypeConverter.printBase64Binary("joe:joe".getBytes("utf-8")));
         connection.setRequestProperty("Accept", "application/json");
         String message = IOUtils.toString(connection.getInputStream());
 
         assertThat(message, is("{\"message\":\"Hello world\"}"));
     }
-
 
 
 }
