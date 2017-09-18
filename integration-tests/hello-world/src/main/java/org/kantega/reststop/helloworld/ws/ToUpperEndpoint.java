@@ -11,6 +11,6 @@ public class ToUpperEndpoint {
 
     @OnMessage
     public String onMessage(String message) {
-        return message.toLowerCase();
+        return message.toUpperCase();
     }
 }

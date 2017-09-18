@@ -293,6 +293,11 @@
                                     <artifactId>reststop-jetty-plugin</artifactId>
                                     <version>${project.parent.version}</version>
                                 </plugin>
+                                <plugin>
+                                    <groupId>${project.parent.groupId}</groupId>
+                                    <artifactId>reststop-jetty-websockets-plugin</artifactId>
+                                    <version>${project.parent.version}</version>
+                                </plugin>
                             </bootstrapPlugins>
                             <container>bootstrap</container>
                             <resources>

@@ -19,8 +19,9 @@ package org.kantega.reststop.jetty;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
-import org.kantega.reststop.api.*;
+import org.kantega.reststop.api.Config;
+import org.kantega.reststop.api.Export;
+import org.kantega.reststop.api.Plugin;
 import org.kantega.reststop.servlet.api.ServletBuilder;
 import org.kantega.reststop.servlet.api.ServletDeployer;
 import org.kantega.reststop.servlets.ReststopInitializer;
@@ -28,6 +29,7 @@ import org.kantega.reststop.servlets.ReststopInitializer;
 import javax.annotation.PreDestroy;
 import javax.servlet.DispatcherType;
 import javax.servlet.ServletContext;
+import java.util.Collection;
 import java.util.EnumSet;
 
 /**
@@ -42,7 +44,7 @@ public class JettyPlugin {
 
     private final Server server;
 
-    public JettyPlugin(@Config(defaultValue = "8080") int jettyPort)throws Exception {
+    public JettyPlugin(@Config(defaultValue = "8080") int jettyPort, Collection<ServletContextCustomizer> servletContextCustomizers)throws Exception {
 
         server = new Server(jettyPort);
 
@@ -55,7 +57,9 @@ public class JettyPlugin {
         handler.addFilter(new FilterHolder(filter), "/*", EnumSet.of(DispatcherType.REQUEST));
         server.setHandler(handler);
 
-        WebSocketServerContainerInitializer.configureContext(handler);
+        for (ServletContextCustomizer customizer : servletContextCustomizers) {
+            customizer.customize(handler);
+        }
 
         try {
             server.start();

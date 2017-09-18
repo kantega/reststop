@@ -21,22 +21,30 @@
     <parent>
         <groupId>org.kantega.reststop</groupId>
         <artifactId>reststop-plugins</artifactId>
-        <version>3.5-SNAPSHOT</version>
+        <version>3.4-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
 
-    <artifactId>reststop-jetty-plugin</artifactId>
+    <artifactId>reststop-jetty-websockets-plugin</artifactId>
 
 
     <dependencies>
         <dependency>
-            <groupId>org.eclipse.jetty</groupId>
-            <artifactId>jetty-servlet</artifactId>
-            <version>${jetty.version}</version>
+            <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-jetty-plugin</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.kantega.reststop</groupId>
-            <artifactId>reststop-servlet</artifactId>
+            <groupId>org.eclipse.jetty.websocket</groupId>
+            <artifactId>javax-websocket-server-impl</artifactId>
+            <version>${jetty.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>javax.websocket</groupId>
+                    <artifactId>javax.websocket-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
     </dependencies>
 </project>
