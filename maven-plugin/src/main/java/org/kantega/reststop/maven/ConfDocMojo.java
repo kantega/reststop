@@ -25,8 +25,9 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.kantega.reststop.classloaderutils.config.PluginConfigParam;
 import org.kantega.reststop.classloaderutils.config.PluginConfigParams;
 
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.*;
 import java.util.*;
 import java.util.function.Predicate;
@@ -53,18 +54,18 @@ public class ConfDocMojo extends AbstractReststopMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
 
         try {
-            JAXBContext context = JAXBContext.newInstance(PluginConfigParams.class);
+            DocumentBuilder documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 
             exampleConfigFile.getParentFile().mkdirs();
 
-            Map<String, List<PluginConfig>> configs = findConfigs(context);
+            Map<String, List<PluginConfig>> configs = findConfigs(documentBuilder);
 
             Properties properties = validateConfiguration(configs);
             writeExampleConfig(configs);
             writeHtmlDoc(configs, properties);
 
 
-        } catch (IOException | JAXBException e) {
+        } catch (IOException  | ParserConfigurationException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
     }
@@ -254,7 +255,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
 
     }
 
-    private Map<String, List<PluginConfig>> findConfigs(JAXBContext context) throws MojoFailureException, MojoExecutionException, JAXBException, IOException {
+    private Map<String, List<PluginConfig>> findConfigs(DocumentBuilder context) throws MojoFailureException, MojoExecutionException, IOException {
         Map<String, List<PluginConfig>> configs = new LinkedHashMap<>();
         for (Plugin plugin : getPlugins()) {
 
@@ -290,7 +291,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
         return false;
     }
 
-    private List<PluginConfig> readPluginConfigs(File pluginFile, JAXBContext context) throws JAXBException, IOException {
+    private List<PluginConfig> readPluginConfigs(File pluginFile, DocumentBuilder documentBuilder) throws IOException {
 
         List<PluginConfig> configs = new ArrayList<>();
         String path = "META-INF/services/ReststopPlugin/simple.txt";
@@ -300,7 +301,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
                 String className;
                 while ((className = br.readLine()) != null) {
                     try (InputStream is = new FileInputStream(new File(pluginFile, className.replace('.', '/') + ".config-params"))) {
-                        configs.add(new PluginConfig(className, (PluginConfigParams) context.createUnmarshaller().unmarshal(is)));
+                        configs.add(new PluginConfig(className, new ParamsUnmarshaller().unmarshal(is, documentBuilder)));
                     }
                 }
             }
@@ -313,7 +314,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
                         while ((className = br.readLine()) != null) {
                             ZipEntry configParamsEntry = jarFile.getEntry(className.replace('.', '/') + ".config-params");
                             try (InputStream is = jarFile.getInputStream(configParamsEntry)) {
-                                configs.add(new PluginConfig(className, (PluginConfigParams) context.createUnmarshaller().unmarshal(is)));
+                                configs.add(new PluginConfig(className, new ParamsUnmarshaller().unmarshal(is, documentBuilder)));
                             }
                         }
                     }

@@ -24,13 +24,12 @@ import org.kantega.reststop.classloaderutils.config.PluginConfigParams;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
+import javax.lang.model.element.Element;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.TypeMirror;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
 import java.io.*;
 import java.nio.file.NoSuchFileException;
 import java.util.*;
@@ -196,9 +195,9 @@ public class PluginClassProcessor extends AbstractProcessor {
                             element);
 
                     try (OutputStream outputStream = configParams.openOutputStream()) {
-                        JAXBContext.newInstance(PluginConfigParams.class).createMarshaller().marshal(params, outputStream);
+                        new ParamsMarshaller().marshall(params, outputStream);
                     }
-                } catch (IOException | JAXBException e) {
+                } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
 
@@ -215,6 +214,8 @@ public class PluginClassProcessor extends AbstractProcessor {
         }
         return false;
     }
+
+
 
     private boolean isPluginExport(DeclaredType typeArgument) {
         return processingEnv.getTypeUtils().isSameType(
