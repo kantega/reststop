@@ -16,7 +16,7 @@
 
 package org.kantega.reststop.jetty;
 
-import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.*;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.kantega.reststop.api.Config;
@@ -44,7 +44,9 @@ public class JettyPlugin {
 
     private final Server server;
 
-    public JettyPlugin(@Config(defaultValue = "8080") int jettyPort, Collection<ServletContextCustomizer> servletContextCustomizers)throws Exception {
+    public JettyPlugin(@Config(defaultValue = "8080") int jettyPort, 
+                       @Config(defaultValue = "false") boolean jettyEnableXForwarded,
+                       Collection<ServletContextCustomizer> servletContextCustomizers)throws Exception {
 
         server = new Server(jettyPort);
 
@@ -60,6 +62,9 @@ public class JettyPlugin {
         for (ServletContextCustomizer customizer : servletContextCustomizers) {
             customizer.customize(handler);
         }
+        
+        if( jettyEnableXForwarded )
+            server.addConnector(createHttpConnector(server, jettyPort));
 
         try {
             server.start();
@@ -73,6 +78,17 @@ public class JettyPlugin {
         ReststopInitializer.DefaultServletBuilder defaultServletBuilder = new ReststopInitializer.DefaultServletBuilder(servletContext, filter);
 
         servletBuilder = defaultServletBuilder;
+    }
+
+    private static Connector createHttpConnector(Server server, int jettyPort) {
+        
+        final HttpConfiguration httpConfig = new HttpConfiguration();
+        httpConfig.addCustomizer(new ForwardedRequestCustomizer());
+
+        final ServerConnector httpConnector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
+        httpConnector.setPort(jettyPort);
+
+        return httpConnector;
     }
 
     @PreDestroy
