@@ -48,7 +48,7 @@ public class JettyPlugin {
                        @Config(defaultValue = "false") boolean jettyEnableXForwarded,
                        Collection<ServletContextCustomizer> servletContextCustomizers)throws Exception {
 
-        server = new Server(jettyPort);
+        server = new Server();
 
         ServletContextHandler handler = new ServletContextHandler(ServletContextHandler.SESSIONS);
 
