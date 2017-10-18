@@ -45,7 +45,7 @@ public class JettyPlugin {
     private final Server server;
 
     public JettyPlugin(@Config(defaultValue = "8080") int jettyPort, 
-                       @Config(defaultValue = "false") boolean enableXForwarded,
+                       @Config(defaultValue = "false") boolean jettyEnableXForwarded,
                        Collection<ServletContextCustomizer> servletContextCustomizers)throws Exception {
 
         server = new Server(jettyPort);
@@ -63,7 +63,7 @@ public class JettyPlugin {
             customizer.customize(handler);
         }
         
-        if( enableXForwarded )
+        if( jettyEnableXForwarded )
             server.addConnector(createHttpConnector(server, jettyPort));
 
         try {
