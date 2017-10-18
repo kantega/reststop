@@ -62,9 +62,8 @@ public class JettyPlugin {
         for (ServletContextCustomizer customizer : servletContextCustomizers) {
             customizer.customize(handler);
         }
-        
-        if( jettyEnableXForwarded )
-            server.addConnector(createHttpConnector(server, jettyPort));
+
+        server.addConnector(createHttpConnector(server, jettyPort, jettyEnableXForwarded));
 
         try {
             server.start();
@@ -80,10 +79,13 @@ public class JettyPlugin {
         servletBuilder = defaultServletBuilder;
     }
 
-    private static Connector createHttpConnector(Server server, int jettyPort) {
+    private static Connector createHttpConnector(Server server, int jettyPort, boolean jettyEnableXForwarded) {
         
         final HttpConfiguration httpConfig = new HttpConfiguration();
-        httpConfig.addCustomizer(new ForwardedRequestCustomizer());
+
+        if(jettyEnableXForwarded) {
+            httpConfig.addCustomizer(new ForwardedRequestCustomizer());
+        }
 
         final ServerConnector httpConnector = new ServerConnector(server, new HttpConnectionFactory(httpConfig));
         httpConnector.setPort(jettyPort);
