@@ -16,30 +16,15 @@
 
 package org.kantega.reststop.jetty.websockets;
 
-import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
 import org.kantega.reststop.api.Export;
 import org.kantega.reststop.api.Plugin;
 import org.kantega.reststop.jetty.ServletContextCustomizer;
-
-import javax.servlet.ServletException;
 
 /**
  *
  */
 @Plugin
 public class JettyWebsocketsPlugin {
-
-    @Export final ServletContextCustomizer servletContextCustomizer;
-
-    public JettyWebsocketsPlugin()throws Exception {
-
-        servletContextCustomizer = new ServletContextCustomizer() {
-            @Override
-            public void customize(ServletContextHandler contextHandler) throws ServletException {
-                WebSocketServerContainerInitializer.configureContext(contextHandler);
-            }
-        };
-
-    }
+    @Export final ServletContextCustomizer servletContextCustomizer = WebSocketServerContainerInitializer::configureContext;
 }
