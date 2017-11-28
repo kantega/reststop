@@ -37,16 +37,7 @@ public class JettyWebsocketsPlugin {
         servletContextCustomizer = new ServletContextCustomizer() {
             @Override
             public void customize(ServletContextHandler contextHandler) throws ServletException {
-                Thread thread = Thread.currentThread();
-
-                ClassLoader oldCl = thread.getContextClassLoader();
-
-                try {
-                    thread.setContextClassLoader(JettyWebsocketsPlugin.class.getClassLoader());
-                    WebSocketServerContainerInitializer.configureContext(contextHandler);
-                } finally {
-                    thread.setContextClassLoader(oldCl);
-                }
+                WebSocketServerContainerInitializer.configureContext(contextHandler);
             }
         };
 
