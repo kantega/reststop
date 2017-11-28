@@ -6,7 +6,7 @@ import javax.websocket.server.ServerEndpoint;
 /**
  *
  */
-@ServerEndpoint("/toupper")
+@ServerEndpoint(value = "/toupper", configurator = CustomWsConfiguator.class)
 public class ToUpperEndpoint {
 
     @OnMessage
