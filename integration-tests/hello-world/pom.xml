@@ -221,7 +221,49 @@
                             <artifactId>reststop-wsdl-test-plugin</artifactId>
                             <version>${project.parent.version}</version>
                         </plugin>
+                        <plugin>
+                            <groupId>${project.parent.groupId}</groupId>
+                            <artifactId>reststop-jetty-plugin</artifactId>
+                            <version>${project.parent.version}</version>
+                        </plugin>
+                        <plugin>
+                            <groupId>${project.parent.groupId}</groupId>
+                            <artifactId>reststop-jetty-websockets-plugin</artifactId>
+                            <version>${project.parent.version}</version>
+                        </plugin>
                     </plugins>
+                    <containerDependencies>
+                        <!--<dependency>
+                            <groupId>ch.qos.logback</groupId>
+                            <artifactId>logback-classic</artifactId>
+                            <version>1.1.3</version>
+                        </dependency>-->
+                        <dependency>
+                            <groupId>org.slf4j</groupId>
+                            <artifactId>slf4j-api</artifactId>
+                            <version>${slf4j.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>org.slf4j</groupId>
+                            <artifactId>slf4j-simple</artifactId>
+                            <version>${slf4j.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>${project.parent.groupId}</groupId>
+                            <artifactId>reststop-servlet-api</artifactId>
+                            <version>${project.parent.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>javax.servlet</groupId>
+                            <artifactId>javax.servlet-api</artifactId>
+                            <version>3.1.0</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>javax.websocket</groupId>
+                            <artifactId>javax.websocket-api</artifactId>
+                            <version>1.0</version>
+                        </dependency>
+                    </containerDependencies>
                 </configuration>
                 <executions>
                     <execution>
@@ -239,7 +281,7 @@
                     <execution>
                         <id>start</id>
                         <goals>
-                            <goal>start</goal>
+                            <goal>boot-start</goal>
                         </goals>
                     </execution>
                     <execution>
@@ -254,51 +296,6 @@
                             <goal>dist</goal>
                         </goals>
                         <configuration>
-
-                            <containerDependencies>
-                                <!--<dependency>
-                                    <groupId>ch.qos.logback</groupId>
-                                    <artifactId>logback-classic</artifactId>
-                                    <version>1.1.3</version>
-                                </dependency>-->
-                                <dependency>
-                                    <groupId>org.slf4j</groupId>
-                                    <artifactId>slf4j-api</artifactId>
-                                    <version>${slf4j.version}</version>
-                                </dependency>
-                                <dependency>
-                                    <groupId>org.slf4j</groupId>
-                                    <artifactId>slf4j-simple</artifactId>
-                                    <version>${slf4j.version}</version>
-                                </dependency>
-                                <dependency>
-                                    <groupId>${project.parent.groupId}</groupId>
-                                    <artifactId>reststop-servlet-api</artifactId>
-                                    <version>${project.parent.version}</version>
-                                </dependency>
-                                <dependency>
-                                    <groupId>javax.servlet</groupId>
-                                    <artifactId>javax.servlet-api</artifactId>
-                                    <version>3.1.0</version>
-                                </dependency>
-                                <dependency>
-                                    <groupId>javax.websocket</groupId>
-                                    <artifactId>javax.websocket-api</artifactId>
-                                    <version>1.0</version>
-                                </dependency>
-                            </containerDependencies>
-                            <bootstrapPlugins>
-                                <plugin>
-                                    <groupId>${project.parent.groupId}</groupId>
-                                    <artifactId>reststop-jetty-plugin</artifactId>
-                                    <version>${project.parent.version}</version>
-                                </plugin>
-                                <plugin>
-                                    <groupId>${project.parent.groupId}</groupId>
-                                    <artifactId>reststop-jetty-websockets-plugin</artifactId>
-                                    <version>${project.parent.version}</version>
-                                </plugin>
-                            </bootstrapPlugins>
                             <container>bootstrap</container>
                             <resources>
                                 <resource>
@@ -333,6 +330,7 @@
     </build>
 
     <profiles>
+        <!--
         <profile>
             <activation>
                 <jdk>[9,)</jdk>
@@ -343,11 +341,11 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-failsafe-plugin</artifactId>
                         <configuration>
-                            <argLine>--add-modules=java.xml.bind,java.xml.ws</argLine>
+                            <argLine>-add-modules=java.xml.bind,java.xml.ws</argLine>
                         </configuration>
                     </plugin>
                 </plugins>
             </build>
-        </profile>
+        </profile>-->
     </profiles>
 </project>

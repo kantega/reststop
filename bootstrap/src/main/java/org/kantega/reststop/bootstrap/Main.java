@@ -17,18 +17,15 @@
 package org.kantega.reststop.bootstrap;
 
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.*;
+import java.util.concurrent.CountDownLatch;
 
 /**
  *
@@ -41,6 +38,8 @@ public class Main {
 
     private static List<Bootstrap> bootstraps = new ArrayList<>();
 
+    private static CountDownLatch shutdownLatch = new CountDownLatch(1);
+
     public static void main(String[] args) throws ParserConfigurationException, IOException, SAXException {
 
         Settings settings = parseCli(args);
@@ -51,9 +50,11 @@ public class Main {
 
         Document pluginsXml = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(settings.pluginsXmlFile);
 
-        List<URL> urls = getCommonURLs(pluginsXml, settings.repositoryDirectory);
+        BootstrapHelper helper = new BootstrapHelper();
 
-        ClassLoader classLoader = createClassLoader(urls);
+        List<URL> urls = helper.getCommonURLs(pluginsXml, settings.repositoryDirectory);
+
+        ClassLoader classLoader = helper.createClassLoader(urls, Main.class.getClassLoader());
 
         ServiceLoader<Bootstrap> load = ServiceLoader.load(Bootstrap.class, classLoader);
         Iterator<Bootstrap> iterator = load.iterator();
@@ -69,7 +70,7 @@ public class Main {
             bootstrap.preBootstrap();
         }
         for (Bootstrap bootstrap : load) {
-            bootstrap.bootstrap(settings.globalConfigurationFile, pluginsXml, settings.repositoryDirectory);
+            bootstrap.bootstrap(settings.globalConfigurationFile, pluginsXml, settings.repositoryDirectory, classLoader);
         }
         for (Bootstrap bootstrap : load) {
             bootstrap.postBootstrap();
@@ -78,12 +79,19 @@ public class Main {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
+                shutdownLatch.countDown();
                 Collections.reverse(bootstraps);
                 for (Bootstrap bootstrap : bootstraps) {
                     bootstrap.shutdown();
                 }
             }
         });
+
+        try {
+            shutdownLatch.await();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
     }
 
@@ -164,36 +172,9 @@ public class Main {
         System.exit(0);
     }
 
-    private static ClassLoader createClassLoader(List<URL> commonUrls) throws MalformedURLException {
 
-        return new URLClassLoader(commonUrls.toArray(new URL[commonUrls.size()]), Main.class.getClassLoader());
-    }
 
-    private static List<URL> getCommonURLs(Document pluginsXml, File repositoryDirectory) throws MalformedURLException {
-        NodeList commonElems = pluginsXml.getDocumentElement().getElementsByTagName("common");
 
-        List<URL> urls = new ArrayList<>();
-
-        for(int i = 0; i < commonElems.getLength(); i++) {
-            Element commonElem = (Element) commonElems.item(i);
-            String groupId = commonElem.getAttribute("groupId");
-            String artifactId = commonElem.getAttribute("artifactId");
-            String version = commonElem.getAttribute("version");
-
-            urls.add(getFile(repositoryDirectory, groupId, artifactId, version).toURI().toURL());
-        }
-        return urls;
-    }
-
-    private static File getFile(File repoDir, String groupId, String artifactId, String version) {
-
-        return new File(repoDir,
-                groupId.replace('.', '/') + "/"
-                        + artifactId + "/"
-                        + version + "/"
-                        + artifactId + "-" + version + ".jar");
-
-    }
 
     static class Settings {
 

@@ -37,13 +37,10 @@ public class DefaultBootstrap implements Bootstrap{
 
     private DefaultReststopPluginManager manager;
 
-    private CountDownLatch shutdownLatch = new CountDownLatch(1);
 
     @Override
-    public void bootstrap(File globalConfigurationFile, Document pluginsXml, File repositoryDirectory) {
+    public void bootstrap(File globalConfigurationFile, Document pluginsXml, File repositoryDirectory, ClassLoader parentClassLoader) {
         List<PluginInfo> parsed = PluginInfo.parse(pluginsXml);
-
-        ClassLoader parentClassLoader = getClass().getClassLoader();
 
         manager = new DefaultReststopPluginManager(parentClassLoader, globalConfigurationFile);
 
@@ -51,11 +48,6 @@ public class DefaultBootstrap implements Bootstrap{
 
         deployPlugins(parsed, classLoaderFactory);
 
-        try {
-            shutdownLatch.await();
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     private void deployPlugins(List<PluginInfo> plugins, ClassLoaderFactory classLoaderFactory) {
@@ -81,7 +73,6 @@ public class DefaultBootstrap implements Bootstrap{
     @Override
     public void shutdown() {
         manager.stop();
-        shutdownLatch.countDown();
     }
 
     private class DefaultClassLoaderFactory implements ClassLoaderFactory {

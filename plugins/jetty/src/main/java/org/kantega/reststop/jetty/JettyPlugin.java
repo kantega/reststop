@@ -86,6 +86,11 @@ public class JettyPlugin {
         ReststopInitializer.DefaultServletBuilder defaultServletBuilder = new ReststopInitializer.DefaultServletBuilder(servletContext, filter);
 
         servletBuilder = defaultServletBuilder;
+
+        ServerConnector connector = (ServerConnector) server.getConnectors()[0];
+        int actualPort = connector.getLocalPort();
+
+        System.setProperty("reststopPort", Integer.toString(actualPort));
     }
 
     private static Connector createHttpConnector(Server server, int jettyPort, boolean jettyEnableXForwarded) {

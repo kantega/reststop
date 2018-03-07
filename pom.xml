@@ -121,7 +121,11 @@
                 <artifactId>reststop-classloader-utils</artifactId>
                 <version>${project.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>org.kantega.reststop</groupId>
+                <artifactId>reststop-bootstrap</artifactId>
+                <version>${project.version}</version>
+            </dependency>
             <dependency>
                 <groupId>${project.groupId}</groupId>
                 <artifactId>reststop-webapp</artifactId>

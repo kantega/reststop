@@ -36,6 +36,10 @@
         </dependency>
         <dependency>
             <groupId>org.kantega.reststop</groupId>
+            <artifactId>reststop-bootstrap</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.kantega.reststop</groupId>
             <artifactId>reststop-api</artifactId>
         </dependency>
         <dependency>

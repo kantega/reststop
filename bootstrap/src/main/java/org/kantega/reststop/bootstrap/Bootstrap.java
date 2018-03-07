@@ -12,7 +12,7 @@ public interface Bootstrap {
 
     default void preBootstrap() {}
 
-    default void bootstrap(File globalConfigurationFile, Document pluginsXml, File repositoryDirectory) {}
+    default void bootstrap(File globalConfigurationFile, Document pluginsXml, File repositoryDirectory, ClassLoader parentClassLoader) {}
 
     default void postBootstrap() {}
 

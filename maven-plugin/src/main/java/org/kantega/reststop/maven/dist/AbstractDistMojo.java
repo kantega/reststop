@@ -128,14 +128,6 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
     @Parameter
     private List<Plugin> distributionPlugins;
 
-    @Parameter
-    protected List<Plugin> baseBootstrapPlugins;
-
-    @Parameter
-    private List<Plugin> bootstrapPlugins;
-
-    @Parameter
-    private List<org.apache.maven.model.Dependency> containerDependencies;
 
     @Parameter
     protected FilePerm defaultPermissions;
@@ -254,48 +246,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         }
     }
 
-    private List<Artifact> resolveContainerArtifacts(List<org.apache.maven.model.Dependency> containerDependencies) throws MojoFailureException, MojoExecutionException {
 
-        List<Artifact> containerArtifacts = new ArrayList<>();
-
-
-        List<Dependency> containerDeps = new ArrayList<>();
-
-        for (org.apache.maven.model.Dependency dependency : containerDependencies) {
-
-            Artifact dependencyArtifact = resolveArtifact(
-                    String.format("%s:%s:%s", dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion()));
-
-            containerDeps.add(new Dependency(dependencyArtifact, JavaScopes.RUNTIME));
-        }
-
-        try {
-            CollectRequest collectRequest = new CollectRequest(containerDeps, null, remoteRepos);
-
-            final DependencyFilter filter = DependencyFilterUtils.andFilter(
-                    DependencyFilterUtils.classpathFilter(JavaScopes.RUNTIME),
-                    (dependencyNode, list) ->
-                            dependencyNode.getDependency() == null || !dependencyNode.getDependency().isOptional());
-
-            DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, filter);
-
-            DependencyResult dependencyResult = repoSystem.resolveDependencies(repoSession, dependencyRequest);
-
-            if (!dependencyResult.getCollectExceptions().isEmpty()) {
-                throw new MojoFailureException("Failed resolving plugin dependencies", dependencyResult.getCollectExceptions().get(0));
-            }
-
-
-            for (ArtifactResult result : dependencyResult.getArtifactResults()) {
-                Artifact artifact = result.getArtifact();
-                containerArtifacts.add(artifact);
-            }
-
-            return containerArtifacts;
-        } catch (DependencyResolutionException e) {
-            throw new MojoFailureException("Failed resolving plugin dependencies", e);
-        }
-    }
 
     protected void initDirectories() {
         this.rootDirectory = new File(workDirectory, "distRoot/" + name + "-" + mavenProject.getVersion());

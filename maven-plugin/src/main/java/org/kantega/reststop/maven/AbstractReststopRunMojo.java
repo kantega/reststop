@@ -17,10 +17,21 @@
 package org.kantega.reststop.maven;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.maven.model.Dependency;
+import org.apache.maven.model.DependencyManagement;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.building.*;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugin.logging.Log;
+import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.graph.Exclusion;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.DependencyResolutionException;
 import org.eclipse.jetty.maven.plugin.JettyWebAppContext;
 import org.eclipse.jetty.maven.plugin.ServerSupport;
 import org.eclipse.jetty.server.Request;
@@ -31,6 +42,9 @@ import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.websocket.jsr356.server.ServerContainer;
 import org.eclipse.jetty.websocket.server.WebSocketUpgradeFilter;
+import org.kantega.reststop.classloaderutils.BuildSystem;
+import org.kantega.reststop.classloaderutils.PluginClassLoader;
+import org.kantega.reststop.classloaderutils.PluginInfo;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -38,6 +52,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.util.ArrayList;
 import java.util.List;
 
 import static java.util.Arrays.asList;
@@ -48,13 +63,13 @@ import static java.util.Arrays.asList;
 public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
 
     @Parameter(required = true)
-    private String applicationName;
+    protected String applicationName;
 
     @Parameter (defaultValue = "/")
     private String contextPath;
 
     @Parameter(defaultValue =  "${basedir}/src/config")
-    private File configDir;
+    protected File configDir;
 
 
     @Parameter(defaultValue = "${project.build.directory}/reststop/temp")
@@ -62,7 +77,7 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
 
 
     @Parameter(defaultValue = "${project.build.testOutputDirectory}/reststopPort.txt")
-    private File reststopPortFile;
+    protected File reststopPortFile;
 
     @Parameter(defaultValue = "8080")
     private int port;
@@ -72,6 +87,9 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
 
     @Parameter(defaultValue = "${project.build.outputDirectory}")
     protected File classesDirectory;
+
+    @Component
+    private ModelBuilder modelBuilder;
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -234,5 +252,87 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
                 baseRequest.setHandled(true);
             }
         }
+    }
+
+    protected void registerBuildSystem() {
+        BuildSystem.instance = new BuildSystem() {
+            @Override
+            public boolean needsRefresh(PluginClassLoader cl) {
+                if(cl.getPluginInfo().getSourceDirectory() == null) {
+                    return false;
+                }
+
+                File pomXml = new File(cl.getPluginInfo().getSourceDirectory(), "pom.xml");
+
+                return cl.getCreationTime() < pomXml.lastModified();
+            }
+
+            @Override
+            public PluginInfo refresh(PluginInfo pluginInfo) {
+
+
+                Resolver resolver = new Resolver(repoSystem, repoSession, remoteRepos, getLog());
+
+                try {
+                    File pomFile = new File(pluginInfo.getSourceDirectory(), "pom.xml");
+
+                    PluginInfo info = new PluginInfo();
+                    info.setGroupId(pluginInfo.getGroupId());
+                    info.setArtifactId(pluginInfo.getArtifactId());
+                    info.setVersion(pluginInfo.getVersion());
+                    info.setSourceDirectory(pluginInfo.getSourceDirectory());
+
+                    Artifact pluginArtifact = resolver.resolveArtifact(info.getGroupId() +":" + info.getArtifactId() +":" + info.getVersion());
+                    info.setFile(pluginArtifact.getFile());
+                    resolver.resolveClasspaths(info, createCollectRequest(buildModel(pomFile)));
+                    return info;
+                } catch ( MojoFailureException | DependencyResolutionException | MojoExecutionException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            private CollectRequest createCollectRequest(Model model) {
+                CollectRequest collectRequest = new CollectRequest();
+
+                for (RemoteRepository repo : remoteRepos) {
+                    collectRequest.addRepository(repo);
+                }
+                for (org.apache.maven.model.Dependency dependency : model.getDependencies()) {
+                    collectRequest.addDependency(mavenDep2AetherDep(dependency));
+                }
+                DependencyManagement depm = model.getDependencyManagement();
+                if(depm != null) {
+                    for (org.apache.maven.model.Dependency dependency : depm.getDependencies()) {
+                        collectRequest = collectRequest.addManagedDependency(mavenDep2AetherDep(dependency));
+                    }
+                }
+
+                return collectRequest;
+            }
+
+            private org.eclipse.aether.graph.Dependency mavenDep2AetherDep(Dependency dependency) {
+                Artifact artifact = new DefaultArtifact(dependency.getGroupId(), dependency.getArtifactId(), dependency.getClassifier(), dependency.getType(), dependency.getVersion());
+                org.eclipse.aether.graph.Dependency aetherDep = new org.eclipse.aether.graph.Dependency(artifact, dependency.getScope());
+                if(dependency.getExclusions() != null) {
+                    List<Exclusion> exclusions = new ArrayList<>();
+                    dependency.getExclusions().forEach( e -> {
+                        exclusions.add(new Exclusion(e.getGroupId(), e.getArtifactId(), "*", "*"));
+                    });
+                    aetherDep = aetherDep.setExclusions(exclusions);
+                }
+                return aetherDep;
+            }
+
+            private Model buildModel(File pomFile) {
+                try {
+                    DefaultModelBuildingRequest request = new DefaultModelBuildingRequest();
+                    request.setModelSource(new FileModelSource(pomFile));
+                    ModelBuildingResult build = modelBuilder.build(request);
+                    return build.getEffectiveModel();
+                } catch (ModelBuildingException e) {
+                    throw  new RuntimeException(e);
+                }
+            }
+        };
     }
 }
