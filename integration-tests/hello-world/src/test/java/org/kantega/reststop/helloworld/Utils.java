@@ -27,7 +27,7 @@ import java.nio.file.Paths;
 public class Utils {
     public static String readPort() {
         try {
-            return new String(Files.readAllBytes(Paths.get(Utils.class.getResource("/reststopPort.txt").toURI().getPath())));
+            return new String(Files.readAllBytes(Paths.get(Utils.class.getResource("/reststopPort.txt").toURI())));
         } catch (IOException | URISyntaxException e) {
             throw new RuntimeException(e);
         }
