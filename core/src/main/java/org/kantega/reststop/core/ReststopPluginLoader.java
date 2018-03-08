@@ -391,7 +391,10 @@ public class ReststopPluginLoader {
         for (String prop : props) {
             String property = System.getProperty(prop);
             if(property == null) {
-                throw new IllegalArgumentException("Missing system property ${" + prop +"}");
+                property = System.getenv(prop);
+            }
+            if(property == null) {
+                throw new IllegalArgumentException("Missing system property or environment variable ${" + prop +"}");
             }
             value = value.replace("${" + prop +"}", property);
         }
