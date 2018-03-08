@@ -128,10 +128,6 @@ public class StartBootMojo extends AbstractReststopRunMojo {
             plugins.add(new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion()));
         }
 
-        plugins.addAll(Stream.of(baseBootstrapPlugins, bootstrapPlugins)
-                .filter(Objects::nonNull)
-                .flatMap(List::stream).collect(Collectors.toList()));
-
         return plugins;
     }
 

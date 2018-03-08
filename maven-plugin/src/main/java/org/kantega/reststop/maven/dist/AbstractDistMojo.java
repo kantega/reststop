@@ -560,11 +560,7 @@ public abstract class AbstractDistMojo extends AbstractReststopMojo {
         if (new File(mavenProject.getBasedir(), "target/classes/META-INF/services/ReststopPlugin").exists()) {
             plugins.add(new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion()));
         }
-        if ("bootstrap".equals(container)) {
-            plugins.addAll(Stream.of(baseBootstrapPlugins, bootstrapPlugins)
-                    .filter(Objects::nonNull)
-                    .flatMap(List::stream).collect(Collectors.toList()));
-        }
+
 
         return Stream.of(plugins, baseDistributionPlugins, distributionPlugins)
                 .filter(Objects::nonNull)

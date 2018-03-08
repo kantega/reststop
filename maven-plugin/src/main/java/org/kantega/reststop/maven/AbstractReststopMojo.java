@@ -93,12 +93,6 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
     protected String pluginVersion;
 
     @Parameter
-    protected List<Plugin> baseBootstrapPlugins;
-
-    @Parameter
-    protected List<Plugin> bootstrapPlugins;
-
-    @Parameter
     protected List<org.apache.maven.model.Dependency> containerDependencies;
 
 
@@ -310,29 +304,6 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
         return plugins;
     }
-
-
-    private String getClasspath(List<org.apache.maven.artifact.Artifact> artifacts) {
-
-        StringBuilder classpath = new StringBuilder();
-
-        int c = 0;
-
-
-        for (org.apache.maven.artifact.Artifact a : artifacts) {
-
-            if (c > 0) {
-                classpath.append(File.pathSeparatorChar);
-            }
-            c++;
-            classpath.append(a.getFile().getAbsolutePath());
-
-
-        }
-
-        return classpath.toString();
-    }
-
 
     protected File resolveArtifactFile(String coords) throws MojoFailureException, MojoExecutionException {
         return resolveArtifact(coords).getFile();
