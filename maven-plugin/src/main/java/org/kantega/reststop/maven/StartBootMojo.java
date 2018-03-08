@@ -45,7 +45,7 @@ public class StartBootMojo extends AbstractReststopRunMojo {
 
             Document pluginsXml = createPluginXmlDocument(false);
 
-            addBootstrapClasspath(pluginsXml, repoSession.getLocalRepositoryManager());
+            addBootstrapClasspath(pluginsXml);
 
             BootstrapHelper helper = new BootstrapHelper();
 
@@ -101,7 +101,7 @@ public class StartBootMojo extends AbstractReststopRunMojo {
         // Do nothing
     }
 
-    private void addBootstrapClasspath(Document pluginXmlDocument, LocalRepositoryManager manager) throws MojoFailureException, MojoExecutionException {
+    private void addBootstrapClasspath(Document pluginXmlDocument) throws MojoFailureException, MojoExecutionException {
         ArrayList<Dependency> deps = new ArrayList<>();
         if (containerDependencies != null) {
             deps.addAll(containerDependencies);
@@ -138,9 +138,6 @@ public class StartBootMojo extends AbstractReststopRunMojo {
     private class MavenHidingClassLoader extends ClassLoader {
 
         private final ClassRealm classRealm;
-        private String[] hiddenPackages = {
-                "org.eclipse.jetty"
-        };
 
         public MavenHidingClassLoader(ClassRealm classLoader) {
             super(classLoader);
@@ -204,7 +201,7 @@ public class StartBootMojo extends AbstractReststopRunMojo {
         private boolean isHiddenPackage(String name) {
             name = name.replace('/', '.');
 
-            return !name.startsWith("org.kantega");
+            return !name.startsWith("org.kantega.reststop.bootstrap");
         }
     }
 }

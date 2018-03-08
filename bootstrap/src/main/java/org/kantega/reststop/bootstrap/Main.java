@@ -79,11 +79,11 @@ public class Main {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                shutdownLatch.countDown();
                 Collections.reverse(bootstraps);
                 for (Bootstrap bootstrap : bootstraps) {
                     bootstrap.shutdown();
                 }
+                shutdownLatch.countDown();
             }
         });
 
