@@ -6,11 +6,14 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.kantega.reststop.bootstrap.Bootstrap;
 
+import java.io.Console;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+
+import static java.util.Objects.nonNull;
 
 /**
  *
@@ -41,27 +44,32 @@ public class BootMojo extends StartBootMojo {
 
     @Override
     protected void postExecute(List<Bootstrap> bootstraps) {
-        getLog().info("Reststop has started. Type CTRL-D to shut down");
-        new Thread(() -> {
-            Reader console = System.console().reader();
-            int i = 0;
-            try {
-                do {
-                    i = console.read();
-                } while (i != -1);
+        Console systemConsole = System.console();
+        if (nonNull(systemConsole)) {
+            getLog().info("Reststop has started. Type CTRL-D to shut down");
 
-                getLog().info("Reststop is shutting down..");
-                Collections.reverse(bootstraps);
-                for (Bootstrap bootstrap : bootstraps) {
-                    bootstrap.shutdown();
+            new Thread(() -> {
+
+                Reader reader = systemConsole.reader();
+                int i = 0;
+                try {
+                    do {
+                        i = reader.read();
+                    } while (i != -1);
+
+                    getLog().info("Reststop is shutting down..");
+                    Collections.reverse(bootstraps);
+                    for (Bootstrap bootstrap : bootstraps) {
+                        bootstrap.shutdown();
+                    }
+                    getLog().info("Reststop shutdown completed");
+                    shutdownLatch.countDown();
+
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
-                getLog().info("Reststop shutdown completed");
-                shutdownLatch.countDown();
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }).start();
+            }).start();
+        }
 
         try {
             shutdownLatch.await();
