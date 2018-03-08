@@ -73,7 +73,7 @@ public class StartBootMojo extends AbstractReststopRunMojo {
                 bootstrap.preBootstrap();
             }
             for (Bootstrap bootstrap : load) {
-                bootstrap.bootstrap(new File(configDir, applicationName +".conf"), pluginsXml, localRepository, classLoader);
+                bootstrap.bootstrap(new File(configDir, applicationName +".conf"), pluginsXml, null, classLoader);
             }
             for (Bootstrap bootstrap : load) {
                 bootstrap.postBootstrap();
@@ -118,7 +118,6 @@ public class StartBootMojo extends AbstractReststopRunMojo {
             common.setAttribute("groupId", containerArtifact.getGroupId());
             common.setAttribute("artifactId", containerArtifact.getArtifactId());
             common.setAttribute("version", containerArtifact.getBaseVersion());
-            common.setAttribute("fole", containerArtifact.getFile().getAbsolutePath());
             pluginXmlDocument.getDocumentElement().appendChild(common);
         }
     }
