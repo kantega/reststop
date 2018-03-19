@@ -48,9 +48,9 @@ public class PluginClassInfo {
 
         List<PluginClassInfo> sorted = new ArrayList<>();
 
-        Set<String> ancestors = new LinkedHashSet<>();
         for (PluginClassInfo pluginClass : pluginClasses) {
             if(!processed.containsKey(pluginClass)) {
+                Set<String> ancestors = new LinkedHashSet<>();
                 resolveStartupOrder(pluginClass, processed, sorted, pluginClasses, ancestors);
             }
         }
@@ -65,7 +65,7 @@ public class PluginClassInfo {
                 .filter(p -> p.getExports().stream().anyMatch(t -> pluginClass.getImports().contains(t)))
                 .forEach(p -> {
                     if(!processed.containsKey(p)) {
-                        resolveStartupOrder(p, processed, sorted, allPlugins, ancestors);
+                        resolveStartupOrder(p, processed, sorted, allPlugins, new LinkedHashSet<>(ancestors));
                         processed.put(p, p);
                     }
                 });
