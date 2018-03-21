@@ -99,31 +99,32 @@ public class CreatePluginMojo extends AbstractCreateMojo {
         try {
 
             File pluginsDir;
-            File webappDir;
+            File appOrWebappDir;
             if (basedir.getName().equalsIgnoreCase("plugins")) {
                 rootArtifactId = mavenProject.getParent().getArtifactId();
                 pluginsDir = basedir;
-                webappDir = new File(basedir.getParent(), "webapp");
-            } else if (basedir.getName().equalsIgnoreCase("webapp")) {
+                appOrWebappDir = getAppOrWebapp(basedir.getParentFile());
+            } else if (basedir.getName().equalsIgnoreCase("webapp") ||
+                    basedir.getName().equalsIgnoreCase("app")) {
                 rootArtifactId = mavenProject.getParent().getArtifactId();
                 pluginsDir = new File(basedir.getParent(), "plugins");
                 if (!pluginsDir.exists()) {
                     pluginsDir.mkdirs();
                 }
-                webappDir = basedir;
+                appOrWebappDir = basedir;
             } else if (basedir.getName().equalsIgnoreCase(artifactId)) {
                 rootArtifactId = artifactId;
                 pluginsDir = new File(basedir, "plugins");
                 if (!pluginsDir.exists()) {
                     pluginsDir.mkdirs();
                 }
-                webappDir = new File(basedir, "webapp");
+                appOrWebappDir = getAppOrWebapp(basedir);
             } else {
                 //TODO: Check parent until we find root of project.
                 //basedir.getParentFile();
                 throw new MojoFailureException("Could not find a proper Reststop directory structure, please use create goal.");
             }
-            if (!webappDir.exists()) {
+            if (!appOrWebappDir.exists()) {
                 throw new MojoFailureException("Could not find the webapp directory, resulting in an improper Reststop directory structure, please use create goal.");
             }
 
@@ -156,7 +157,7 @@ public class CreatePluginMojo extends AbstractCreateMojo {
 
             File pluginClassFile = createPluginClass(pluginName, sourceDir, pack);
             pomAddModule(new File(pluginsDir, "pom.xml"), pluginName);
-            pomAddPluginToReststop(new File(webappDir, "pom.xml"), groupId, rootArtifactId + "-" + pluginName, "${project.version}");
+            pomAddPluginToReststop(new File(appOrWebappDir, "pom.xml"), groupId, rootArtifactId + "-" + pluginName, "${project.version}");
 
             addNewFilesToGit(pluginsDir, pluginPomFile, pluginClassFile);
 
@@ -174,6 +175,14 @@ public class CreatePluginMojo extends AbstractCreateMojo {
         }
 
 
+    }
+
+    private File getAppOrWebapp(File basedir) {
+        File webapp = new File(basedir, "webapp");
+        if(webapp.exists()) {
+            return webapp;
+        }
+        return new File(basedir, "app");
     }
 
     private void addNewFilesToGit(File pluginsDir, File pluginPomFile, File pluginClassFile) throws IOException {
