@@ -59,6 +59,8 @@ public class CreateMojo extends AbstractCreateMojo {
         File rootPom = new File(rootDir, "pom.xml");
         File webappDir = new File(rootDir, "webapp");
         File webappPom = new File(webappDir, "pom.xml");
+        File appDir = new File(rootDir, "app");
+        File appPom = new File(appDir, "pom.xml");
 
         try {
             Map<String,String> tokens = new HashMap<>();
@@ -109,24 +111,8 @@ public class CreateMojo extends AbstractCreateMojo {
             new File(pluginDir, "src/test/resources").mkdirs();
 
             // webapp
-            createMavenModule(tokens, getClass().getResourceAsStream("dist/template-plugin-webapp-pom.xml"), webappPom);
-
-            File webappDirTest = new File(new File(new File(webappDir, "src"),"test"), "jetty");
-            webappDirTest.mkdirs();
-
-            String webOverride = IOUtils.toString(getClass().getResourceAsStream("dist/template-context.xml"), "utf-8");
-            Files.write(new File(webappDirTest, "context.xml").toPath(), webOverride.getBytes("utf-8"));
-
-            File webinfDir = webappDir.toPath().resolve("src").resolve("main").resolve("webapp").resolve("WEB-INF").toFile();
-            webinfDir.mkdirs();
-            String webXml = IOUtils.toString(getClass().getResourceAsStream("dist/template-web.xml"), "utf-8");
-            webXml = webXml.replace("${artifactId}", artifactId);
-            Files.write(new File(webinfDir, "web.xml").toPath(), webXml.getBytes("utf-8"));
-
-            File config = new File(new File(webappDir, "src/config/"), artifactId +".conf");
-            config.getParentFile().mkdirs();
-            Files.write(config.toPath(), "greeting=Hello".getBytes("utf-8"));
-
+            createWebapp(artifactId, webappDir, webappPom, tokens);
+            createApp(artifactId, appDir, appPom, tokens);
 
 
         } catch (IOException e) {
@@ -145,8 +131,8 @@ public class CreateMojo extends AbstractCreateMojo {
         }
 
         InvocationRequest request2 = new DefaultInvocationRequest();
-        request2.setPomFile(webappPom);
-        request2.setGoals(asList("reststop:run"));
+        request2.setPomFile(appPom);
+        request2.setGoals(asList("reststop:boot"));
 
         try {
             invoker.execute(request2);
@@ -154,6 +140,45 @@ public class CreateMojo extends AbstractCreateMojo {
             throw new MojoExecutionException("Failed executing reststop:run on created project", e);
         }
 
+    }
+
+    private void createWebapp(String artifactId, File webappDir, File webappPom, Map<String, String> tokens) throws MojoFailureException, IOException {
+        createMavenModule(tokens, getClass().getResourceAsStream("dist/template-plugin-webapp-pom.xml"), webappPom);
+
+        File webappDirTest = new File(new File(new File(webappDir, "src"),"test"), "jetty");
+        webappDirTest.mkdirs();
+
+        String webOverride = IOUtils.toString(getClass().getResourceAsStream("dist/template-context.xml"), "utf-8");
+        Files.write(new File(webappDirTest, "context.xml").toPath(), webOverride.getBytes("utf-8"));
+
+        File webinfDir = webappDir.toPath().resolve("src").resolve("main").resolve("webapp").resolve("WEB-INF").toFile();
+        webinfDir.mkdirs();
+        String webXml = IOUtils.toString(getClass().getResourceAsStream("dist/template-web.xml"), "utf-8");
+        webXml = webXml.replace("${artifactId}", artifactId);
+        Files.write(new File(webinfDir, "web.xml").toPath(), webXml.getBytes("utf-8"));
+
+        createConfig(artifactId, webappDir);
+    }
+
+    private void createApp(String artifactId, File appDir, File appPom, Map<String, String> tokens) throws MojoFailureException, IOException {
+        createMavenModule(tokens, getClass().getResourceAsStream("dist/template-plugin-app-pom.xml"), appPom);
+
+        createConfig(artifactId, appDir);
+
+        createInstall(artifactId, appDir);
+    }
+
+    private void createInstall(String artifactId, File appDir) throws IOException {
+        File configFile = new File(appDir, "src/install/opt/" + artifactId + "/conf/" + artifactId + ".conf");
+        configFile.getParentFile().mkdirs();
+        Files.write(configFile.toPath(), "greeting=ProductionHello".getBytes("utf-8"));
+
+    }
+
+    private void createConfig(String artifactId, File dir) throws IOException {
+        File config = new File(new File(dir, "src/config/"), artifactId +".conf");
+        config.getParentFile().mkdirs();
+        Files.write(config.toPath(), "greeting=Hello".getBytes("utf-8"));
     }
 
     private void createClasses(String pack, List<String> classNames, File sourceDir) throws IOException {
@@ -180,11 +205,12 @@ public class CreateMojo extends AbstractCreateMojo {
             readValue(values, "artifactId", "exampleservice");
             String defaultPackage = values.get("groupId") + "." + removeSpecialCharactersAndCapitalize(values.get("artifactId")).toLowerCase();
             String pack;
+            Pattern p = Pattern.compile("^[a-zA-Z_\\$][\\w\\$]*(?:\\.[a-zA-Z_\\$][\\w\\$]*)*$");
+
             for(;;) {
                 pack = readLineWithDefault("package", defaultPackage).trim();
                 if(pack.isEmpty()) pack = defaultPackage;
 
-                Pattern p = Pattern.compile("^[a-zA-Z_\\$][\\w\\$]*(?:\\.[a-zA-Z_\\$][\\w\\$]*)*$");
                 if(p.matcher(pack).matches()) {
                     break;
                 }

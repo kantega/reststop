@@ -26,8 +26,16 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.artifact.Artifact;
 import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyFilter;
 import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.DependencyRequest;
+import org.eclipse.aether.resolution.DependencyResolutionException;
+import org.eclipse.aether.resolution.DependencyResult;
 import org.eclipse.aether.util.artifact.JavaScopes;
+import org.eclipse.aether.util.filter.DependencyFilterUtils;
 import org.eclipse.jetty.maven.plugin.JettyWebAppContext;
 import org.eclipse.jetty.server.Server;
 import org.kantega.reststop.classloaderutils.CircularDependencyException;
@@ -83,6 +91,9 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
 
     @Parameter (defaultValue = "${plugin.version}")
     protected String pluginVersion;
+
+    @Parameter
+    protected List<org.apache.maven.model.Dependency> containerDependencies;
 
 
     protected void customizeContext(JettyWebAppContext context) {
@@ -294,29 +305,6 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
         return plugins;
     }
 
-
-    private String getClasspath(List<org.apache.maven.artifact.Artifact> artifacts) {
-
-        StringBuilder classpath = new StringBuilder();
-
-        int c = 0;
-
-
-        for (org.apache.maven.artifact.Artifact a : artifacts) {
-
-            if (c > 0) {
-                classpath.append(File.pathSeparatorChar);
-            }
-            c++;
-            classpath.append(a.getFile().getAbsolutePath());
-
-
-        }
-
-        return classpath.toString();
-    }
-
-
     protected File resolveArtifactFile(String coords) throws MojoFailureException, MojoExecutionException {
         return resolveArtifact(coords).getFile();
     }
@@ -354,5 +342,47 @@ public abstract class AbstractReststopMojo extends AbstractMojo {
         }
     }
 
+    protected List<Artifact> resolveContainerArtifacts(List<org.apache.maven.model.Dependency> containerDependencies) throws MojoFailureException, MojoExecutionException {
+
+        List<Artifact> containerArtifacts = new ArrayList<>();
+
+
+        List<org.eclipse.aether.graph.Dependency> containerDeps = new ArrayList<>();
+
+        for (org.apache.maven.model.Dependency dependency : containerDependencies) {
+
+            Artifact dependencyArtifact = resolveArtifact(
+                    String.format("%s:%s:%s", dependency.getGroupId(), dependency.getArtifactId(), dependency.getVersion()));
+
+            containerDeps.add(new Dependency(dependencyArtifact, JavaScopes.RUNTIME));
+        }
+
+        try {
+            CollectRequest collectRequest = new CollectRequest(containerDeps, null, remoteRepos);
+
+            final DependencyFilter filter = DependencyFilterUtils.andFilter(
+                    DependencyFilterUtils.classpathFilter(JavaScopes.RUNTIME),
+                    (dependencyNode, list) ->
+                            dependencyNode.getDependency() == null || !dependencyNode.getDependency().isOptional());
+
+            DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, filter);
+
+            DependencyResult dependencyResult = repoSystem.resolveDependencies(repoSession, dependencyRequest);
+
+            if (!dependencyResult.getCollectExceptions().isEmpty()) {
+                throw new MojoFailureException("Failed resolving plugin dependencies", dependencyResult.getCollectExceptions().get(0));
+            }
+
+
+            for (ArtifactResult result : dependencyResult.getArtifactResults()) {
+                Artifact artifact = result.getArtifact();
+                containerArtifacts.add(artifact);
+            }
+
+            return containerArtifacts;
+        } catch (DependencyResolutionException e) {
+            throw new MojoFailureException("Failed resolving plugin dependencies", e);
+        }
+    }
 
 }

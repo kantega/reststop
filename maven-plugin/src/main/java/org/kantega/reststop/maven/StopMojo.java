@@ -44,22 +44,29 @@ public class StopMojo extends AbstractMojo {
     public void execute() throws MojoExecutionException, MojoFailureException {
         getLog().info("Stopping Reststop..");
 
-        int reststopPort = Integer.parseInt(mavenProject.getProperties().getProperty("reststopPort"));
-
-        try {
-            String url = "http://localhost:" + reststopPort + "/shutdown";
-            new URL(url).openStream();
-        }  catch (IOException e) {
-            Log.getLog().ignore(e);
-        }
-
-
         Server server = (Server) mavenProject.getContextValue("jettyServer");
 
-        try {
-            server.join();
-        } catch (InterruptedException e) {
-            throw new MojoExecutionException(e.getMessage(), e);
+        if(server != null) {
+            int reststopPort = Integer.parseInt(mavenProject.getProperties().getProperty("reststopPort"));
+
+            try {
+                String url = "http://localhost:" + reststopPort + "/shutdown";
+                new URL(url).openStream();
+            } catch (IOException e) {
+                Log.getLog().ignore(e);
+            }
+
+
+            try {
+                server.join();
+            } catch (InterruptedException e) {
+                throw new MojoExecutionException(e.getMessage(), e);
+            }
+        } else {
+            Runnable stopHook = (Runnable) mavenProject.getContextValue("stopHook");
+            if(stopHook != null) {
+                stopHook.run();
+            }
         }
 
 
