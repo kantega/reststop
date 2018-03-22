@@ -297,11 +297,14 @@ public class ConfDocMojo extends AbstractReststopMojo {
         String path = "META-INF/services/ReststopPlugin/simple.txt";
 
         if (pluginFile.isDirectory()) {
-            try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(new File(pluginFile, path))))) {
-                String className;
-                while ((className = br.readLine()) != null) {
-                    try (InputStream is = new FileInputStream(new File(pluginFile, className.replace('.', '/') + ".config-params"))) {
-                        configs.add(new PluginConfig(className, new ParamsUnmarshaller().unmarshal(is, documentBuilder)));
+            File descriptorFile = new File(pluginFile, path);
+            if(descriptorFile.exists()) {
+                try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(descriptorFile)))) {
+                    String className;
+                    while ((className = br.readLine()) != null) {
+                        try (InputStream is = new FileInputStream(new File(pluginFile, className.replace('.', '/') + ".config-params"))) {
+                            configs.add(new PluginConfig(className, new ParamsUnmarshaller().unmarshal(is, documentBuilder)));
+                        }
                     }
                 }
             }
