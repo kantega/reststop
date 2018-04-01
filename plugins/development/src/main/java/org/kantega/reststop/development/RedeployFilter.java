@@ -17,6 +17,13 @@
 package org.kantega.reststop.development;
 
 import org.apache.velocity.app.VelocityEngine;
+import org.junit.platform.engine.discovery.DiscoverySelectors;
+import org.junit.platform.launcher.Launcher;
+import org.junit.platform.launcher.LauncherDiscoveryRequest;
+import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
+import org.junit.platform.launcher.core.LauncherFactory;
+import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
+import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import org.kantega.reststop.core.LoadedPluginClass;
 import org.kantega.reststop.core.PluginClassInfo;
 import org.kantega.reststop.core.PluginState;
@@ -37,6 +44,8 @@ import java.io.InputStream;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static java.util.Objects.nonNull;
 
 /**
  *
@@ -84,17 +93,12 @@ public class RedeployFilter implements Filter {
         try {
             checkingRedeploy = true;
 
+            List<DevelopmentClassloader> staleClassLoaders;
 
-            List<DevelopmentClassloader> staleClassLoaders = new ArrayList<>();
-
-            List<PluginInfo> needsBuild = new ArrayList<>();
-
-            Set<String>  changedProps = new HashSet<>();
+            List<PluginInfo> needsBuild;
 
             synchronized (this) {
-
-
-                needsBuild.addAll(needsBuild());
+                needsBuild = new ArrayList<>(needsBuild());
 
                 if(!needsBuild.isEmpty()) {
 
@@ -113,9 +117,7 @@ public class RedeployFilter implements Filter {
                 }
 
 
-                staleClassLoaders.addAll(findStaleClassLoaders());
-
-
+                staleClassLoaders = new ArrayList<>(findStaleClassLoaders());
 
                 if(! staleClassLoaders.isEmpty()){
 
@@ -131,8 +133,6 @@ public class RedeployFilter implements Filter {
                             classloader.copySourceResorces();
                             classloader.compileJavaTests(fileManager);
                             classloader.copyTestResources();
-
-
                         } catch (JavaCompilationException e) {
                             new ErrorReporter(velocityEngine, classloader.getBasedir()).addCompilationException(e).render(req, resp);
                             return;
@@ -155,7 +155,7 @@ public class RedeployFilter implements Filter {
                     if(stale.contains(shadowClassLoader)) {
                         List<PluginInfo> all = pluginManager.getPluginClassLoaders().stream()
                                 .filter(cl -> cl instanceof PluginClassLoader)
-                                .map(cl -> (PluginClassLoader)cl)
+                                .map(PluginClassLoader.class::cast)
                                 .map(PluginClassLoader::getPluginInfo)
                                 .collect(Collectors.toList());
                         pluginManager.deploy(all, factory);
@@ -163,46 +163,44 @@ public class RedeployFilter implements Filter {
                         pluginManager.deploy(stale, factory);
                     }
 
-
                     if (shouldRunTests) {
-                        /*
-                        Map<String, DevelopmentClassloader> testLoaders = new LinkedHashMap<>();
+                        Collection<DevelopmentClassloader> newClassLoaders =
+                                pluginManager.getPluginClassLoaders()
+                                        .stream()
+                                        .filter(cl -> DevelopmentClassloader.class.isAssignableFrom(cl.getClass()))
+                                        .map(DevelopmentClassloader.class::cast)
+                                        .filter(dcl -> stale.contains(dcl.getPluginInfo()))
+                                        .collect(Collectors.toList());
 
                         for (DevelopmentClassloader classloader : newClassLoaders) {
-                            testLoaders.put(classloader.getPluginInfo().getPluginId(), classloader);
-                        }
-
-                        for (DevelopmentClassloader classloader : newClassLoaders) {
-
-                            if (!testLoaders.containsKey(classloader.getPluginInfo().getPluginId())) {
-                                boolean stale = classloader.isStaleTests();
-                                if (stale) {
-                                    classloader.compileJavaTests();
-                                    classloader.copyTestResources();
-                                }
-                                if (stale || classloader.hasFailingTests()) {
-                                    testLoaders.put(classloader.getPluginInfo().getPluginId(), classloader);
-                                }
-
-                            }
-                        }
-
-                        for (DevelopmentClassloader classloader : testLoaders.values()) {
                             try {
                                 synchronized (runTestsMonitor) {
 
-                                    List<Class> testClasses = classloader.getTestClasses();
-                                    if (testClasses.size() > 0) {
-                                        Class[] objects = testClasses.toArray(new Class[testClasses.size()]);
+                                    DevelopmentClassloader.ClassLoaderAndTestClasses testsAndClassLoader = classloader.getTestsAndClassLoader();
+                                    if (nonNull(testsAndClassLoader)) {
                                         ClassLoader loader = Thread.currentThread().getContextClassLoader();
-                                        Thread.currentThread().setContextClassLoader(testClasses.get(0).getClassLoader());
+                                        Thread.currentThread().setContextClassLoader(testsAndClassLoader.classLoader);
                                         try {
 
+                                            LauncherDiscoveryRequest request = LauncherDiscoveryRequestBuilder.request()
+                                                    .selectors(
+                                                            testsAndClassLoader.testClasses
+                                                            .stream()
+                                                            .map(DiscoverySelectors::selectClass)
+                                                            .collect(Collectors.toList())
+                                                    )
+                                                    .build();
+                                            Launcher launcher = LauncherFactory.create();
 
-                                            Result result = new JUnitCore().run(objects);
-                                            if (result.getFailureCount() > 0) {
+                                            SummaryGeneratingListener listener = new SummaryGeneratingListener();
+                                            launcher.registerTestExecutionListeners(listener);
+
+                                            launcher.execute(request);
+                                            TestExecutionSummary summary = listener.getSummary();
+
+                                            if (summary.getTestsFailedCount() > 0) {
                                                 classloader.testsFailed();
-                                                throw new TestFailureException(result.getFailures());
+                                                throw new TestFailureException(summary.getFailures());
                                             } else {
                                                 classloader.testsPassed();
                                             }
@@ -220,32 +218,27 @@ public class RedeployFilter implements Filter {
 
                         }
                     }
-                    */
-
-                    }
 
                 }
 
-                changedProps.addAll(getModifiedConfigProps());
+            }
 
-                if(!changedProps.isEmpty()) {
-                    if(! changedProps.isEmpty()) {
+            Set<String> changedProps = new HashSet<>(getModifiedConfigProps());
 
-                        PluginState pluginState = pluginManager.getPluginState();
+            if(!changedProps.isEmpty()) {
 
-                        List<LoadedPluginClass> configuredWith = pluginState.findConfiguredWith(changedProps);
-                        Set<Class> exportedTypes = getTypesExportedBy(configuredWith.stream().map(LoadedPluginClass::getPluginClassInfo).collect(Collectors.toList()));
-                        List<LoadedPluginClass> consumers = pluginState.findConsumers(exportedTypes);
+                PluginState pluginState = pluginManager.getPluginState();
 
-                        List<LoadedPluginClass> restarts = Stream.concat(configuredWith.stream(), consumers.stream())
-                                .distinct()
-                                .collect(Collectors.toList());
+                List<LoadedPluginClass> configuredWith = pluginState.findConfiguredWith(changedProps);
+                Set<Class> exportedTypes = getTypesExportedBy(configuredWith.stream().map(LoadedPluginClass::getPluginClassInfo).collect(Collectors.toList()));
+                List<LoadedPluginClass> consumers = pluginState.findConsumers(exportedTypes);
+
+                List<LoadedPluginClass> restarts = Stream.concat(configuredWith.stream(), consumers.stream())
+                        .distinct()
+                        .collect(Collectors.toList());
 
 
-                        pluginManager.restart(restarts);
-                    }
-                }
-
+                pluginManager.restart(restarts);
             }
 
             if(!needsBuild.isEmpty() || !staleClassLoaders.isEmpty() || !changedProps.isEmpty()) {
@@ -335,10 +328,12 @@ public class RedeployFilter implements Filter {
     }
 
     public List<DevelopmentClassloader> findStaleClassLoaders() {
-        return Stream.concat(pluginManager.getPluginClassLoaders().stream()
-                .filter(cl -> cl instanceof DevelopmentClassloader)
-                .map(cl -> (DevelopmentClassloader) cl), Stream.of(shadowClassLoader))
-                .filter(cl -> cl.isStaleSources() || cl.isFailed())
+        return Stream.concat(
+                pluginManager.getPluginClassLoaders().stream()
+                        .filter(cl -> cl instanceof DevelopmentClassloader)
+                        .map(cl -> (DevelopmentClassloader) cl),
+                Stream.of(shadowClassLoader))
+                .filter(cl -> cl.isStaleSources() || cl.isStaleTests() || cl.isFailed())
                 .collect(Collectors.toList());
     }
 

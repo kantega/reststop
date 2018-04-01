@@ -16,7 +16,8 @@
 
 package org.kantega.reststop.development;
 
-import org.junit.runner.notification.Failure;
+
+import org.junit.platform.launcher.listeners.TestExecutionSummary;
 
 import java.util.List;
 
@@ -24,13 +25,13 @@ import java.util.List;
  *
  */
 public class TestFailureException extends RuntimeException {
-    private final List<Failure> failures;
+    private final List<TestExecutionSummary.Failure> failures;
 
-    public TestFailureException(List<Failure> failures) {
+    public TestFailureException(List<TestExecutionSummary.Failure> failures) {
         this.failures = failures;
     }
 
-    public List<Failure> getFailures() {
+    public List<TestExecutionSummary.Failure> getFailures() {
         return failures;
     }
 }

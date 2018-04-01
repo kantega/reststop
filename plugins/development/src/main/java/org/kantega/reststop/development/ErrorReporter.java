@@ -18,7 +18,8 @@ package org.kantega.reststop.development;
 
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.VelocityEngine;
-import org.junit.runner.notification.Failure;
+import org.junit.platform.engine.support.descriptor.MethodSource;
+import org.junit.platform.launcher.listeners.TestExecutionSummary;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 
 import javax.servlet.http.HttpServletRequest;
@@ -92,7 +93,7 @@ public class ErrorReporter {
                 sb.append(",\n");
             }
             for(int f = 0; f < e.getFailures().size(); f++) {
-                Failure failure = e.getFailures().get(f);
+                TestExecutionSummary.Failure failure = e.getFailures().get(f);
                 if(f > 0) {
                     sb.append(",\n");
                 }
@@ -100,19 +101,31 @@ public class ErrorReporter {
                 {
                     sb.append("{");
                     {
-                        sb.append("description:").append("\"").append(escapeJavascript(failure.getDescription().toString())).append("\",");
+                        String testClassAndName = failure.getTestIdentifier()
+                                .getSource()
+                                .filter(s -> MethodSource.class.isAssignableFrom(s.getClass()))
+                                .map(MethodSource.class::cast)
+                                .map(ms -> ms.getClassName() + "." + ms.getMethodName() + "(" + ms.getMethodParameterTypes() + ")")
+                                .orElse("UnknownTest");
+                        sb.append("description:").append("\"").append(escapeJavascript(testClassAndName)).append("\",");
                         sb.append("exceptionClass:").append("\"").append(escapeJavascript(failure.getException().getClass().getName())).append("\",");
 
+                        String testClassName = failure.getTestIdentifier()
+                                .getSource()
+                                .filter(s -> MethodSource.class.isAssignableFrom(s.getClass()))
+                                .map(MethodSource.class::cast)
+                                .map(MethodSource::getClassName)
+                                .orElse("UnknownTestClass");
+
                         for (StackTraceElement element : failure.getException().getStackTrace()) {
-                            if(element.getClassName().equals(failure.getDescription().getTestClass().getName())) {
+                            if(Objects.equals(element.getClassName(), testClassName)) {
                                 sb.append("sourceFile:").append("\"").append(escapeJavascript(element.getFileName())).append("\",");
                                 sb.append("sourceMethod:").append("\"").append(escapeJavascript(element.getMethodName())).append("\",");
                                 sb.append("sourceLine:").append(Integer.toString(element.getLineNumber())).append(",");
                             }
                         }
 
-
-                        File sourceFile = new File(new File(basedir, "src/test/java"), failure.getDescription().getTestClass().getName().replace('.','/') +".java");
+                        File sourceFile = new File(new File(basedir, "src/test/java"), testClassName.replace('.','/') +".java");
                         sb.append("sourceLines:").append(readSourceLines(sourceFile)).append("\n,");
 
                         if(failure.getException() != null) {
@@ -121,7 +134,7 @@ public class ErrorReporter {
                             sb.append("stackTrace:").append("\"").append(escapeJavascript(sw.toString())).append("\"\n,");
                         }
 
-                        String message = failure.getMessage();
+                        String message = failure.getException().getMessage();
                         if(message != null) {
                             sb.append("message:").append("\"").append(escapeJavascript(message)).append("\"");
                         }
@@ -203,13 +216,13 @@ public class ErrorReporter {
     }
 
     private String escapeJavascript(String message) {
-        String replaced = message.replace("\\", "\\\\").replace("\r\n", "\\n").replace("\n", "\\n").replace("\"","\\\"");
-        return replaced;
+        return message.replace("\\", "\\\\")
+                      .replace("\r\n", "\\n").replace("\n", "\\n").replace("\"","\\\"");
     }
 
     private String escapeHTML(String message) {
-        String replaced = message.replace("<", "&lt;").replace(">", "&gt;").replace("\"", "&quot;");
-        return replaced;
+        return message.replace("<", "&lt;")
+                       .replace(">", "&gt;").replace("\"", "&quot;");
     }
 
     public ErrorReporter addTestFailulreException(TestFailureException e) {
