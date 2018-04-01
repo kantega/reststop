@@ -10,7 +10,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.codehaus.plexus.classworlds.realm.ClassRealm;
 import org.eclipse.aether.artifact.Artifact;
-import org.eclipse.aether.repository.LocalRepositoryManager;
 import org.kantega.reststop.bootstrap.Bootstrap;
 import org.kantega.reststop.bootstrap.BootstrapHelper;
 import org.w3c.dom.Document;
@@ -20,8 +19,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  *
@@ -47,15 +44,13 @@ public class StartBootMojo extends AbstractReststopRunMojo {
 
             addBootstrapClasspath(pluginsXml);
 
-            BootstrapHelper helper = new BootstrapHelper();
-
             File localRepository = repoSession.getLocalRepositoryManager().getRepository().getBasedir();
 
-            List<URL> urls = helper.getCommonURLs(pluginsXml, localRepository);
+            List<URL> urls = BootstrapHelper.getCommonURLs(pluginsXml, localRepository);
 
             ClassLoader mavenHidingClassLoader = new MavenHidingClassLoader((ClassRealm) getClass().getClassLoader());
 
-            ClassLoader classLoader = helper.createClassLoader(urls, mavenHidingClassLoader);
+            ClassLoader classLoader = BootstrapHelper.createClassLoader(urls, mavenHidingClassLoader);
 
             ServiceLoader<Bootstrap> load = ServiceLoader.load(Bootstrap.class, classLoader);
             Iterator<Bootstrap> iterator = load.iterator();

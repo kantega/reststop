@@ -16,7 +16,7 @@ import java.util.List;
  */
 public class BootstrapHelper {
 
-    public ClassLoader createClassLoader(List<URL> commonUrls, ClassLoader parentClassLoader) throws MalformedURLException {
+    public static ClassLoader createClassLoader(List<URL> commonUrls, ClassLoader parentClassLoader) throws MalformedURLException {
 
         return new URLClassLoader(commonUrls.toArray(new URL[commonUrls.size()]), parentClassLoader);
     }
