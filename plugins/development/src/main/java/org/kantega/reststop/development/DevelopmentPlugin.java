@@ -40,7 +40,7 @@ public class DevelopmentPlugin  {
     @Export
     private final VelocityEngine velocityEngine;
 
-    public DevelopmentPlugin(@Config(defaultValue = "true") String runTestsOnRedeploy,
+    public DevelopmentPlugin(@Config(defaultValue = "false") String runTestsOnRedeploy,
                              ReststopPluginManager pluginManager, final ServletBuilder servletBuilder) {
 
         velocityEngine = initVelocityEngine();

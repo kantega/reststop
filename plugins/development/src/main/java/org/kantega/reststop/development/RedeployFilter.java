@@ -131,8 +131,10 @@ public class RedeployFilter implements Filter {
 
                             classloader.compileSources(fileManager);
                             classloader.copySourceResorces();
-                            classloader.compileJavaTests(fileManager);
-                            classloader.copyTestResources();
+                            if (shouldRunTests) {
+                                classloader.compileJavaTests(fileManager);
+                                classloader.copyTestResources();
+                            }
                         } catch (JavaCompilationException e) {
                             new ErrorReporter(velocityEngine, classloader.getBasedir()).addCompilationException(e).render(req, resp);
                             return;
