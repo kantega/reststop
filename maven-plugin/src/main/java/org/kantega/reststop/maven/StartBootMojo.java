@@ -17,6 +17,7 @@ import org.w3c.dom.Element;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.*;
 
@@ -34,28 +35,24 @@ public class StartBootMojo extends AbstractReststopRunMojo {
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
-
-
         try {
 
             preExecute();
 
             Document pluginsXml = createPluginXmlDocument(false);
 
-            addBootstrapClasspath(pluginsXml);
+            List<URL> dependencies = addBootstrapClasspath(pluginsXml);
 
-            File localRepository = repoSession.getLocalRepositoryManager().getRepository().getBasedir();
-
-            List<URL> urls = BootstrapHelper.getCommonURLs(pluginsXml, localRepository);
+            BootstrapHelper helper = new BootstrapHelper();
 
             ClassLoader mavenHidingClassLoader = new MavenHidingClassLoader((ClassRealm) getClass().getClassLoader());
 
-            ClassLoader classLoader = BootstrapHelper.createClassLoader(urls, mavenHidingClassLoader);
+            ClassLoader classLoader = helper.createClassLoader(dependencies, mavenHidingClassLoader);
 
             ServiceLoader<Bootstrap> load = ServiceLoader.load(Bootstrap.class, classLoader);
             Iterator<Bootstrap> iterator = load.iterator();
             if(! iterator.hasNext()) {
-                throw new IllegalStateException("Could not find any service instance of " + Bootstrap.class +" in class path " + urls);
+                throw new IllegalStateException("Could not find any service instance of " + Bootstrap.class +" in class path " + dependencies);
             }
 
             List<Bootstrap> bootstraps = new ArrayList<>();
@@ -96,8 +93,8 @@ public class StartBootMojo extends AbstractReststopRunMojo {
         // Do nothing
     }
 
-    private void addBootstrapClasspath(Document pluginXmlDocument) throws MojoFailureException, MojoExecutionException {
-        ArrayList<Dependency> deps = new ArrayList<>();
+    private List<URL> addBootstrapClasspath(Document pluginXmlDocument) throws MojoFailureException, MojoExecutionException, MalformedURLException {
+        List<Dependency> deps = new ArrayList<>();
         if (containerDependencies != null) {
             deps.addAll(containerDependencies);
         }
@@ -108,13 +105,16 @@ public class StartBootMojo extends AbstractReststopRunMojo {
 
         deps.add(reststopCore);
         List<Artifact> containerArtifacts = resolveContainerArtifacts(deps);
+        List<URL> dependencyLocations = new ArrayList<>(containerArtifacts.size());
         for (Artifact containerArtifact : containerArtifacts) {
             Element common = pluginXmlDocument.createElement("common");
             common.setAttribute("groupId", containerArtifact.getGroupId());
             common.setAttribute("artifactId", containerArtifact.getArtifactId());
             common.setAttribute("version", containerArtifact.getBaseVersion());
             pluginXmlDocument.getDocumentElement().appendChild(common);
+            dependencyLocations.add(containerArtifact.getFile().toURI().toURL());
         }
+        return dependencyLocations;
     }
 
     public List<Plugin> getPlugins() {
