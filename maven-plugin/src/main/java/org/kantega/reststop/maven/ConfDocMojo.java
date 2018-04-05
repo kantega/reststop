@@ -335,9 +335,11 @@ public class ConfDocMojo extends AbstractReststopMojo {
 
         List<Plugin> plugins = new ArrayList<>();
         if (mavenProject.getPackaging().equals("jar")) {
-            Plugin projectPlugin = new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion());
-            projectPlugin.setSourceDirectory(mavenProject.getBasedir());
-            plugins.add(projectPlugin);
+            if(hasArtifactFileFromPackagePhase()) {
+                Plugin projectPlugin = new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion());
+                projectPlugin.setSourceDirectory(mavenProject.getBasedir());
+                plugins.add(projectPlugin);
+            }
 
             {
                 Plugin devConsolePlugin = new Plugin("org.kantega.reststop", "reststop-development-console", pluginVersion);
@@ -353,6 +355,10 @@ public class ConfDocMojo extends AbstractReststopMojo {
 
         plugins.addAll(super.getPlugins());
         return plugins;
+    }
+
+    private boolean hasArtifactFileFromPackagePhase() {
+        return mavenProject.getArtifact() != null && mavenProject.getArtifact().getFile() != null && mavenProject.getArtifact().getFile().exists();
     }
 
     private class ParamContext {
