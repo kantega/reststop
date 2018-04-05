@@ -105,6 +105,12 @@
                 </configuration>
                 <executions>
                     <execution>
+                        <id>conf-doc</id>
+                        <goals>
+                            <goal>conf-doc</goal>
+                        </goals>
+                    </execution>
+                    <execution>
                         <id>dist</id>
                         <goals>
                             <goal>dist</goal>
