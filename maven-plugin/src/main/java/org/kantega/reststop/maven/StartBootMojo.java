@@ -137,12 +137,15 @@ public class StartBootMojo extends AbstractReststopRunMojo {
 
         @Override
         protected Class<?> loadClass(String name, boolean resolve) throws ClassNotFoundException {
-            Class<?> clazz = super.loadClass(name, resolve);
-
-            if(clazz.getClassLoader() == classRealm && isHiddenPackage(clazz.getName())) {
-                throw new ClassNotFoundException(name);
+            try {
+                return classRealm.getParentClassLoader().loadClass(name);
+            } catch (ClassNotFoundException e) {
+                if(isHiddenPackage(name)) {
+                    throw new ClassNotFoundException(name);
+                }
+                return super.loadClass(name, resolve);
             }
-            return clazz;
+
         }
 
         @Override
@@ -166,9 +169,6 @@ public class StartBootMojo extends AbstractReststopRunMojo {
                     return resource;
                 }
             }
-
-
-
         }
 
         @Override
