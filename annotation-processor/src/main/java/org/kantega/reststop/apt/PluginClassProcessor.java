@@ -17,17 +17,13 @@
 package org.kantega.reststop.apt;
 
 import org.kantega.reststop.api.Config;
-import org.kantega.reststop.api.Export;
 import org.kantega.reststop.classloaderutils.config.PluginConfigParam;
 import org.kantega.reststop.classloaderutils.config.PluginConfigParams;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
-import javax.lang.model.element.Element;
-import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ErrorType;
-import javax.lang.model.type.TypeMirror;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 import java.io.*;
@@ -42,7 +38,7 @@ import java.util.stream.Collectors;
 @SupportedSourceVersion(SourceVersion.RELEASE_8)
 public class PluginClassProcessor extends AbstractProcessor {
 
-    Set<String> pluginClasses = new TreeSet<>();
+    private Set<String> pluginClasses = new TreeSet<>();
     private File pluginsDescriptorFile;
 
 
@@ -76,9 +72,6 @@ public class PluginClassProcessor extends AbstractProcessor {
 
                 List<String> parameterNames = new ArrayList<>();
 
-                Set<String> imports = new TreeSet<>();
-                Set<String> exports = new TreeSet<>();
-
                 PluginConfigParams params = new PluginConfigParams();
 
                 for (Element enclosedElement : enclosedElements) {
@@ -95,24 +88,7 @@ public class PluginClassProcessor extends AbstractProcessor {
                             Name simpleName = parameter.getSimpleName();
                             parameterNames.add(simpleName.toString());
                             Config configAnnotation = parameter.getAnnotation(Config.class);
-                            if(configAnnotation == null) {
-                                if(isCollection(parameter.asType())) {
-                                    DeclaredType type  = (DeclaredType) parameter.asType();
-                                    DeclaredType typeArgument = (DeclaredType) type.getTypeArguments().get(0);
-
-                                    if(typeArgument instanceof ErrorType) {
-                                        continue;
-                                    }
-                                    if(isPluginExport(typeArgument)) {
-                                        imports.add(typeArgument.getTypeArguments().get(0).toString());
-                                    } else {
-                                        imports.add(typeArgument.toString());
-                                    }
-
-                                } else {
-                                    imports.add(parameter.asType().toString());
-                                }
-                            } else {
+                            if(configAnnotation != null) {
                                 PluginConfigParam param = new PluginConfigParam();
                                 param.setType(parameter.asType().toString());
                                 param.setDefaultValue(configAnnotation.defaultValue());
@@ -128,21 +104,6 @@ public class PluginClassProcessor extends AbstractProcessor {
 
                         }
 
-                    } else if(enclosedElement.getKind() == ElementKind.FIELD) {
-                        if(enclosedElement.getAnnotation(Export.class) != null) {
-                            if(enclosedElement.asType() instanceof ErrorType) {
-                                continue;
-                            }
-                            if (isCollection(enclosedElement.asType())) {
-                                TypeMirror typeArgument = ((DeclaredType) enclosedElement.asType()).getTypeArguments().get(0);
-                                if(typeArgument instanceof ErrorType) {
-                                    continue;
-                                }
-                                exports.add(typeArgument.toString());
-                            } else {
-                                exports.add(enclosedElement.asType().toString());
-                            }
-                        }
                     }
                 }
 
@@ -162,31 +123,6 @@ public class PluginClassProcessor extends AbstractProcessor {
                     throw new RuntimeException(e);
                 }
 
-                try {
-                    FileObject parameterNamesFile = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT,
-                            packageElement.getQualifiedName(),
-                            clazzElem.getSimpleName() + ".imports",
-                            element);
-
-                    try (Writer writer = parameterNamesFile.openWriter()) {
-                        writer.append(imports.stream().collect(Collectors.joining("\n")));
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-
-                try {
-                    FileObject parameterNamesFile = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT,
-                            packageElement.getQualifiedName(),
-                            clazzElem.getSimpleName() + ".exports",
-                            element);
-
-                    try (Writer writer = parameterNamesFile.openWriter()) {
-                        writer.append(exports.stream().collect(Collectors.joining("\n")));
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
 
                 try {
                     FileObject configParams = processingEnv.getFiler().createResource(StandardLocation.CLASS_OUTPUT,
@@ -216,19 +152,4 @@ public class PluginClassProcessor extends AbstractProcessor {
     }
 
 
-
-    private boolean isPluginExport(DeclaredType typeArgument) {
-        return processingEnv.getTypeUtils().isSameType(
-                processingEnv.getTypeUtils().erasure(typeArgument),
-                processingEnv.getTypeUtils().erasure(processingEnv.getElementUtils().getTypeElement("org.kantega.reststop.api.PluginExport").asType()));
-    }
-
-
-    private boolean isCollection(TypeMirror t) {
-        TypeMirror erasure = processingEnv.getTypeUtils().erasure(t);
-        TypeMirror collectionErasure = processingEnv.getTypeUtils().erasure(processingEnv.getElementUtils().getTypeElement("java.util.Collection").asType());
-        return processingEnv.getTypeUtils().isSameType(
-                erasure,
-                collectionErasure);
-    }
 }
