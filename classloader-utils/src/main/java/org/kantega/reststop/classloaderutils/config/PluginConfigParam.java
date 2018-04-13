@@ -16,29 +16,19 @@
 
 package org.kantega.reststop.classloaderutils.config;
 
-import javax.xml.bind.annotation.XmlAccessType;
-import javax.xml.bind.annotation.XmlAccessorType;
-import javax.xml.bind.annotation.XmlAttribute;
-import javax.xml.bind.annotation.XmlElement;
 
 /**
  *
  */
-@XmlAccessorType(XmlAccessType.NONE)
 public class PluginConfigParam {
-    @XmlAttribute(name = "name")
     private String paramName;
 
-    @XmlAttribute(name = "type")
     private String type;
 
-    @XmlAttribute(name = "default-value")
     private String defaultValue;
 
-    @XmlElement(name = "doc")
     private String doc;
 
-    @XmlAttribute(name = "required")
     private boolean required;
 
     public PluginConfigParam(String paramName, String type, String defaultValue, String doc, boolean required) {

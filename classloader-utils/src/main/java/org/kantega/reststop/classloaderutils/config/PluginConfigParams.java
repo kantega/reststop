@@ -17,18 +17,14 @@
 package org.kantega.reststop.classloaderutils.config;
 
 
-import javax.xml.bind.annotation.XmlElement;
-import javax.xml.bind.annotation.XmlRootElement;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  *
  */
-@XmlRootElement(name = "params")
 public class PluginConfigParams extends ArrayList<PluginConfigParam> {
 
-    @XmlElement(name = "param")
     public List<PluginConfigParam> getParams() {
         return this;
     }
