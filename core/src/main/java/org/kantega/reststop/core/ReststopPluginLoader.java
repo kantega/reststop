@@ -394,7 +394,7 @@ public class ReststopPluginLoader {
                 property = System.getenv(prop);
             }
             if(property == null) {
-                throw new IllegalArgumentException("Missing system property or environment variable ${" + prop +"}");
+                throw new IllegalArgumentException("Missing system property or environment variable ${" + prop +"}. Cannot interpolate '"+value+"'");
             }
             value = value.replace("${" + prop +"}", property);
         }
