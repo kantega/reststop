@@ -37,7 +37,6 @@ import java.util.zip.ZipEntry;
 @Mojo(name = "conf-doc", defaultPhase = LifecyclePhase.PROCESS_CLASSES, requiresDependencyResolution = ResolutionScope.COMPILE)
 public class ConfDocMojo extends AbstractReststopMojo {
 
-
     @Parameter(defaultValue = "${project.build.directory}/example.conf")
     private File exampleConfigFile;
 
@@ -49,6 +48,10 @@ public class ConfDocMojo extends AbstractReststopMojo {
 
     @Parameter(defaultValue = "${basedir}/src/config")
     private File configDir;
+
+    @Parameter(defaultValue = "false")
+    private boolean suppressWarnings;
+
 
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
@@ -65,7 +68,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
             writeHtmlDoc(configs, properties);
 
 
-        } catch (IOException  | ParserConfigurationException e) {
+        } catch (IOException | ParserConfigurationException e) {
             throw new MojoExecutionException(e.getMessage(), e);
         }
     }
@@ -105,8 +108,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
                 out.println("</tr>");
 
 
-
-                for(PluginConfig config : entry.getValue()) {
+                for (PluginConfig config : entry.getValue()) {
 
                     Collections.sort(config.getConfigParams(), Comparator.comparing(PluginConfigParam::isOptional).thenComparing(PluginConfigParam::getParamName));
 
@@ -161,7 +163,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
 
             for (PluginConfig config : entry.getValue()) {
                 for (PluginConfigParam param : config.getConfigParams()) {
-                    if(param.getType().equals("java.util.Properties")) {
+                    if (param.getType().equals("java.util.Properties")) {
                         continue;
                     }
                     knownProperties.add(param.getParamName());
@@ -178,7 +180,11 @@ public class ConfDocMojo extends AbstractReststopMojo {
             for (ParamContext missingParameter : missingParameters) {
                 message.append(String.format(" '%s' needed by %s\n", missingParameter.getParam().getParamName(), missingParameter.getKey()));
             }
-            throw new MojoFailureException(message.toString());
+            if (!suppressWarnings)
+                throw new MojoFailureException(message.toString());
+            else
+                getLog().warn(message.toString());
+
         }
 
         Set<String> unknownProperties = new TreeSet();
@@ -193,7 +199,10 @@ public class ConfDocMojo extends AbstractReststopMojo {
             for (String unknownProperty : unknownProperties) {
                 message.append(String.format("'%s'\n", unknownProperty));
             }
-            throw new MojoFailureException(message.toString());
+            if (!suppressWarnings)
+                throw new MojoFailureException(message.toString());
+            else
+                getLog().warn(message.toString());
         }
 
         return props;
@@ -261,7 +270,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
 
             File pluginFile = resolveArtifactFile(plugin.getCoords());
 
-            List<PluginConfig>configsForPlugin = readPluginConfigs(pluginFile, context);
+            List<PluginConfig> configsForPlugin = readPluginConfigs(pluginFile, context);
 
 
             if (configsForPlugin != null && hasProps(configsForPlugin)) {
@@ -298,7 +307,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
 
         if (pluginFile.isDirectory()) {
             File descriptorFile = new File(pluginFile, path);
-            if(descriptorFile.exists()) {
+            if (descriptorFile.exists()) {
                 try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(descriptorFile)))) {
                     String className;
                     while ((className = br.readLine()) != null) {
@@ -335,7 +344,7 @@ public class ConfDocMojo extends AbstractReststopMojo {
 
         List<Plugin> plugins = new ArrayList<>();
         if (mavenProject.getPackaging().equals("jar")) {
-            if(hasArtifactFileFromPackagePhase()) {
+            if (hasArtifactFileFromPackagePhase()) {
                 Plugin projectPlugin = new Plugin(mavenProject.getGroupId(), mavenProject.getArtifactId(), mavenProject.getVersion());
                 projectPlugin.setSourceDirectory(mavenProject.getBasedir());
                 plugins.add(projectPlugin);
