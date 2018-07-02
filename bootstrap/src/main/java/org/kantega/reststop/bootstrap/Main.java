@@ -62,18 +62,28 @@ public class Main {
             throw new IllegalStateException("Could not find any service instance of " + Bootstrap.class +" in class path " + urls);
         }
 
-        for(Bootstrap bootstrap : load) {
-            bootstraps.add(bootstrap);
-        }
-
-        for (Bootstrap bootstrap : load) {
-            bootstrap.preBootstrap();
-        }
-        for (Bootstrap bootstrap : load) {
-            bootstrap.bootstrap(settings.globalConfigurationFile, pluginsXml, settings.repositoryDirectory, classLoader);
-        }
-        for (Bootstrap bootstrap : load) {
-            bootstrap.postBootstrap();
+        try {
+            for(Bootstrap bootstrap : load) {
+                bootstraps.add(bootstrap);
+            }
+            
+            for (Bootstrap bootstrap : load) {
+                bootstrap.preBootstrap();
+            }
+            for (Bootstrap bootstrap : load) {
+                bootstrap.bootstrap(settings.globalConfigurationFile, pluginsXml, settings.repositoryDirectory, classLoader);
+            }
+            for (Bootstrap bootstrap : load) {
+                bootstrap.postBootstrap();
+            }
+        } catch (Throwable t) {
+            t.printStackTrace();
+            System.out.println("Bootstrap failed to load all plugins. Aborting startup!");
+            
+            // try to clean up 
+            Collections.reverse(bootstraps);
+            bootstraps.forEach(Bootstrap::shutdown);
+            Runtime.getRuntime().exit(-1);
         }
 
         Runtime.getRuntime().addShutdownHook(new Thread() {
