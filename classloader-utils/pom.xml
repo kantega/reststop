@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.kantega.reststop</groupId>
         <artifactId>reststop-parent</artifactId>
-        <version>3.10-SNAPSHOT</version>
+        <version>3.10</version>
     </parent>
 
     <artifactId>reststop-classloader-utils</artifactId>
