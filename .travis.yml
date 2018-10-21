@@ -1,0 +1,15 @@
+sudo: false
+language: java
+jdk:
+- oraclejdk10
+- oraclejdk9
+- oraclejdk8
+cache:
+  directories:
+  - "$HOME/.m2/repository"
+before_cache:
+- rm -rf $HOME/.m2/repository/org/kantega/reststop
+install:
+- mvn --version
+script:
+- mvn install -e -B
