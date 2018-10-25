@@ -194,7 +194,7 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
         WebSocketUpgradeFilter filter = WebSocketUpgradeFilter.configureContext(context);
 
         // Create the Jetty ServerContainer implementation
-        ServerContainer jettyContainer = new RedeployableServerContainer(filter,filter.getFactory(),context.getServer().getThreadPool());
+        ServerContainer jettyContainer = new RedeployableServerContainer(filter.getConfiguration(),context.getServer().getThreadPool());
         context.addBean(jettyContainer, true);
 
         // Store a reference to the ServerContainer per javax.websocket spec 1.0 final section 6.4 Programmatic Server Deployment
