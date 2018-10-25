@@ -16,17 +16,14 @@
 
 package org.kantega.reststop.maven;
 
-import org.eclipse.jetty.http.pathmap.MappedResource;
+import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.websocket.jsr356.server.ServerContainer;
 import org.eclipse.jetty.websocket.jsr356.server.ServerEndpointMetadata;
 import org.eclipse.jetty.websocket.server.MappedWebSocketCreator;
-import org.eclipse.jetty.websocket.server.WebSocketServerFactory;
-import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
+import org.eclipse.jetty.websocket.server.NativeWebSocketConfiguration;
 
 import javax.websocket.DeploymentException;
 import javax.websocket.server.ServerEndpointConfig;
-import java.util.Iterator;
-import java.util.concurrent.Executor;
 
 /**
  *
@@ -34,8 +31,10 @@ import java.util.concurrent.Executor;
 public class RedeployableServerContainer extends ServerContainer {
     private final MappedWebSocketCreator creator;
 
-    public RedeployableServerContainer(MappedWebSocketCreator creator, WebSocketServerFactory factory, Executor executor) {
-        super(creator, factory, executor);
+    public RedeployableServerContainer(MappedWebSocketCreator creator,
+                                       NativeWebSocketConfiguration configuration,
+                                       HttpClient httpClient) {
+        super(configuration, httpClient);
         this.creator = creator;
     }
 
@@ -62,12 +61,10 @@ public class RedeployableServerContainer extends ServerContainer {
     }
 
     private void removeMapping(String path) {
-        Iterator<MappedResource<WebSocketCreator>> iterator = creator.getMappings().iterator();
-        while (iterator.hasNext()) {
-            MappedResource<WebSocketCreator> next = iterator.next();
-            if(next.getPathSpec().getDeclaration().equals(path)) {
-                iterator.remove();
-            }
-        }
+        // Due to how removeMapping and ServerEndpointMetadata.getPath() works we need to try these different
+        // mappings. See NativeWebSocketConfiguration.toPathSpec(path)
+        creator.removeMapping(path);
+        creator.removeMapping("uri-template|" + path);
+        creator.removeMapping("regex|" + path);
     }
 }

@@ -16,15 +16,14 @@
 
 package org.kantega.reststop.jetty.websockets;
 
-import org.eclipse.jetty.http.pathmap.MappedResource;
+import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.websocket.jsr356.server.ServerContainer;
 import org.eclipse.jetty.websocket.jsr356.server.ServerEndpointMetadata;
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
 import org.eclipse.jetty.websocket.server.MappedWebSocketCreator;
-import org.eclipse.jetty.websocket.server.WebSocketServerFactory;
+import org.eclipse.jetty.websocket.server.NativeWebSocketConfiguration;
 import org.eclipse.jetty.websocket.server.WebSocketUpgradeFilter;
-import org.eclipse.jetty.websocket.servlet.WebSocketCreator;
 import org.kantega.reststop.api.Config;
 import org.kantega.reststop.api.Export;
 import org.kantega.reststop.api.Plugin;
@@ -33,8 +32,6 @@ import org.kantega.reststop.jetty.ServletContextCustomizer;
 import javax.servlet.ServletException;
 import javax.websocket.DeploymentException;
 import javax.websocket.server.ServerEndpointConfig;
-import java.util.Iterator;
-import java.util.concurrent.Executor;
 
 /**
  *
@@ -56,7 +53,7 @@ public class JettyWebsocketsPlugin implements ServletContextCustomizer {
             WebSocketUpgradeFilter filter = WebSocketUpgradeFilter.configureContext(context);
 
             // Create the Jetty ServerContainer implementation
-            ServerContainer jettyContainer = new RedeployableServerContainer(filter, filter.getFactory(), context.getServer().getThreadPool());
+            ServerContainer jettyContainer = new RedeployableServerContainer(filter, filter.getConfiguration(), null);
             context.addBean(jettyContainer, true);
 
             // Store a reference to the ServerContainer per javax.websocket spec 1.0 final section 6.4 Programmatic Server Deployment
@@ -72,8 +69,10 @@ public class JettyWebsocketsPlugin implements ServletContextCustomizer {
     private static class RedeployableServerContainer extends ServerContainer {
         private final MappedWebSocketCreator creator;
 
-        public RedeployableServerContainer(MappedWebSocketCreator creator, WebSocketServerFactory factory, Executor executor) {
-            super(creator, factory, executor);
+        public RedeployableServerContainer(MappedWebSocketCreator creator,
+                                           NativeWebSocketConfiguration configuration,
+                                           HttpClient httpClient) {
+            super(configuration, httpClient);
             this.creator = creator;
         }
 
@@ -100,13 +99,11 @@ public class JettyWebsocketsPlugin implements ServletContextCustomizer {
         }
 
         private void removeMapping(String path) {
-            Iterator<MappedResource<WebSocketCreator>> iterator = creator.getMappings().iterator();
-            while (iterator.hasNext()) {
-                MappedResource<WebSocketCreator> next = iterator.next();
-                if(next.getPathSpec().getDeclaration().equals(path)) {
-                    iterator.remove();
-                }
-            }
+            // Due to how removeMapping and ServerEndpointMetadata.getPath() works we need to try these different
+            // mappings. See NativeWebSocketConfiguration.toPathSpec(path)
+            creator.removeMapping(path);
+            creator.removeMapping("uri-template|" + path);
+            creator.removeMapping("regex|" + path);
         }
     }
 }
