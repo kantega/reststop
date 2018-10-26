@@ -16,14 +16,16 @@
 
 package org.kantega.reststop.classloaderutils;
 
-import org.junit.Test;
+
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 /**
  *
@@ -96,7 +98,7 @@ public class PluginInfoTest {
         assertThat(a, is(sorted.get(0)));
     }
 
-    @Test(expected = CircularDependencyException.class)
+    @Test
     public void shouldDetectCircularDependency() {
 
         // c depends on b
@@ -107,7 +109,6 @@ public class PluginInfoTest {
         a.addDependsOn(c);
 
 
-
-        PluginInfo.resolveClassloaderOrder(infos);
+        assertThrows(CircularDependencyException.class, () -> PluginInfo.resolveClassloaderOrder(infos));
     }
 }
