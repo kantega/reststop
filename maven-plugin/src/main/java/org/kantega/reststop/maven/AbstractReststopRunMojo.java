@@ -147,6 +147,7 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
             context.getServletContext().setAttribute("pluginsXml", createPluginXmlDocument(false));
             context.setInitParameter("pluginConfigurationDirectory", configDir.getAbsolutePath());
             context.setInitParameter("applicationName", applicationName);
+            context.setInitParameter("org.eclipse.jetty.websocket.jsr356", "false");
 
             customizeContext(context);
 
@@ -190,7 +191,7 @@ public abstract class AbstractReststopRunMojo extends AbstractReststopMojo {
     public static ServerContainer configureWebSocket(ServletContextHandler context) throws ServletException
     {
 
-        // Create Filter
+       // Create Filter
         WebSocketUpgradeFilter filter = WebSocketUpgradeFilter.configureContext(context);
 
         // Create the Jetty ServerContainer implementation
