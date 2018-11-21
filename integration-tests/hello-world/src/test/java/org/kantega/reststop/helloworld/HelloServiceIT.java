@@ -16,7 +16,7 @@
 
 package org.kantega.reststop.helloworld;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 
 import javax.xml.namespace.QName;
@@ -31,8 +31,10 @@ import javax.xml.ws.Service;
 import javax.xml.ws.WebServiceException;
 import java.util.Map;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 
 /**
  *
@@ -55,12 +57,13 @@ public class HelloServiceIT {
         assertThat(textContent, is("Hello, Joe!"));
     }
 
-    @Test(expected = WebServiceException.class)
+    @Test
     public void shouldFailBecauseOfNullReceiver() throws TransformerException {
 
         Dispatch<Source> helloPort = getDispatch();
 
-        helloPort.invoke(new StreamSource(getClass().getResourceAsStream("helloRequest-fail.xml")));
+        assertThrows(WebServiceException.class,
+                () -> helloPort.invoke(new StreamSource(getClass().getResourceAsStream("helloRequest-fail.xml"))));
 
     }
 

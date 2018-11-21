@@ -49,7 +49,6 @@
     <scm>
         <url>https://github.com/kantega/reststop</url>
         <connection>scm:git:git@github.com:kantega/reststop.git</connection>
-    <tag>reststop-parent-3.4</tag>
   </scm>
 
 
@@ -60,9 +59,11 @@
         <maven.version>3.1.0</maven.version>
         <maven-deploy-plugin.version>2.8.1</maven-deploy-plugin.version>
         <aether.version>1.0.0.v20140518</aether.version>
-        <jexmec.version>2.0.0rc8</jexmec.version>
         <logback.version>1.1.2</logback.version>
         <slf4j.version>1.7.7</slf4j.version>
+
+        <junit-jupiter.version>5.3.1</junit-jupiter.version>
+        <junit-platform.version>1.3.1</junit-platform.version>
     </properties>
 
 
@@ -92,12 +93,21 @@
             <url>http://opensource.kantega.no/nexus/content/repositories/snapshots/</url>
         </snapshotRepository>
     </distributionManagement>
+
     <dependencies>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+            <version>1.3</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
+
     <dependencyManagement>
         <dependencies>
             <!-- Internal deps  -->
@@ -170,18 +180,6 @@
             </dependency>
 
             <dependency>
-                <groupId>org.kantega.jexmec</groupId>
-                <artifactId>jexmec-manager</artifactId>
-                <version>${jexmec.version}</version>
-            </dependency>
-
-            <dependency>
-                <groupId>org.kantega.jexmec</groupId>
-                <artifactId>jexmec-ctor-pl</artifactId>
-                <version>${jexmec.version}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
                 <version>1.4</version>
@@ -199,14 +197,14 @@
                 <version>${slf4j.version}</version>
             </dependency>
 
-
-            <!-- Test deps-->
             <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>4.11</version>
-                <scope>test</scope>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${junit-jupiter.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
             </dependency>
+
 
         </dependencies>
     </dependencyManagement>
@@ -232,6 +230,12 @@
                     <remoteTagging>true</remoteTagging>
                     <autoVersionSubmodules>true</autoVersionSubmodules>
                 </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.22.1</version>
             </plugin>
         </plugins>
     </build>

@@ -16,12 +16,10 @@
 
 package org.kantega.reststop.helloworld;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.kantega.reststop.helloworld.jaxrs.Hello;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 /**
  *

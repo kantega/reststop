@@ -16,8 +16,6 @@
 
 package org.kantega.reststop.development;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.kantega.reststop.classloaderutils.Artifact;
 import org.kantega.reststop.classloaderutils.PluginClassLoader;
 import org.kantega.reststop.classloaderutils.PluginInfo;
@@ -25,7 +23,6 @@ import org.kantega.reststop.classloaderutils.PluginInfo;
 import javax.tools.*;
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
@@ -39,11 +36,13 @@ import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.function.Predicate;
 
 import static java.util.Arrays.asList;
+import static java.util.Objects.isNull;
 
 /**
  *
  */
-public class DevelopmentClassloader extends PluginClassLoader{
+public class DevelopmentClassloader extends PluginClassLoader {
+
     private final long created;
     private final File basedir;
     private final File jarFile;
@@ -65,7 +64,8 @@ public class DevelopmentClassloader extends PluginClassLoader{
     private Set<String> usedUrls = new CopyOnWriteArraySet<>();
     private volatile boolean failed;
 
-    public DevelopmentClassloader(PluginInfo info, File baseDir, File jarFile, List<File> compileClasspath, List<File> runtimeClasspath, List<File> testClasspath, ClassLoader parent, int version) {
+    public DevelopmentClassloader(PluginInfo info, File baseDir, File jarFile, List<File> compileClasspath,
+                                  List<File> runtimeClasspath, List<File> testClasspath, ClassLoader parent, int version) {
         super(info, new URL[0], parent);
         this.basedir = baseDir;
         this.jarFile = jarFile;
@@ -191,6 +191,8 @@ public class DevelopmentClassloader extends PluginClassLoader{
     }
 
     public boolean isStaleTests() {
+        if(isNull(basedir)) return false;
+
         File sources = new File(basedir, "src/test/java");
         return sources.exists() && newest(sources, p -> p.getFileName().toString().endsWith(".java")) > lastTestCompile;
     }
@@ -208,14 +210,13 @@ public class DevelopmentClassloader extends PluginClassLoader{
         return visitor.getNewest();
     }
 
-    public List<Class> getTestClasses() {
+    public ClassLoaderAndTestClasses getTestsAndClassLoader() {
         File testSources = new File(basedir, "src/test/java");
         if(!testSources.exists()) {
-            return Collections.emptyList();
+            return null;
         }
 
         List<URL> urls = new ArrayList<>();
-
 
         try {
             for (File file : testClasspath) {
@@ -252,26 +253,13 @@ public class DevelopmentClassloader extends PluginClassLoader{
         for (String className : classNames) {
             try {
                 Class<?> clazz = loader.loadClass(className);
-                if(isJunit4Class(clazz)) {
-                    classes.add(clazz);
-                }
+                classes.add(clazz);
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException(e);
             }
         }
-        return classes;
-    }
 
-    private boolean isJunit4Class(Class<?> clazz) {
-        if(clazz.getAnnotation(RunWith.class) != null) {
-            return true;
-        }
-        for (Method method : clazz.getMethods()) {
-            if(method.getAnnotation(Test.class) != null) {
-                return true;
-            }
-        }
-        return false;
+        return new ClassLoaderAndTestClasses(loader, classes);
     }
 
     public File getBasedir() {
@@ -327,10 +315,7 @@ public class DevelopmentClassloader extends PluginClassLoader{
         }
         File sourceDirectory = new File(basedir, "src/main/java");
         File outputDirectory = new File(basedir, "target/classes");
-        List<File> classpath = compileClasspath;
-
-
-        compileJava(sourceDirectory, outputDirectory, classpath, standardFileManager);
+        compileJava(sourceDirectory, outputDirectory, compileClasspath, standardFileManager);
 
     }
 
@@ -341,9 +326,7 @@ public class DevelopmentClassloader extends PluginClassLoader{
         File sourceDirectory = new File(basedir, "src/test/java");
         if(sourceDirectory.exists()) {
             File outputDirectory = new File(basedir, "target/test-classes");
-            List<File> classpath = testClasspath;
-
-            compileJava(sourceDirectory, outputDirectory, classpath, standardFileManager);
+            compileJava(sourceDirectory, outputDirectory, testClasspath, standardFileManager);
 
             lastTestCompile = System.currentTimeMillis();
         }
@@ -449,5 +432,15 @@ public class DevelopmentClassloader extends PluginClassLoader{
     @Override
     public String toString() {
         return getClass().getSimpleName() + " for " + getPluginInfo().getPluginId();
+    }
+
+    class ClassLoaderAndTestClasses {
+        final List<Class> testClasses;
+        final ClassLoader classLoader;
+
+        ClassLoaderAndTestClasses(ClassLoader classLoader, List<Class> classes) {
+            this.classLoader = classLoader;
+            this.testClasses = classes;
+        }
     }
 }

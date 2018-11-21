@@ -17,7 +17,7 @@
 package org.kantega.reststop.helloworld;
 
 import org.apache.commons.io.IOUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
@@ -26,7 +26,7 @@ import java.net.URISyntaxException;
 import java.net.URL;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.kantega.reststop.helloworld.Utils.readPort;
 
 /**
