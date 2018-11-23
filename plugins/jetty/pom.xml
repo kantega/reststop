@@ -38,5 +38,9 @@
             <groupId>org.kantega.reststop</groupId>
             <artifactId>reststop-servlet</artifactId>
         </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+        </dependency>
     </dependencies>
 </project>

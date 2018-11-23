@@ -28,7 +28,7 @@
     <artifactId>reststop-cxf-plugin</artifactId>
 
     <properties>
-        <cxf.version>3.0.1</cxf.version>
+        <cxf.version>3.2.7</cxf.version>
     </properties>
 
     <dependencies>
@@ -58,6 +58,10 @@
             <groupId>org.apache.cxf</groupId>
             <artifactId>cxf-rt-transports-http</artifactId>
             <version>${cxf.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
         </dependency>
 
     </dependencies>

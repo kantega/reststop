@@ -28,10 +28,13 @@
     <artifactId>reststop-jaxws-api</artifactId>
 
     <dependencies>
-
         <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.xml.ws</groupId>
+            <artifactId>jaxws-api</artifactId>
         </dependency>
     </dependencies>
 </project>

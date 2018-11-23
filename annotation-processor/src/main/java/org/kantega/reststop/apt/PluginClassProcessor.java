@@ -23,7 +23,6 @@ import org.kantega.reststop.classloaderutils.config.PluginConfigParams;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
-import javax.lang.model.type.ErrorType;
 import javax.tools.FileObject;
 import javax.tools.StandardLocation;
 import java.io.*;
@@ -82,9 +81,10 @@ public class PluginClassProcessor extends AbstractProcessor {
                         List<? extends VariableElement> parameters = constructor.getParameters();
 
                         for (VariableElement parameter : parameters) {
-                            if(parameter.asType() instanceof ErrorType) {
+                            // TODO: Disabled, all parameters are of ErrorType in Java11
+                            /*if(parameter.asType() instanceof ErrorType) {
                                 continue;
-                            }
+                            }*/
                             Name simpleName = parameter.getSimpleName();
                             parameterNames.add(simpleName.toString());
                             Config configAnnotation = parameter.getAnnotation(Config.class);

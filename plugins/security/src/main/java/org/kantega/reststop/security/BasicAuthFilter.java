@@ -20,9 +20,10 @@ import javax.servlet.*;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.security.Principal;
+import java.util.Base64;
 
 /**
  *
@@ -42,7 +43,8 @@ public class BasicAuthFilter implements Filter {
 
         if(auth != null) {
 
-            final String[] usernameAndPassword = new String(DatatypeConverter.parseBase64Binary(auth.substring("Basic ".length())), "utf-8").split(":");
+            Base64.Decoder decoder = Base64.getDecoder();
+            final String[] usernameAndPassword = new String(decoder.decode(auth.substring("Basic ".length())), StandardCharsets.UTF_8).split(":");
             if(usernameAndPassword[0].equals(usernameAndPassword[1])) {
                 filterChain.doFilter(new HttpServletRequestWrapper(req) {
                     @Override

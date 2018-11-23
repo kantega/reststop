@@ -67,7 +67,7 @@ public class ReststopPluginLoader {
             } catch (IllegalAccessException e) {
                 throw new InvalidPluginException("Plugin class " + clazz.getName() + " or its constructor has an illegal access modifier", e, clazz);
             } catch (InvocationTargetException e) {
-                throw new InvalidPluginException("Plugin class " + clazz.getName() + " threw an exeception during construction ", e, clazz);
+                throw new InvalidPluginException("Plugin class " + clazz.getName() + " threw an exception during construction ", e, clazz);
             }
         });
 
@@ -129,6 +129,7 @@ public class ReststopPluginLoader {
 
         Set<String> propertyNames = new HashSet<>();
 
+        int parameterNamesCounter = 0;
         for (int i = 0; i < constructor.getParameterTypes().length; i++) {
             if (constructor.getParameters()[i].isAnnotationPresent(Config.class)) {
                 Config config = constructor.getParameters()[i].getAnnotation(Config.class);
@@ -139,9 +140,10 @@ public class ReststopPluginLoader {
                 String name = config.property();
 
                 if( name == null || name.trim().isEmpty())  {
-                    name = parameterNames[i];
+                    name = parameterNames[parameterNamesCounter];
                 }
                 propertyNames.add(name);
+                parameterNamesCounter++;
             }
         }
 
@@ -286,9 +288,12 @@ public class ReststopPluginLoader {
 
         String[] parameterNames = readParameterNames(constructor.getDeclaringClass());
         Object[] params = new Object[constructor.getParameterTypes().length];
+        int parameterNamesCounter = 0;
         for (int i = 0; i < constructor.getParameterTypes().length; i++) {
-            params[i] = findInjectableService(constructor, i, pluginState, parameterNames[i], config);
-
+            if (constructor.getParameters()[i].isAnnotationPresent(Config.class)) {
+                params[i] = findInjectableService(constructor, i, pluginState, parameterNames[parameterNamesCounter], config);
+                parameterNamesCounter++;
+            }
         }
         return params;
     }

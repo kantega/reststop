@@ -18,7 +18,7 @@ package org.kantega.reststop.cxflogging;
 
 import org.apache.cxf.annotations.SchemaValidation;
 import org.apache.cxf.interceptor.LoggingInInterceptor;
-import org.apache.cxf.jaxws22.EndpointImpl;
+import org.apache.cxf.jaxws.EndpointImpl;
 import org.apache.cxf.message.Message;
 import org.kantega.reststop.api.Export;
 import org.kantega.reststop.api.Plugin;
