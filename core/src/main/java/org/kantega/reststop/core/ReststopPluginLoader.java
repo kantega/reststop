@@ -290,10 +290,8 @@ public class ReststopPluginLoader {
         Object[] params = new Object[constructor.getParameterTypes().length];
         int parameterNamesCounter = 0;
         for (int i = 0; i < constructor.getParameterTypes().length; i++) {
-            if (constructor.getParameters()[i].isAnnotationPresent(Config.class)) {
-                params[i] = findInjectableService(constructor, i, pluginState, parameterNames[parameterNamesCounter], config);
-                parameterNamesCounter++;
-            }
+            params[i] = findInjectableService(constructor, i, pluginState, parameterNames[parameterNamesCounter], config);
+            parameterNamesCounter++;
         }
         return params;
     }
