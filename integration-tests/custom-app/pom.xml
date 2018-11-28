@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.kantega.reststop</groupId>
         <artifactId>reststop-parent</artifactId>
-        <version>3.12-SNAPSHOT</version>
+        <version>4.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <artifactId>reststop-custom-app</artifactId>
