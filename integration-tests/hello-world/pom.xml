@@ -98,6 +98,7 @@
             <groupId>javax.jws</groupId>
             <artifactId>javax.jws-api</artifactId>
             <version>1.1</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
@@ -267,7 +268,7 @@
                         <dependency>
                             <groupId>javax.websocket</groupId>
                             <artifactId>javax.websocket-api</artifactId>
-                            <version>1.0</version>
+                            <version>1.1</version>
                         </dependency>
                     </containerDependencies>
                 </configuration>
