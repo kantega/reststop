@@ -63,6 +63,8 @@
         <jexmec.version>2.0.0rc8</jexmec.version>
         <logback.version>1.2.3</logback.version>
         <slf4j.version>1.7.25</slf4j.version>
+        <jaxb.version>2.4.0-b180830.0438</jaxb.version>
+        <javax.activation-api.version>1.2.0</javax.activation-api.version>
     </properties>
 
 
