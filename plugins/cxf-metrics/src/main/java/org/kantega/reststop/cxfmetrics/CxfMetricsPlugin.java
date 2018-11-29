@@ -18,7 +18,7 @@ package org.kantega.reststop.cxfmetrics;
 
 import com.codahale.metrics.MetricRegistry;
 import org.apache.cxf.interceptor.Fault;
-import org.apache.cxf.jaxws22.EndpointImpl;
+import org.apache.cxf.jaxws.EndpointImpl;
 import org.apache.cxf.message.Message;
 import org.apache.cxf.phase.AbstractPhaseInterceptor;
 import org.apache.cxf.phase.Phase;
