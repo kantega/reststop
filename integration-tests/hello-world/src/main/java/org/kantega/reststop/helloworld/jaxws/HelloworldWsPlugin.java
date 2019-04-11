@@ -23,10 +23,10 @@ import org.kantega.reststop.jaxwsapi.EndpointConfigurationBuilder;
 
 import javax.annotation.PreDestroy;
 
-@Plugin
+//@Plugin
 public class HelloworldWsPlugin  {
 
-    @Export
+    //@Export
     private final EndpointConfiguration helloEndpoint;
 
     public HelloworldWsPlugin(EndpointConfigurationBuilder builder) {

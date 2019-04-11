@@ -180,7 +180,7 @@
                         <plugin>
                             <groupId>javax.validation</groupId>
                             <artifactId>validation-api</artifactId>
-                            <version>1.1.0.Final</version>
+                            <version>2.0.1.Final</version>
                         </plugin>
                         <plugin>
                             <groupId>org.kantega.reststop</groupId>
@@ -270,6 +270,16 @@
                             <artifactId>javax.websocket-api</artifactId>
                             <version>1.1</version>
                         </dependency>
+                        <dependency>
+                            <groupId>javax.jws</groupId>
+                            <artifactId>javax.jws-api</artifactId>
+                            <version>1.1</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>com.sun.xml.ws</groupId>
+                            <artifactId>jaxws-rt</artifactId>
+                            <version>2.3.2</version>
+                        </dependency>
                     </containerDependencies>
                 </configuration>
                 <executions>
@@ -335,24 +345,4 @@
             </plugin>
         </plugins>
     </build>
-
-    <profiles>
-        <profile>
-            <id>JDK9+</id>
-            <activation>
-                <jdk>[9,)</jdk>
-            </activation>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-failsafe-plugin</artifactId>
-                        <configuration>
-                            <argLine>--add-modules=java.xml.bind,java.xml.ws</argLine>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 </project>

@@ -39,7 +39,7 @@ import static org.junit.Assert.assertThat;
  */
 public class HelloServiceIT {
 
-    @Test
+    //@Test
     public void shouldRespond() throws TransformerException {
 
         Dispatch<Source> helloPort = getDispatch();
@@ -55,7 +55,7 @@ public class HelloServiceIT {
         assertThat(textContent, is("Hello, Joe!"));
     }
 
-    @Test(expected = WebServiceException.class)
+    //@Test(expected = WebServiceException.class)
     public void shouldFailBecauseOfNullReceiver() throws TransformerException {
 
         Dispatch<Source> helloPort = getDispatch();

@@ -82,7 +82,8 @@ public class CxfPlugin implements EndpointDeployer {
             try {
                 pluginClassLoader.set(export.getClassLoader());
                 Endpoint endpoint = Endpoint.create(config.getImplementor());
-                endpoint.publish(config.getPath());
+                // TODO
+                endpoint.publish("http://localhost:8080" + config.getPath());
                 for (EndpointCustomizer cxfPluginPlugin : customizers) {
                     cxfPluginPlugin.customizeEndpoint(endpoint);
                 }
